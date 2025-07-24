@@ -922,8 +922,8 @@ const CompetitorManagement = ({ token }) => {
                 className="w-full h-32 px-3 py-2 border rounded-lg focus:outline-none focus:border-purple-500 font-mono text-xs"
                 placeholder="Cole aqui os dados da sua planilha Excel... (Ctrl+V)
 
-✅ FORMATO CORRETO dos seus dados:
-Kelmax	líquido	1,45	0	15,95	0	0	0	0	13,05	0,6525	0	0	0	0	1,305	0	0	0	33,4% Extratos de Algas
+✅ FORMATO CORRETO (baseado no seu exemplo):
+ICL	Kelmax	líquido	1,45	0	15,95	0	0	0	0	13,05	0,6525	0	0	0	0	1,305	0	0	0	33,4% Extratos de Algas
 
 DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                 spellCheck="false"
