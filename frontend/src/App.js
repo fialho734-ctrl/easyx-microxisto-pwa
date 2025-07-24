@@ -3,6 +3,855 @@ import './App.css';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
+// Admin Components
+const UserManagement = ({ token }) => {
+  const [users, setUsers] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchPendingUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchPendingUsers = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users/pending`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setPendingUsers(data);
+    } catch (error) {
+      console.error('Error fetching pending users:', error);
+    }
+  };
+
+  const approveUser = async (userId, approved) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ user_id: userId, approved })
+      });
+      
+      if (response.ok) {
+        fetchUsers();
+        fetchPendingUsers();
+      }
+    } catch (error) {
+      console.error('Error approving user:', error);
+    }
+    setLoading(false);
+  };
+
+  const deleteUser = async (userId) => {
+    if (!window.confirm('Tem certeza que deseja remover este usuário?')) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchUsers();
+        fetchPendingUsers();
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Pending Users */}
+      {pendingUsers.length > 0 && (
+        <div className="card">
+          <h3 className="text-xl font-bold text-red-600 mb-4">Usuários Pendentes de Aprovação</h3>
+          <div className="space-y-3">
+            {pendingUsers.map(user => (
+              <div key={user.id} className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div>
+                  <p className="font-semibold">{user.email}</p>
+                  <p className="text-sm text-gray-500">Cadastrado em: {new Date(user.created_at).toLocaleDateString()}</p>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => approveUser(user.id, true)}
+                    disabled={loading}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                  >
+                    Aprovar
+                  </button>
+                  <button
+                    onClick={() => approveUser(user.id, false)}
+                    disabled={loading}
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Rejeitar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All Users */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Todos os Usuários</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2 text-left">Email</th>
+                <th className="px-4 py-2 text-left">Status</th>
+                <th className="px-4 py-2 text-left">Tipo</th>
+                <th className="px-4 py-2 text-left">Cadastro</th>
+                <th className="px-4 py-2 text-left">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(user => (
+                <tr key={user.id} className="border-t">
+                  <td className="px-4 py-2">{user.email}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 rounded text-sm ${user.is_approved ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {user.is_approved ? 'Aprovado' : 'Pendente'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 rounded text-sm ${user.is_admin ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {user.is_admin ? 'Admin' : 'Usuário'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">{new Date(user.created_at).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">
+                    {user.email !== 'agrofialho@gmail.com' && (
+                      <button
+                        onClick={() => deleteUser(user.id)}
+                        disabled={loading}
+                        className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Remover
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TechnologyManagement = ({ token, technologies, fetchTechnologies }) => {
+  const [editingTech, setEditingTech] = useState(null);
+  const [formData, setFormData] = useState({ name: '', logo: '', description: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleEdit = (tech) => {
+    setEditingTech(tech);
+    setFormData({ name: tech.name, logo: tech.logo, description: tech.description });
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const url = editingTech 
+        ? `${API_BASE}/api/admin/technologies/${editingTech.id}`
+        : `${API_BASE}/api/admin/technologies`;
+      
+      const method = editingTech ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        fetchTechnologies();
+        setEditingTech(null);
+        setFormData({ name: '', logo: '', description: '' });
+      }
+    } catch (error) {
+      console.error('Error saving technology:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (techId) => {
+    if (!window.confirm('Tem certeza que deseja remover esta tecnologia?')) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/technologies/${techId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchTechnologies();
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Erro ao remover tecnologia');
+      }
+    } catch (error) {
+      console.error('Error deleting technology:', error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Form */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          {editingTech ? 'Editar Tecnologia' : 'Nova Tecnologia'}
+        </h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Nome</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">URL do Logo</label>
+            <input
+              type="text"
+              value={formData.logo}
+              onChange={(e) => setFormData({...formData, logo: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-gray-700 font-semibold mb-2">Descrição</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 h-24"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex space-x-2">
+          <button
+            onClick={handleSave}
+            disabled={loading || !formData.name}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {loading ? 'Salvando...' : 'Salvar'}
+          </button>
+          {editingTech && (
+            <button
+              onClick={() => {
+                setEditingTech(null);
+                setFormData({ name: '', logo: '', description: '' });
+              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Technologies List */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Tecnologias Cadastradas</h3>
+        <div className="grid gap-4">
+          {technologies.map(tech => (
+            <div key={tech.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center space-x-4">
+                <img src={tech.logo} alt={tech.name} className="h-12 w-auto object-contain" />
+                <div>
+                  <h4 className="font-semibold text-green-800">{tech.name}</h4>
+                  <p className="text-gray-600 text-sm">{tech.description}</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleEdit(tech)}
+                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(tech.id)}
+                  disabled={loading}
+                  className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+                >
+                  Remover
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProductManagement = ({ token, technologies }) => {
+  const [products, setProducts] = useState([]);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
+    composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
+    additives: '', description: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/products`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setFormData(product);
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const url = editingProduct 
+        ? `${API_BASE}/api/admin/products/${editingProduct.id}`
+        : `${API_BASE}/api/admin/products`;
+      
+      const method = editingProduct ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        fetchProducts();
+        setEditingProduct(null);
+        setFormData({
+          name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
+          composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
+          additives: '', description: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (productId) => {
+    if (!window.confirm('Tem certeza que deseja remover este produto?')) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchProducts();
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+    setLoading(false);
+  };
+
+  const elements = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'Mo', 'Co', 'Zn', 'B', 'Cu', 'Mn', 'Ni', 'Se', 'Si', 'Fe'];
+
+  return (
+    <div className="space-y-6">
+      {/* Form */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+        </h3>
+        
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Nome</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">URL do Logo</label>
+            <input
+              type="text"
+              value={formData.logo}
+              onChange={(e) => setFormData({...formData, logo: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Tecnologia</label>
+            <select
+              value={formData.technology_id}
+              onChange={(e) => setFormData({...formData, technology_id: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            >
+              <option value="">Selecione...</option>
+              {technologies.map(tech => (
+                <option key={tech.id} value={tech.id}>{tech.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Densidade</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.density}
+              onChange={(e) => setFormData({...formData, density: parseFloat(e.target.value) || 0})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Natureza</label>
+            <select
+              value={formData.nature}
+              onChange={(e) => setFormData({...formData, nature: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            >
+              <option value="Líquido">Líquido</option>
+              <option value="Sólido">Sólido</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Composition */}
+        <div className="mb-4">
+          <h4 className="text-lg font-semibold text-gray-800 mb-3">Composição Química</h4>
+          <div className="grid grid-cols-4 gap-3">
+            {elements.map(element => (
+              <div key={element}>
+                <label className="block text-gray-700 font-medium mb-1 text-sm">{element}</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={formData.composition[element]}
+                  onChange={(e) => setFormData({
+                    ...formData, 
+                    composition: {...formData.composition, [element]: parseFloat(e.target.value) || 0}
+                  })}
+                  className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:border-green-500"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Aditivos</label>
+            <textarea
+              value={formData.additives}
+              onChange={(e) => setFormData({...formData, additives: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 h-20"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Descrição</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 h-20"
+            />
+          </div>
+        </div>
+
+        <div className="flex space-x-2">
+          <button
+            onClick={handleSave}
+            disabled={loading || !formData.name || !formData.technology_id}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {loading ? 'Salvando...' : 'Salvar'}
+          </button>
+          {editingProduct && (
+            <button
+              onClick={() => {
+                setEditingProduct(null);
+                setFormData({
+                  name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
+                  composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
+                  additives: '', description: ''
+                });
+              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Products List */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Produtos Cadastrados</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2 text-left">Logo</th>
+                <th className="px-4 py-2 text-left">Nome</th>
+                <th className="px-4 py-2 text-left">Tecnologia</th>
+                <th className="px-4 py-2 text-left">Densidade</th>
+                <th className="px-4 py-2 text-left">Natureza</th>
+                <th className="px-4 py-2 text-left">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map(product => {
+                const technology = technologies.find(t => t.id === product.technology_id);
+                return (
+                  <tr key={product.id} className="border-t">
+                    <td className="px-4 py-2">
+                      <img src={product.logo} alt={product.name} className="h-8 w-auto object-contain" />
+                    </td>
+                    <td className="px-4 py-2 font-semibold">{product.name}</td>
+                    <td className="px-4 py-2">{technology?.name || 'N/A'}</td>
+                    <td className="px-4 py-2">{product.density}</td>
+                    <td className="px-4 py-2">{product.nature}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleEdit(product)}
+                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          disabled={loading}
+                          className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CompetitorManagement = ({ token }) => {
+  const [competitors, setCompetitors] = useState([]);
+  const [csvFile, setCsvFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchCompetitors();
+  }, []);
+
+  const fetchCompetitors = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/competitors`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      setCompetitors(data);
+    } catch (error) {
+      console.error('Error fetching competitors:', error);
+    }
+  };
+
+  const handleCsvUpload = async () => {
+    if (!csvFile) return;
+    
+    setLoading(true);
+    const formData = new FormData();
+    formData.append('file', csvFile);
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/competitors/import-csv`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      
+      const result = await response.json();
+      setImportResult(result);
+      
+      if (response.ok) {
+        fetchCompetitors();
+        setCsvFile(null);
+      }
+    } catch (error) {
+      console.error('Error uploading CSV:', error);
+      setImportResult({ message: 'Erro ao importar arquivo', errors: [error.message] });
+    }
+    setLoading(false);
+  };
+
+  const deleteCompetitor = async (competitorId) => {
+    if (!window.confirm('Tem certeza que deseja remover este concorrente?')) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/competitors/${competitorId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchCompetitors();
+      }
+    } catch (error) {
+      console.error('Error deleting competitor:', error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* CSV Import */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Importar Concorrentes via CSV</h3>
+        
+        {/* CSV Template Info */}
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 className="font-semibold text-blue-800 mb-2">Formato do CSV:</h4>
+          <p className="text-sm text-blue-700 mb-2">O arquivo deve conter as seguintes colunas (na ordem exata):</p>
+          <div className="text-xs text-blue-600 grid grid-cols-3 gap-1">
+            <span>• Empresa</span>
+            <span>• Produto</span>
+            <span>• Natureza</span>
+            <span>• Densidade (g/cm³)</span>
+            <span>• N (g/L ou Kg)</span>
+            <span>• P2O5 (g/L ou Kg)</span>
+            <span>• K2O (g/L ou Kg)</span>
+            <span>• Ca (g/L ou Kg)</span>
+            <span>• Mg (g/L ou Kg)</span>
+            <span>• S (g/L ou Kg)</span>
+            <span>• Mo (g/L ou Kg)</span>
+            <span>• Co (g/L ou Kg)</span>
+            <span>• Zn (g/L ou Kg)</span>
+            <span>• B (g/L ou Kg)</span>
+            <span>• Cu (g/L ou Kg)</span>
+            <span>• Mn (g/L ou Kg)</span>
+            <span>• Ni (g/L ou Kg)</span>
+            <span>• Se (g/L ou Kg)</span>
+            <span>• Si (g/L ou Kg)</span>
+            <span>• Fe (g/L ou Kg)</span>
+            <span>• Aditivos</span>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={(e) => setCsvFile(e.target.files[0])}
+            className="flex-1"
+          />
+          <button
+            onClick={handleCsvUpload}
+            disabled={!csvFile || loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? 'Importando...' : 'Importar CSV'}
+          </button>
+        </div>
+
+        {importResult && (
+          <div className={`mt-4 p-4 rounded-lg ${importResult.errors && importResult.errors.length > 0 ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
+            <p className="font-semibold">{importResult.message}</p>
+            {importResult.errors && importResult.errors.length > 0 && (
+              <div className="mt-2">
+                <p className="text-sm font-medium text-red-600">Erros encontrados:</p>
+                <ul className="list-disc list-inside text-sm text-red-600 mt-1">
+                  {importResult.errors.slice(0, 10).map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                  {importResult.errors.length > 10 && (
+                    <li>... e mais {importResult.errors.length - 10} erros</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Competitors List */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Concorrentes Cadastrados ({competitors.length})</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-3 py-2 text-left">Empresa</th>
+                <th className="px-3 py-2 text-left">Produto</th>
+                <th className="px-3 py-2 text-left">Natureza</th>
+                <th className="px-3 py-2 text-left">Densidade</th>
+                <th className="px-3 py-2 text-left">Elementos</th>
+                <th className="px-3 py-2 text-left">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {competitors.map(competitor => (
+                <tr key={competitor.id} className="border-t">
+                  <td className="px-3 py-2 font-semibold">{competitor.company}</td>
+                  <td className="px-3 py-2">{competitor.product}</td>
+                  <td className="px-3 py-2">{competitor.nature}</td>
+                  <td className="px-3 py-2">{competitor.density}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(competitor.composition).filter(([key, value]) => value > 0).map(([key, value]) => (
+                        <span key={key} className="text-xs bg-green-100 text-green-800 px-1 rounded">
+                          {key}: {value}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => deleteCompetitor(competitor.id)}
+                      disabled={loading}
+                      className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                    >
+                      Remover
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HomeContentManagement = ({ token, homeContent, fetchHomeContent }) => {
+  const [content, setContent] = useState({ text: '', pdf_url: '' });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (homeContent) {
+      setContent({ text: homeContent.text || '', pdf_url: homeContent.pdf_url || '' });
+    }
+  }, [homeContent]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/home`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(content)
+      });
+      
+      if (response.ok) {
+        fetchHomeContent();
+        alert('Conteúdo atualizado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Error updating home content:', error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="card">
+      <h3 className="text-xl font-bold text-gray-800 mb-4">Gerenciar Conteúdo da Página Inicial</h3>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-gray-700 font-semibold mb-2">Texto Principal</label>
+          <textarea
+            value={content.text}
+            onChange={(e) => setContent({...content, text: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 h-32"
+            placeholder="Digite o texto que será exibido na página inicial..."
+          />
+        </div>
+        
+        <div>
+          <label className="block text-gray-700 font-semibold mb-2">URL do PDF (Opcional)</label>
+          <input
+            type="text"
+            value={content.pdf_url}
+            onChange={(e) => setContent({...content, pdf_url: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            placeholder="https://exemplo.com/documento.pdf"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Se fornecido, será exibido um botão para download do PDF na página inicial
+          </p>
+        </div>
+        
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+        >
+          {loading ? 'Salvando...' : 'Salvar Alterações'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [technologies, setTechnologies] = useState([]);
