@@ -1829,7 +1829,7 @@ function App() {
                     >
                       <option value="">Escolha um produto...</option>
                       {products.map(product => (
-                        <option key={product.id} value={product.id}>{product.name}</option>
+                        <option key={product.id} value={product.id} translate="no">{product.name}</option>
                       ))}
                     </select>
                   </div>
