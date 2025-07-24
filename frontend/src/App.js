@@ -1914,16 +1914,16 @@ function App() {
 
         {currentPage === 'comparison' && (
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-green-800 mb-8 text-center">Comparativo de Concorrentes</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Comparativo de Concorrentes</h2>
             
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Empresa Concorrente</label>
+                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Empresa Concorrente</label>
                   <select
                     value={selectedCompany}
                     onChange={(e) => handleCompanyChange(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                   >
                     <option value="">Selecione...</option>
                     {companies.map(company => (
@@ -1933,29 +1933,29 @@ function App() {
                 </div>
                 
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Produto Concorrente</label>
+                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
                   <select
                     value={selectedCompetitor}
                     onChange={(e) => setSelectedCompetitor(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedCompany}
                   >
                     <option value="">Selecione...</option>
                     {competitorProducts.map(product => (
-                      <option key={product.id} value={product.id}>{product.product}</option>
+                      <option key={product.id} value={product.id} translate="no">{product.product}</option>
                     ))}
                   </select>
                 </div>
                 
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Tecnologia MicroXisto</label>
+                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Tecnologia MicroXisto</label>
                   <select
                     value={selectedComparisonTech}
                     onChange={(e) => {
                       setSelectedComparisonTech(e.target.value);
                       handleTechChange(e.target.value);
                     }}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                   >
                     <option value="">Selecione...</option>
                     {technologies.map(tech => (
@@ -1965,11 +1965,11 @@ function App() {
                 </div>
                 
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Produto MicroXisto</label>
+                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto MicroXisto</label>
                   <select
                     value={selectedComparisonProduct}
                     onChange={(e) => setSelectedComparisonProduct(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedComparisonTech}
                     spellCheck="false"
                     autoComplete="off"
@@ -1979,7 +1979,7 @@ function App() {
                   >
                     <option value="">Selecione...</option>
                     {products.map(product => (
-                      <option key={product.id} value={product.id}>{product.name}</option>
+                      <option key={product.id} value={product.id} translate="no">{product.name}</option>
                     ))}
                   </select>
                 </div>
@@ -1995,13 +1995,13 @@ function App() {
             </div>
             
             {comparisonData && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-2xl font-bold text-green-800 mb-6 text-center">Comparação de Produtos</h3>
+              <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">Comparação de Produtos</h3>
                 
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
                   <div className="text-center">
-                    <h4 className="text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
-                    <h5 className="text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
+                    <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
+                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>Densidade: {comparisonData.competitor.density} g/mL</p>
                       <p>Natureza: {comparisonData.competitor.nature}</p>
@@ -2010,10 +2010,10 @@ function App() {
                   
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-2 mb-2">
-                      <img src={comparisonData.microxisto.logo} alt="MicroXisto" className="h-8" />
-                      <h4 className="text-xl font-semibold text-green-800">MicroXisto</h4>
+                      <img src={comparisonData.microxisto.logo} alt="MicroXisto" className="h-6 lg:h-8" />
+                      <h4 className="text-lg lg:text-xl font-semibold text-green-800">MicroXisto</h4>
                     </div>
-                    <h5 className="text-lg text-gray-600 mb-4" translate="no">{comparisonData.microxisto.name}</h5>
+                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.microxisto.name}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>Densidade: {comparisonData.microxisto.density} g/mL</p>
                       <p>Natureza: {comparisonData.microxisto.nature}</p>
@@ -2021,20 +2021,20 @@ function App() {
                   </div>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   {renderCompositionTable(comparisonData.competitor.composition, `${comparisonData.competitor.company} - ${comparisonData.competitor.product}`)}
                   {renderCompositionTable(comparisonData.microxisto.composition, `MicroXisto - ${comparisonData.microxisto.name}`)}
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6 mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h5 className="font-semibold text-gray-800 mb-2">Aditivos - <span translate="no">{comparisonData.competitor.company}</span></h5>
-                    <p className="text-gray-600" translate="no">{comparisonData.competitor.additives}</p>
+                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.competitor.additives}</p>
                   </div>
                   
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
-                    <p className="text-gray-600" translate="no">{comparisonData.microxisto.additives}</p>
+                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.microxisto.additives}</p>
                   </div>
                 </div>
               </div>
