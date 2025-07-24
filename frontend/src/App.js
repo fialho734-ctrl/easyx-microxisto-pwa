@@ -997,19 +997,61 @@ function App() {
         body: JSON.stringify(loginForm)
       });
       
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('isAdmin', data.is_admin);
+        setToken(data.access_token);
         setIsLoggedIn(true);
         setIsAdmin(data.is_admin);
         setCurrentPage('home');
       } else {
-        alert('Credenciais inválidas');
+        alert(data.detail || 'Credenciais inválidas');
       }
     } catch (error) {
       console.error('Login error:', error);
       alert('Erro no login');
+    }
+    setLoading(false);
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    
+    if (registerForm.password !== registerForm.confirmPassword) {
+      setRegisterMessage('As senhas não coincidem');
+      return;
+    }
+    
+    if (!registerForm.email.endsWith('@microxisto.com.br')) {
+      setRegisterMessage('Email deve ser @microxisto.com.br');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: registerForm.email,
+          password: registerForm.password
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setRegisterMessage('Cadastro realizado! Aguarde a aprovação do administrador.');
+        setRegisterForm({ email: '', password: '', confirmPassword: '' });
+      } else {
+        setRegisterMessage(data.detail || 'Erro no cadastro');
+      }
+    } catch (error) {
+      console.error('Register error:', error);
+      setRegisterMessage('Erro no cadastro');
     }
     setLoading(false);
   };
