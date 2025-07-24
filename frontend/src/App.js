@@ -611,6 +611,29 @@ const CompetitorManagement = ({ token }) => {
   const [csvFile, setCsvFile] = useState(null);
   const [importResult, setImportResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // Novo estado para tabela editável
+  const [editableRows, setEditableRows] = useState([]);
+  const [showEditableTable, setShowEditableTable] = useState(false);
+
+  const elements = [
+    { symbol: 'N', name: 'Nitrogênio' },
+    { symbol: 'P', name: 'Fósforo' },
+    { symbol: 'K', name: 'Potássio' },
+    { symbol: 'Ca', name: 'Cálcio' },
+    { symbol: 'Mg', name: 'Magnésio' },
+    { symbol: 'S', name: 'Enxofre' },
+    { symbol: 'Mo', name: 'Molibdênio' },
+    { symbol: 'Co', name: 'Cobalto' },
+    { symbol: 'Zn', name: 'Zinco' },
+    { symbol: 'B', name: 'Boro' },
+    { symbol: 'Cu', name: 'Cobre' },
+    { symbol: 'Mn', name: 'Manganês' },
+    { symbol: 'Ni', name: 'Níquel' },
+    { symbol: 'Se', name: 'Selênio' },
+    { symbol: 'Si', name: 'Silício' },
+    { symbol: 'Fe', name: 'Ferro' }
+  ];
 
   useEffect(() => {
     fetchCompetitors();
@@ -626,6 +649,105 @@ const CompetitorManagement = ({ token }) => {
     } catch (error) {
       console.error('Error fetching competitors:', error);
     }
+  };
+
+  // Função para adicionar nova linha editável
+  const addEditableRow = () => {
+    const newRow = {
+      id: Date.now(),
+      company: '',
+      product: '',
+      density: '',
+      nature: 'liquido',
+      composition: elements.reduce((acc, element) => {
+        acc[element.symbol] = '';
+        return acc;
+      }, {}),
+      additives: ''
+    };
+    setEditableRows([...editableRows, newRow]);
+  };
+
+  // Função para remover linha editável
+  const removeEditableRow = (id) => {
+    setEditableRows(editableRows.filter(row => row.id !== id));
+  };
+
+  // Função para atualizar dados da linha editável
+  const updateEditableRow = (id, field, value, elementSymbol = null) => {
+    setEditableRows(editableRows.map(row => {
+      if (row.id === id) {
+        if (elementSymbol) {
+          return {
+            ...row,
+            composition: { ...row.composition, [elementSymbol]: value }
+          };
+        } else {
+          return { ...row, [field]: value };
+        }
+      }
+      return row;
+    }));
+  };
+
+  // Função para salvar todas as linhas editáveis
+  const saveEditableRows = async () => {
+    setLoading(true);
+    let savedCount = 0;
+    let errors = [];
+
+    for (const row of editableRows) {
+      if (!row.company.trim() || !row.product.trim()) {
+        errors.push(`Linha com produto "${row.product || 'vazio'}": Empresa e Produto são obrigatórios`);
+        continue;
+      }
+
+      try {
+        const competitorData = {
+          company: row.company.trim(),
+          product: row.product.trim(),
+          logo: '',
+          density: parseFloat(row.density) || 0,
+          nature: row.nature,
+          composition: elements.reduce((acc, element) => {
+            acc[element.symbol] = parseFloat(row.composition[element.symbol]) || 0;
+            return acc;
+          }, {}),
+          additives: row.additives.trim()
+        };
+
+        const response = await fetch(`${API_BASE}/api/admin/competitors`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(competitorData)
+        });
+
+        if (response.ok) {
+          savedCount++;
+        } else {
+          const errorData = await response.json();
+          errors.push(`Produto "${row.product}": ${errorData.detail || 'Erro desconhecido'}`);
+        }
+      } catch (error) {
+        errors.push(`Produto "${row.product}": ${error.message}`);
+      }
+    }
+
+    setImportResult({
+      message: `${savedCount} concorrentes salvos com sucesso!`,
+      imported_count: savedCount,
+      errors
+    });
+
+    if (savedCount > 0) {
+      fetchCompetitors();
+      setEditableRows([]);
+    }
+
+    setLoading(false);
   };
 
   const handleCsvUpload = async () => {
@@ -677,11 +799,156 @@ const CompetitorManagement = ({ token }) => {
 
   return (
     <div className="space-y-6">
-      {/* CSV Import */}
+      {/* Tabela Editável - NOVA FUNCIONALIDADE */}
       <div className="card">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Importar Concorrentes via CSV</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">✨ Inserir Concorrentes - Tabela Editável</h3>
+          <button
+            onClick={() => setShowEditableTable(!showEditableTable)}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            {showEditableTable ? 'Ocultar Tabela' : 'Mostrar Tabela Editável'}
+          </button>
+        </div>
+
+        {showEditableTable && (
+          <div>
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+              <p className="text-sm text-green-800">
+                <strong>💡 Muito mais fácil!</strong> Adicione linhas, cole seus dados diretamente da sua planilha e salve tudo de uma vez.
+              </p>
+            </div>
+
+            <div className="mb-4 flex space-x-2">
+              <button
+                onClick={addEditableRow}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                ➕ Adicionar Linha
+              </button>
+              
+              {editableRows.length > 0 && (
+                <button
+                  onClick={saveEditableRows}
+                  disabled={loading}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                >
+                  {loading ? '💾 Salvando...' : `💾 Salvar ${editableRows.length} Produto(s)`}
+                </button>
+              )}
+            </div>
+
+            {editableRows.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-300 px-2 py-1">Empresa</th>
+                      <th className="border border-gray-300 px-2 py-1">Produto</th>
+                      <th className="border border-gray-300 px-2 py-1">Densidade</th>
+                      <th className="border border-gray-300 px-2 py-1">Natureza</th>
+                      {elements.map(element => (
+                        <th key={element.symbol} className="border border-gray-300 px-1 py-1 min-w-12">
+                          {element.symbol}
+                        </th>
+                      ))}
+                      <th className="border border-gray-300 px-2 py-1">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {editableRows.map(row => (
+                      <tr key={row.id}>
+                        <td className="border border-gray-300 px-1 py-1">
+                          <input
+                            type="text"
+                            value={row.company}
+                            onChange={(e) => updateEditableRow(row.id, 'company', e.target.value)}
+                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                            placeholder="Nome da Empresa"
+                          />
+                        </td>
+                        <td className="border border-gray-300 px-1 py-1">
+                          <input
+                            type="text"
+                            value={row.product}
+                            onChange={(e) => updateEditableRow(row.id, 'product', e.target.value)}
+                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                            placeholder="Nome do Produto"
+                          />
+                        </td>
+                        <td className="border border-gray-300 px-1 py-1">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={row.density}
+                            onChange={(e) => updateEditableRow(row.id, 'density', e.target.value)}
+                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                            placeholder="g/mL"
+                          />
+                        </td>
+                        <td className="border border-gray-300 px-1 py-1">
+                          <select
+                            value={row.nature}
+                            onChange={(e) => updateEditableRow(row.id, 'nature', e.target.value)}
+                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                          >
+                            <option value="liquido">Líquido</option>
+                            <option value="solido">Sólido</option>
+                          </select>
+                        </td>
+                        {elements.map(element => (
+                          <td key={element.symbol} className="border border-gray-300 px-1 py-1">
+                            <input
+                              type="number"
+                              step="0.001"
+                              value={row.composition[element.symbol]}
+                              onChange={(e) => updateEditableRow(row.id, 'composition', e.target.value, element.symbol)}
+                              className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                              style={{ minWidth: '50px' }}
+                            />
+                          </td>
+                        ))}
+                        <td className="border border-gray-300 px-1 py-1">
+                          <button
+                            onClick={() => removeEditableRow(row.id)}
+                            className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {importResult && (
+          <div className={`mt-4 p-4 rounded-lg ${importResult.errors && importResult.errors.length > 0 ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
+            <p className="font-semibold">{importResult.message}</p>
+            {importResult.errors && importResult.errors.length > 0 && (
+              <div className="mt-2">
+                <p className="text-sm font-medium text-red-600">Erros encontrados:</p>
+                <ul className="list-disc list-inside text-sm text-red-600 mt-1">
+                  {importResult.errors.slice(0, 10).map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                  {importResult.errors.length > 10 && (
+                    <li>... e mais {importResult.errors.length - 10} erros</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* CSV Import - Funcionalidade secundária */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">📁 Importar via CSV (Alternativo)</h3>
         
-        {/* CSV Template Info */}
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h4 className="font-semibold text-blue-800 mb-2">Formato do CSV:</h4>
           <p className="text-sm text-blue-700 mb-2">O arquivo deve conter as seguintes colunas (na ordem exata):</p>
@@ -727,25 +994,6 @@ const CompetitorManagement = ({ token }) => {
             {loading ? 'Importando...' : 'Importar CSV'}
           </button>
         </div>
-
-        {importResult && (
-          <div className={`mt-4 p-4 rounded-lg ${importResult.errors && importResult.errors.length > 0 ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
-            <p className="font-semibold">{importResult.message}</p>
-            {importResult.errors && importResult.errors.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm font-medium text-red-600">Erros encontrados:</p>
-                <ul className="list-disc list-inside text-sm text-red-600 mt-1">
-                  {importResult.errors.slice(0, 10).map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                  {importResult.errors.length > 10 && (
-                    <li>... e mais {importResult.errors.length - 10} erros</li>
-                  )}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Competitors List */}
