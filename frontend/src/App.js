@@ -1059,6 +1059,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('isAdmin');
+    setToken(null);
     setIsLoggedIn(false);
     setIsAdmin(false);
     setCurrentPage('home');
