@@ -299,17 +299,17 @@ async def login(request: LoginRequest):
 
 @app.get("/api/technologies")
 async def get_technologies():
-    technologies = await db.technologies.find({}).to_list(None)
+    technologies = await db.technologies.find({}, {"_id": 0}).to_list(None)
     return technologies
 
 @app.get("/api/technologies/{tech_id}/products")
 async def get_products_by_technology(tech_id: str):
-    products = await db.products.find({"technology_id": tech_id}).to_list(None)
+    products = await db.products.find({"technology_id": tech_id}, {"_id": 0}).to_list(None)
     return products
 
 @app.get("/api/products/{product_id}")
 async def get_product(product_id: str):
-    product = await db.products.find_one({"id": product_id})
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
@@ -325,19 +325,19 @@ async def get_competitor_companies():
 
 @app.get("/api/competitors/companies/{company}/products")
 async def get_competitor_products(company: str):
-    products = await db.competitors.find({"company": company}).to_list(None)
+    products = await db.competitors.find({"company": company}, {"_id": 0}).to_list(None)
     return products
 
 @app.get("/api/competitors/{competitor_id}")
 async def get_competitor(competitor_id: str):
-    competitor = await db.competitors.find_one({"id": competitor_id})
+    competitor = await db.competitors.find_one({"id": competitor_id}, {"_id": 0})
     if not competitor:
         raise HTTPException(status_code=404, detail="Competitor not found")
     return competitor
 
 @app.get("/api/home")
 async def get_home_content():
-    content = await db.home_content.find_one({})
+    content = await db.home_content.find_one({}, {"_id": 0})
     return content if content else {"text": "", "pdf_url": None}
 
 # Admin routes
