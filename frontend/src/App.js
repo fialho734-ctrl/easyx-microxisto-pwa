@@ -1048,12 +1048,12 @@ Kimberlit	Exion Vida	1.19	liquido	0	0	0	0	4.284	0	0	0	1.785	1.19	1.19	0	0	0	0	0"
                         </select>
                       </td>
                       {elements.map(element => (
-                        <td key={element.symbol} className="border border-gray-300 px-1 py-1">
+                        <td key={element} className="border border-gray-300 px-1 py-1">
                           <input
                             type="number"
                             step="0.001"
-                            value={row.composition[element.symbol]}
-                            onChange={(e) => updateEditableRow(row.id, 'composition', e.target.value, element.symbol)}
+                            value={row.composition[element]}
+                            onChange={(e) => updateEditableRow(row.id, 'composition', e.target.value, element)}
                             className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
                             style={{ minWidth: '50px' }}
                             spellCheck="false"
