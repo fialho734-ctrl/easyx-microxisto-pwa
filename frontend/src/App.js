@@ -1182,7 +1182,7 @@ function App() {
           {elements.map(element => (
             <div key={element} className="flex justify-between p-2 bg-gray-50 rounded">
               <span className="font-medium">{element}:</span>
-              <span>{composition[element] || 0}</span>
+              <span>{composition[element] || 0} g/L</span>
             </div>
           ))}
         </div>
