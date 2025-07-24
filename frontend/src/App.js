@@ -907,8 +907,8 @@ const CompetitorManagement = ({ token }) => {
                 <li><strong>5.</strong> Revise na tabela e clique "Salvar"</li>
               </ol>
               <p className="text-xs text-purple-600 mt-2">
-                <strong>Formato dos SEUS dados:</strong> Empresa | Natureza | Densidade | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos<br/>
-                <strong>⚠️ IMPORTANTE:</strong> Use vírgula decimal (1,45) que será convertida automaticamente
+                <strong>Formato CORRETO:</strong> Empresa | Produto | Natureza | Densidade | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos<br/>
+                <strong>✅ PERFEITO:</strong> Vírgulas decimais (1,45) serão convertidas automaticamente para pontos
               </p>
             </div>
 
