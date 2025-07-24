@@ -653,7 +653,7 @@ const CompetitorManagement = ({ token }) => {
         // Processar elementos químicos (colunas 4 a 19)
         elements.forEach((element, elemIndex) => {
           const colIndex = 4 + elemIndex;
-          row.composition[element.symbol] = (columns[colIndex] || '').trim();
+          row.composition[element] = (columns[colIndex] || '').trim();
         });
 
         // Aditivos na coluna 20 se existir
