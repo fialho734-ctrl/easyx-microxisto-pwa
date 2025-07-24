@@ -741,7 +741,7 @@ const CompetitorManagement = ({ token }) => {
                 <th className="px-3 py-2 text-left">Empresa</th>
                 <th className="px-3 py-2 text-left">Produto</th>
                 <th className="px-3 py-2 text-left">Natureza</th>
-                <th className="px-3 py-2 text-left">Densidade</th>
+                <th className="px-3 py-2 text-left">Densidade (g/mL)</th>
                 <th className="px-3 py-2 text-left">Elementos</th>
                 <th className="px-3 py-2 text-left">Ações</th>
               </tr>
