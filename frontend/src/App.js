@@ -1743,6 +1743,14 @@ function App() {
                 >
                   Tecnologias
                 </button>
+                {isLoggedIn && (
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 lg:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm lg:text-base"
+                  >
+                    Sair
+                  </button>
+                )}
                 <button
                   onClick={() => setCurrentPage('comparison')}
                   className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'comparison' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
