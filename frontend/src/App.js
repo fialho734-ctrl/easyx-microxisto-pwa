@@ -1854,7 +1854,7 @@ function App() {
                 <div className="flex items-center space-x-4 mb-6">
                   <img src={productDetails.logo} alt={productDetails.name} className="h-16" />
                   <div>
-                    <h3 className="text-2xl font-bold text-green-800">{productDetails.name}</h3>
+                    <h3 className="text-2xl font-bold text-green-800" translate="no">{productDetails.name}</h3>
                     <div className="flex space-x-4 text-sm text-gray-600">
                       <span>Densidade: {productDetails.density} g/mL</span>
                       <span>Natureza: {productDetails.nature}</span>
