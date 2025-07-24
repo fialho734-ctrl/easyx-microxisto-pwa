@@ -534,27 +534,27 @@ async def import_competitors_csv(file: UploadFile = File(...), admin_user: dict 
                     "company": row.get('Empresa', '').strip(),
                     "product": row.get('Produto', '').strip(),
                     "logo": "",
-                    "density": float(row.get('Densidade (g/cm³)', 0) or 0),
+                    "density": float(row.get('Densidade', 0) or 0),
                     "nature": row.get('Natureza', '').strip().lower(),
                     "composition": {
-                        "N": float(row.get('N (g/L ou Kg)', 0) or 0),
-                        "P": float(row.get('P2O5 (g/L ou Kg)', 0) or 0),
-                        "K": float(row.get('K2O (g/L ou Kg)', 0) or 0),
-                        "Ca": float(row.get('Ca (g/L ou Kg)', 0) or 0),
-                        "Mg": float(row.get('Mg (g/L ou Kg)', 0) or 0),
-                        "S": float(row.get('S (g/L ou Kg)', 0) or 0),
-                        "Mo": float(row.get('Mo (g/L ou Kg)', 0) or 0),
-                        "Co": float(row.get('Co (g/L ou Kg)', 0) or 0),
-                        "Zn": float(row.get('Zn (g/L ou Kg)', 0) or 0),
-                        "B": float(row.get('B (g/L ou Kg)', 0) or 0),
-                        "Cu": float(row.get('Cu (g/L ou Kg)', 0) or 0),
-                        "Mn": float(row.get('Mn (g/L ou Kg)', 0) or 0),
-                        "Ni": float(row.get('Ni (g/L ou Kg)', 0) or 0),
-                        "Se": float(row.get('Se (g/L ou Kg)', 0) or 0),
-                        "Si": float(row.get('Si (g/L ou Kg)', 0) or 0),
-                        "Fe": float(row.get('Fe (g/L ou Kg)', 0) or 0)
+                        "N": float(row.get('N', 0) or 0),
+                        "P": float(row.get('P', 0) or 0),
+                        "K": float(row.get('K', 0) or 0),
+                        "Ca": float(row.get('Ca', 0) or 0),
+                        "Mg": float(row.get('Mg', 0) or 0),
+                        "S": float(row.get('S', 0) or 0),
+                        "Mo": float(row.get('Mo', 0) or 0),
+                        "Co": float(row.get('Co', 0) or 0),
+                        "Zn": float(row.get('Zn', 0) or 0),
+                        "B": float(row.get('B', 0) or 0),
+                        "Cu": float(row.get('Cu', 0) or 0),
+                        "Mn": float(row.get('Mn', 0) or 0),
+                        "Ni": float(row.get('Ni', 0) or 0),
+                        "Se": float(row.get('Se', 0) or 0),
+                        "Si": float(row.get('Si', 0) or 0),
+                        "Fe": float(row.get('Fe', 0) or 0)
                     },
-                    "additives": row.get('Aditivos', '').strip()
+                    "additives": row.get('Aditivos', '').strip() if 'Aditivos' in row else ""
                 }
                 
                 if competitor["company"] and competitor["product"]:
