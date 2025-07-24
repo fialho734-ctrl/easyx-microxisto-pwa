@@ -1653,34 +1653,17 @@ function App() {
   }
 
   const renderCompositionTable = (composition, title) => {
-    // IMPORTANTE: Usar apenas símbolos químicos - não traduzir!
-    const chemicalElements = [
-      { symbol: 'N', name: 'Nitrogênio' },
-      { symbol: 'P', name: 'Fósforo' },
-      { symbol: 'K', name: 'Potássio' },
-      { symbol: 'Ca', name: 'Cálcio' },
-      { symbol: 'Mg', name: 'Magnésio' },
-      { symbol: 'S', name: 'Enxofre' },
-      { symbol: 'Mo', name: 'Molibdênio' },
-      { symbol: 'Co', name: 'Cobalto' },
-      { symbol: 'Zn', name: 'Zinco' },
-      { symbol: 'B', name: 'Boro' },
-      { symbol: 'Cu', name: 'Cobre' },
-      { symbol: 'Mn', name: 'Manganês' },
-      { symbol: 'Ni', name: 'Níquel' },
-      { symbol: 'Se', name: 'Selênio' },
-      { symbol: 'Si', name: 'Silício' },
-      { symbol: 'Fe', name: 'Ferro' }
-    ];
+    // ELEMENTOS QUÍMICOS - SÍMBOLOS FIXOS (SEM TRADUÇÃO)
+    const chemicalSymbols = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'Mo', 'Co', 'Zn', 'B', 'Cu', 'Mn', 'Ni', 'Se', 'Si', 'Fe'];
     
     return (
       <div className="bg-white rounded-lg shadow-md p-4">
         <h4 className="font-semibold text-gray-800 mb-3">{title}</h4>
         <div className="grid grid-cols-4 gap-2 text-sm">
-          {chemicalElements.map(element => (
-            <div key={element.symbol} className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="font-medium">{element.symbol}:</span>
-              <span>{composition[element.symbol] || 0} g/L</span>
+          {chemicalSymbols.map(symbol => (
+            <div key={symbol} className="flex justify-between p-2 bg-gray-50 rounded">
+              <span className="font-medium" translate="no" spellCheck="false">{symbol}:</span>
+              <span translate="no">{composition[symbol] || 0} g/L</span>
             </div>
           ))}
         </div>
