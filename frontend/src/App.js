@@ -1870,11 +1870,11 @@ function App() {
                     <div className="space-y-3">
                       <div>
                         <span className="font-medium text-gray-700">Aditivos:</span>
-                        <p className="text-gray-600">{productDetails.additives}</p>
+                        <p className="text-gray-600" translate="no">{productDetails.additives}</p>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700">Descrição:</span>
-                        <p className="text-gray-600">{productDetails.description}</p>
+                        <p className="text-gray-600" translate="no">{productDetails.description}</p>
                       </div>
                     </div>
                   </div>
