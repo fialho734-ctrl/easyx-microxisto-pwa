@@ -1526,7 +1526,7 @@ function App() {
                     </div>
                     <h5 className="text-lg text-gray-600 mb-4">{comparisonData.microxisto.name}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.microxisto.density} g/cm³</p>
+                      <p>Densidade: {comparisonData.microxisto.density} g/mL</p>
                       <p>Natureza: {comparisonData.microxisto.nature}</p>
                     </div>
                   </div>
