@@ -1949,6 +1949,11 @@ function App() {
                     onChange={(e) => setSelectedComparisonProduct(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                     disabled={!selectedComparisonTech}
+                    spellCheck="false"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    translate="no"
                   >
                     <option value="">Selecione...</option>
                     {products.map(product => (
