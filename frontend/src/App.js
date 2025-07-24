@@ -403,22 +403,7 @@ const ProductManagement = ({ token, technologies }) => {
   };
 
   const elements = [
-    { symbol: 'N', name: 'Nitrogênio' },
-    { symbol: 'P', name: 'Fósforo' },
-    { symbol: 'K', name: 'Potássio' },
-    { symbol: 'Ca', name: 'Cálcio' },
-    { symbol: 'Mg', name: 'Magnésio' },
-    { symbol: 'S', name: 'Enxofre' },
-    { symbol: 'Mo', name: 'Molibdênio' },
-    { symbol: 'Co', name: 'Cobalto' },
-    { symbol: 'Zn', name: 'Zinco' },
-    { symbol: 'B', name: 'Boro' },
-    { symbol: 'Cu', name: 'Cobre' },
-    { symbol: 'Mn', name: 'Manganês' },
-    { symbol: 'Ni', name: 'Níquel' },
-    { symbol: 'Se', name: 'Selênio' },
-    { symbol: 'Si', name: 'Silício' },
-    { symbol: 'Fe', name: 'Ferro' }
+    'N', 'P', 'K', 'Ca', 'Mg', 'S', 'Mo', 'Co', 'Zn', 'B', 'Cu', 'Mn', 'Ni', 'Se', 'Si', 'Fe'
   ];
 
   return (
