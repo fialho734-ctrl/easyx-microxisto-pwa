@@ -1400,7 +1400,7 @@ function App() {
                   <div>
                     <h3 className="text-2xl font-bold text-green-800">{productDetails.name}</h3>
                     <div className="flex space-x-4 text-sm text-gray-600">
-                      <span>Densidade: {productDetails.density} g/cm³</span>
+                      <span>Densidade: {productDetails.density} g/mL</span>
                       <span>Natureza: {productDetails.nature}</span>
                     </div>
                   </div>
