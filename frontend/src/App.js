@@ -1554,11 +1554,65 @@ function App() {
         )}
 
         {currentPage === 'admin' && isAdmin && (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-green-800 mb-8 text-center">Painel Administrativo</h2>
-            <div className="bg-white rounded-lg shadow-md p-8">
-              <p className="text-center text-gray-600">Funcionalidades administrativas em desenvolvimento...</p>
+            
+            {/* Admin Navigation Tabs */}
+            <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setAdminTab('home')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'home' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Conteúdo Home
+                </button>
+                <button
+                  onClick={() => setAdminTab('users')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'users' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Usuários
+                </button>
+                <button
+                  onClick={() => setAdminTab('technologies')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'technologies' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Tecnologias
+                </button>
+                <button
+                  onClick={() => setAdminTab('products')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'products' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Produtos
+                </button>
+                <button
+                  onClick={() => setAdminTab('competitors')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'competitors' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Concorrentes
+                </button>
+              </div>
             </div>
+
+            {/* Admin Tab Content */}
+            {adminTab === 'home' && (
+              <HomeContentManagement token={token} homeContent={homeContent} fetchHomeContent={fetchHomeContent} />
+            )}
+            
+            {adminTab === 'users' && (
+              <UserManagement token={token} />
+            )}
+            
+            {adminTab === 'technologies' && (
+              <TechnologyManagement token={token} technologies={technologies} fetchTechnologies={fetchTechnologies} />
+            )}
+            
+            {adminTab === 'products' && (
+              <ProductManagement token={token} technologies={technologies} />
+            )}
+            
+            {adminTab === 'competitors' && (
+              <CompetitorManagement token={token} />
+            )}
           </div>
         )}
       </main>
