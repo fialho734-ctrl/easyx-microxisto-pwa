@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,6 +9,8 @@ import jwt
 from datetime import datetime, timedelta
 import uuid
 import bcrypt
+import csv
+import io
 from contextlib import asynccontextmanager
 
 # Database setup
@@ -25,7 +27,7 @@ security = HTTPBearer()
 
 # Pydantic models
 class Technology(BaseModel):
-    id: str
+    id: Optional[str] = None
     name: str
     logo: str
     description: str
@@ -49,7 +51,7 @@ class ProductComposition(BaseModel):
     Fe: float = 0
 
 class Product(BaseModel):
-    id: str
+    id: Optional[str] = None
     name: str
     logo: str
     technology_id: str
@@ -60,7 +62,7 @@ class Product(BaseModel):
     description: str
 
 class Competitor(BaseModel):
-    id: str
+    id: Optional[str] = None
     company: str
     product: str
     logo: Optional[str] = ""
@@ -70,11 +72,20 @@ class Competitor(BaseModel):
     additives: str
 
 class User(BaseModel):
-    id: str
-    email: str
-    password: str
+    id: Optional[str] = None
+    email: EmailStr
+    password: Optional[str] = None
     is_admin: bool = False
     is_approved: bool = False
+    created_at: Optional[datetime] = None
+
+class UserRegistration(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserApproval(BaseModel):
+    user_id: str
+    approved: bool
 
 class LoginRequest(BaseModel):
     email: str
@@ -83,6 +94,30 @@ class LoginRequest(BaseModel):
 class HomeContent(BaseModel):
     text: str
     pdf_url: Optional[str] = None
+
+class TechnologyUpdate(BaseModel):
+    name: str
+    logo: str
+    description: str
+
+class ProductUpdate(BaseModel):
+    name: str
+    logo: str
+    technology_id: str
+    density: float
+    nature: str
+    composition: ProductComposition
+    additives: str
+    description: str
+
+class CompetitorUpdate(BaseModel):
+    company: str
+    product: str
+    logo: Optional[str] = ""
+    density: float
+    nature: str
+    composition: ProductComposition
+    additives: str
 
 # Lifespan manager
 @asynccontextmanager
