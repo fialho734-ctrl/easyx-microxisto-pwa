@@ -668,29 +668,31 @@ const CompetitorManagement = ({ token }) => {
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h4 className="font-semibold text-blue-800 mb-2">Formato do CSV:</h4>
           <p className="text-sm text-blue-700 mb-2">O arquivo deve conter as seguintes colunas (na ordem exata):</p>
-          <div className="text-xs text-blue-600 grid grid-cols-3 gap-1">
+          <div className="text-xs text-blue-600 grid grid-cols-4 gap-1">
             <span>• Empresa</span>
             <span>• Produto</span>
+            <span>• Densidade</span>
             <span>• Natureza</span>
-            <span>• Densidade (g/cm³)</span>
-            <span>• N (g/L ou Kg)</span>
-            <span>• P2O5 (g/L ou Kg)</span>
-            <span>• K2O (g/L ou Kg)</span>
-            <span>• Ca (g/L ou Kg)</span>
-            <span>• Mg (g/L ou Kg)</span>
-            <span>• S (g/L ou Kg)</span>
-            <span>• Mo (g/L ou Kg)</span>
-            <span>• Co (g/L ou Kg)</span>
-            <span>• Zn (g/L ou Kg)</span>
-            <span>• B (g/L ou Kg)</span>
-            <span>• Cu (g/L ou Kg)</span>
-            <span>• Mn (g/L ou Kg)</span>
-            <span>• Ni (g/L ou Kg)</span>
-            <span>• Se (g/L ou Kg)</span>
-            <span>• Si (g/L ou Kg)</span>
-            <span>• Fe (g/L ou Kg)</span>
-            <span>• Aditivos</span>
+            <span>• N</span>
+            <span>• P</span>
+            <span>• K</span>
+            <span>• Ca</span>
+            <span>• Mg</span>
+            <span>• S</span>
+            <span>• Mo</span>
+            <span>• Co</span>
+            <span>• Zn</span>
+            <span>• B</span>
+            <span>• Cu</span>
+            <span>• Mn</span>
+            <span>• Ni</span>
+            <span>• Se</span>
+            <span>• Si</span>
+            <span>• Fe</span>
           </div>
+          <p className="text-xs text-blue-600 mt-2">
+            <strong>Importante:</strong> Densidade em g/mL, elementos químicos em g/L ou g/Kg, use apenas os símbolos químicos (ex: Mg, não Magnésio)
+          </p>
         </div>
 
         <div className="flex items-center space-x-4">
