@@ -1722,65 +1722,72 @@ function App() {
       {/* Header */}
       <header className="bg-white shadow-md">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <img src="https://i.imgur.com/lwNbD0G.png" alt="MicroXisto" className="h-12" />
-              <h1 className="text-2xl font-bold text-green-800">MicroXisto</h1>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            {/* Logo e Título */}
+            <div className="flex items-center justify-center lg:justify-start space-x-3 mb-4 lg:mb-0">
+              <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-8 lg:h-10" />
+              <h1 className="text-xl lg:text-2xl font-bold text-green-800">EasyX</h1>
             </div>
             
-            <nav className="flex items-center space-x-6">
-              <button
-                onClick={() => setCurrentPage('home')}
-                className={`px-4 py-2 rounded-lg ${currentPage === 'home' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-              >
-                Início
-              </button>
-              <button
-                onClick={() => setCurrentPage('technologies')}
-                className={`px-4 py-2 rounded-lg ${currentPage === 'technologies' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-              >
-                Tecnologias
-              </button>
-              <button
-                onClick={() => setCurrentPage('comparison')}
-                className={`px-4 py-2 rounded-lg ${currentPage === 'comparison' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-              >
-                Comparativo
-              </button>
+            {/* Navigation */}
+            <nav className="flex flex-col lg:flex-row items-center lg:space-x-4 space-y-2 lg:space-y-0">
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 lg:gap-4">
+                <button
+                  onClick={() => setCurrentPage('home')}
+                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'home' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
+                >
+                  Início
+                </button>
+                <button
+                  onClick={() => setCurrentPage('technologies')}
+                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'technologies' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
+                >
+                  Tecnologias
+                </button>
+                <button
+                  onClick={() => setCurrentPage('comparison')}
+                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'comparison' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
+                >
+                  Comparativo
+                </button>
+              </div>
               
-              {isLoggedIn ? (
-                <div className="flex items-center space-x-2">
-                  {isAdmin && (
+              {/* Auth buttons */}
+              <div className="flex items-center space-x-2 mt-2 lg:mt-0">
+                {isLoggedIn ? (
+                  <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-2">
+                    {isAdmin && (
+                      <button
+                        onClick={() => setCurrentPage('admin')}
+                        className="px-3 lg:px-4 py-2 bg-green-800 text-white rounded-lg hover:bg-green-900 text-sm lg:text-base"
+                      >
+                        Admin
+                      </button>
+                    )}
                     <button
-                      onClick={() => setCurrentPage('admin')}
-                      className="px-4 py-2 bg-green-800 text-white rounded-lg hover:bg-green-900"
+                      onClick={handleLogout}
+                      className="px-3 lg:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm lg:text-base"
                     >
-                      Admin
+                      Sair
                     </button>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                  >
-                    Sair
-                  </button>
-                </div>
-              ) : (
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setCurrentPage('login')}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    Login
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage('register')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    Cadastro
-                  </button>
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col lg:flex-row gap-2">
+                    <button
+                      onClick={() => setCurrentPage('login')}
+                      className="px-3 lg:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm lg:text-base"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage('register')}
+                      className="px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm lg:text-base"
+                    >
+                      Cadastro
+                    </button>
+                  </div>
+                )}
+              </div>
             </nav>
           </div>
         </div>
