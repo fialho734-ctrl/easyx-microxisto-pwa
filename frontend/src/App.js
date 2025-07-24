@@ -1819,16 +1819,21 @@ function App() {
 
         {currentPage === 'technologies' && (
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-green-800 mb-8 text-center">Tecnologias MicroXisto</h2>
+            <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Tecnologias MicroXisto</h2>
             
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Selecione a Tecnologia</label>
                   <select
                     value={selectedTech}
                     onChange={(e) => handleTechChange(e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                    spellCheck="false"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    translate="no"
                   >
                     <option value="">Escolha uma tecnologia...</option>
                     {technologies.map(tech => (
@@ -1861,10 +1866,10 @@ function App() {
               
               {selectedTechData && (
                 <div className="border-t pt-6">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <img src={selectedTechData.logo} alt={selectedTechData.name} className="h-16" />
-                    <div>
-                      <h3 className="text-2xl font-bold text-green-800">{selectedTechData.name}</h3>
+                  <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4 mb-4">
+                    <img src={selectedTechData.logo} alt={selectedTechData.name} className="h-12 lg:h-16 mx-auto lg:mx-0" />
+                    <div className="text-center lg:text-left">
+                      <h3 className="text-xl lg:text-2xl font-bold text-green-800">{selectedTechData.name}</h3>
                       <p className="text-gray-600">{selectedTechData.description}</p>
                     </div>
                   </div>
@@ -1873,19 +1878,19 @@ function App() {
             </div>
             
             {productDetails && (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center space-x-4 mb-6">
-                  <img src={productDetails.logo} alt={productDetails.name} className="h-16" />
-                  <div>
-                    <h3 className="text-2xl font-bold text-green-800" translate="no">{productDetails.name}</h3>
-                    <div className="flex space-x-4 text-sm text-gray-600">
+              <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4 mb-6">
+                  <img src={productDetails.logo} alt={productDetails.name} className="h-12 lg:h-16 mx-auto lg:mx-0" />
+                  <div className="text-center lg:text-left">
+                    <h3 className="text-xl lg:text-2xl font-bold text-green-800" translate="no">{productDetails.name}</h3>
+                    <div className="flex flex-col lg:flex-row lg:space-x-4 text-sm text-gray-600">
                       <span>Densidade: {productDetails.density} g/mL</span>
                       <span>Natureza: {productDetails.nature}</span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {renderCompositionTable(productDetails.composition, 'Composição Química')}
                   
                   <div className="bg-white rounded-lg shadow-md p-4">
