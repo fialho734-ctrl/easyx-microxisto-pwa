@@ -869,6 +869,36 @@ const CompetitorManagement = ({ token }) => {
     setLoading(false);
   };
 
+  // NOVA FUNÇÃO: Limpar todos os concorrentes
+  const deleteAllCompetitors = async () => {
+    if (!window.confirm(`⚠️ ATENÇÃO: Isso vai remover TODOS os ${competitors.length} concorrentes cadastrados. Tem certeza?`)) return;
+    
+    if (!window.confirm('🚨 CONFIRMAÇÃO FINAL: Esta ação é irreversível! Confirma a exclusão de TODOS os concorrentes?')) return;
+    
+    setLoading(true);
+    let deletedCount = 0;
+    
+    try {
+      for (const competitor of competitors) {
+        const response = await fetch(`${API_BASE}/api/admin/competitors/${competitor.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          deletedCount++;
+        }
+      }
+      
+      alert(`✅ ${deletedCount} concorrentes removidos com sucesso!`);
+      fetchCompetitors();
+    } catch (error) {
+      console.error('Error deleting all competitors:', error);
+      alert('❌ Erro ao remover concorrentes');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* NOVO: Colagem em Bloco - MELHOR SOLUÇÃO */}
