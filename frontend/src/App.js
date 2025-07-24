@@ -474,15 +474,15 @@ const ProductManagement = ({ token, technologies }) => {
           <h4 className="text-lg font-semibold text-gray-800 mb-3">Composição Química</h4>
           <div className="grid grid-cols-4 gap-3">
             {elements.map(element => (
-              <div key={element.symbol}>
-                <label className="block text-gray-700 font-medium mb-1 text-sm">{element.symbol}</label>
+              <div key={element}>
+                <label className="block text-gray-700 font-medium mb-1 text-sm">{element}</label>
                 <input
                   type="number"
                   step="0.001"
-                  value={formData.composition[element.symbol]}
+                  value={formData.composition[element]}
                   onChange={(e) => setFormData({
                     ...formData, 
-                    composition: {...formData.composition, [element.symbol]: parseFloat(e.target.value) || 0}
+                    composition: {...formData.composition, [element]: parseFloat(e.target.value) || 0}
                   })}
                   className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:border-green-500"
                 />
