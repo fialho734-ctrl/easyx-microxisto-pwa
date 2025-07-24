@@ -1231,12 +1231,21 @@ function App() {
             </button>
           </form>
           
-          <button
-            onClick={() => setCurrentPage('home')}
-            className="w-full mt-4 text-green-600 hover:text-green-800"
-          >
-            Voltar ao Início
-          </button>
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setCurrentPage('register')}
+              className="text-green-600 hover:text-green-800"
+            >
+              Não tem conta? Cadastre-se
+            </button>
+            <br />
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="text-green-600 hover:text-green-800 mt-2"
+            >
+              Voltar ao Início
+            </button>
+          </div>
         </div>
       </div>
     );
