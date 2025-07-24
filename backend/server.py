@@ -399,7 +399,184 @@ async def get_home_content():
     content = await db.home_content.find_one({}, {"_id": 0})
     return content if content else {"text": "", "pdf_url": None}
 
-# Admin routes
+# Admin routes - User Management
+@app.get("/api/admin/users")
+async def get_all_users(admin_user: dict = Depends(get_admin_user)):
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(None)
+    return users
+
+@app.get("/api/admin/users/pending")
+async def get_pending_users(admin_user: dict = Depends(get_admin_user)):
+    users = await db.users.find({"is_approved": False}, {"_id": 0, "password": 0}).to_list(None)
+    return users
+
+@app.post("/api/admin/users/approve")
+async def approve_user(approval: UserApproval, admin_user: dict = Depends(get_admin_user)):
+    result = await db.users.update_one(
+        {"id": approval.user_id},
+        {"$set": {"is_approved": approval.approved}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    action = "aprovado" if approval.approved else "rejeitado"
+    return {"message": f"Usuário {action} com sucesso"}
+
+@app.delete("/api/admin/users/{user_id}")
+async def delete_user(user_id: str, admin_user: dict = Depends(get_admin_user)):
+    # Não permitir excluir admin principal
+    user_to_delete = await db.users.find_one({"id": user_id})
+    if user_to_delete and user_to_delete.get("email") == "agrofialho@gmail.com":
+        raise HTTPException(status_code=400, detail="Cannot delete main admin")
+    
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "Usuário removido com sucesso"}
+
+# Admin routes - Technologies Management
+@app.put("/api/admin/technologies/{tech_id}")
+async def update_technology(tech_id: str, tech_data: TechnologyUpdate, admin_user: dict = Depends(get_admin_user)):
+    result = await db.technologies.update_one(
+        {"id": tech_id},
+        {"$set": tech_data.dict()}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Technology not found")
+    return {"message": "Tecnologia atualizada com sucesso"}
+
+@app.delete("/api/admin/technologies/{tech_id}")
+async def delete_technology(tech_id: str, admin_user: dict = Depends(get_admin_user)):
+    # Verificar se há produtos associados
+    products_count = await db.products.count_documents({"technology_id": tech_id})
+    if products_count > 0:
+        raise HTTPException(status_code=400, detail="Cannot delete technology with associated products")
+    
+    result = await db.technologies.delete_one({"id": tech_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Technology not found")
+    
+    return {"message": "Tecnologia removida com sucesso"}
+
+# Admin routes - Products Management  
+@app.get("/api/admin/products")
+async def get_all_products(admin_user: dict = Depends(get_admin_user)):
+    products = await db.products.find({}, {"_id": 0}).to_list(None)
+    return products
+
+@app.put("/api/admin/products/{product_id}")
+async def update_product(product_id: str, product_data: ProductUpdate, admin_user: dict = Depends(get_admin_user)):
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": product_data.dict()}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Produto atualizado com sucesso"}
+
+@app.delete("/api/admin/products/{product_id}")
+async def delete_product(product_id: str, admin_user: dict = Depends(get_admin_user)):
+    result = await db.products.delete_one({"id": product_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    return {"message": "Produto removido com sucesso"}
+
+# Admin routes - Competitors Management
+@app.get("/api/admin/competitors")
+async def get_all_competitors(admin_user: dict = Depends(get_admin_user)):
+    competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
+    return competitors
+
+@app.put("/api/admin/competitors/{competitor_id}")
+async def update_competitor(competitor_id: str, competitor_data: CompetitorUpdate, admin_user: dict = Depends(get_admin_user)):
+    result = await db.competitors.update_one(
+        {"id": competitor_id},
+        {"$set": competitor_data.dict()}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+    return {"message": "Concorrente atualizado com sucesso"}
+
+@app.delete("/api/admin/competitors/{competitor_id}")
+async def delete_competitor(competitor_id: str, admin_user: dict = Depends(get_admin_user)):
+    result = await db.competitors.delete_one({"id": competitor_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+    
+    return {"message": "Concorrente removido com sucesso"}
+
+# Admin routes - CSV Import
+@app.post("/api/admin/competitors/import-csv")
+async def import_competitors_csv(file: UploadFile = File(...), admin_user: dict = Depends(get_admin_user)):
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="File must be CSV format")
+    
+    try:
+        content = await file.read()
+        csv_content = content.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(csv_content))
+        
+        imported_count = 0
+        errors = []
+        
+        expected_columns = [
+            'Empresa', 'Produto', 'Natureza', 'Densidade (g/cm³)',
+            'N (g/L ou Kg)', 'P2O5 (g/L ou Kg)', 'K2O (g/L ou Kg)', 'Ca (g/L ou Kg)',
+            'Mg (g/L ou Kg)', 'S (g/L ou Kg)', 'Mo (g/L ou Kg)', 'Co (g/L ou Kg)',
+            'Zn (g/L ou Kg)', 'B (g/L ou Kg)', 'Cu (g/L ou Kg)', 'Mn (g/L ou Kg)',
+            'Ni (g/L ou Kg)', 'Se (g/L ou Kg)', 'Si (g/L ou Kg)', 'Fe (g/L ou Kg)', 'Aditivos'
+        ]
+        
+        for row_num, row in enumerate(csv_reader, start=2):
+            try:
+                competitor = {
+                    "id": str(uuid.uuid4()),
+                    "company": row.get('Empresa', '').strip(),
+                    "product": row.get('Produto', '').strip(),
+                    "logo": "",
+                    "density": float(row.get('Densidade (g/cm³)', 0) or 0),
+                    "nature": row.get('Natureza', '').strip().lower(),
+                    "composition": {
+                        "N": float(row.get('N (g/L ou Kg)', 0) or 0),
+                        "P": float(row.get('P2O5 (g/L ou Kg)', 0) or 0),
+                        "K": float(row.get('K2O (g/L ou Kg)', 0) or 0),
+                        "Ca": float(row.get('Ca (g/L ou Kg)', 0) or 0),
+                        "Mg": float(row.get('Mg (g/L ou Kg)', 0) or 0),
+                        "S": float(row.get('S (g/L ou Kg)', 0) or 0),
+                        "Mo": float(row.get('Mo (g/L ou Kg)', 0) or 0),
+                        "Co": float(row.get('Co (g/L ou Kg)', 0) or 0),
+                        "Zn": float(row.get('Zn (g/L ou Kg)', 0) or 0),
+                        "B": float(row.get('B (g/L ou Kg)', 0) or 0),
+                        "Cu": float(row.get('Cu (g/L ou Kg)', 0) or 0),
+                        "Mn": float(row.get('Mn (g/L ou Kg)', 0) or 0),
+                        "Ni": float(row.get('Ni (g/L ou Kg)', 0) or 0),
+                        "Se": float(row.get('Se (g/L ou Kg)', 0) or 0),
+                        "Si": float(row.get('Si (g/L ou Kg)', 0) or 0),
+                        "Fe": float(row.get('Fe (g/L ou Kg)', 0) or 0)
+                    },
+                    "additives": row.get('Aditivos', '').strip()
+                }
+                
+                if competitor["company"] and competitor["product"]:
+                    await db.competitors.insert_one(competitor)
+                    imported_count += 1
+                else:
+                    errors.append(f"Linha {row_num}: Empresa e Produto são obrigatórios")
+                    
+            except Exception as e:
+                errors.append(f"Linha {row_num}: {str(e)}")
+        
+        return {
+            "message": f"Importação concluída: {imported_count} concorrentes importados",
+            "imported_count": imported_count,
+            "errors": errors
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}")
+
 @app.post("/api/admin/home")
 async def update_home_content(content: HomeContent, admin_user: dict = Depends(get_admin_user)):
     await db.home_content.update_one(
