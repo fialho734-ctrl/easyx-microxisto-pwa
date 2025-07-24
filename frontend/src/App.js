@@ -986,8 +986,8 @@ Kimberlit	Exion Vida	1.19	liquido	0	0	0	0	4.284	0	0	0	1.785	1.19	1.19	0	0	0	0	0"
                     <th className="border border-gray-300 px-2 py-1">Densidade</th>
                     <th className="border border-gray-300 px-2 py-1">Natureza</th>
                     {elements.map(element => (
-                      <th key={element.symbol} className="border border-gray-300 px-1 py-1 min-w-12">
-                        {element.symbol}
+                      <th key={element} className="border border-gray-300 px-1 py-1 min-w-12">
+                        {element}
                       </th>
                     ))}
                     <th className="border border-gray-300 px-2 py-1">Aditivos</th>
