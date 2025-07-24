@@ -752,7 +752,7 @@ const CompetitorManagement = ({ token }) => {
           density: parseFloat(row.density) || 0,
           nature: row.nature,
           composition: elements.reduce((acc, element) => {
-            acc[element.symbol] = parseFloat(row.composition[element.symbol]) || 0;
+            acc[element] = parseFloat(row.composition[element]) || 0;
             return acc;
           }, {}),
           additives: row.additives.trim()
