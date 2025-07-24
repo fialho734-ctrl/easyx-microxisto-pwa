@@ -2000,13 +2000,13 @@ function App() {
                 
                 <div className="grid md:grid-cols-2 gap-6 mt-6">
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-gray-800 mb-2">Aditivos - {comparisonData.competitor.company}</h5>
-                    <p className="text-gray-600">{comparisonData.competitor.additives}</p>
+                    <h5 className="font-semibold text-gray-800 mb-2">Aditivos - <span translate="no">{comparisonData.competitor.company}</span></h5>
+                    <p className="text-gray-600" translate="no">{comparisonData.competitor.additives}</p>
                   </div>
                   
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
-                    <p className="text-gray-600">{comparisonData.microxisto.additives}</p>
+                    <p className="text-gray-600" translate="no">{comparisonData.microxisto.additives}</p>
                   </div>
                 </div>
               </div>
