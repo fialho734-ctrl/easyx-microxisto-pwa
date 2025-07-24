@@ -320,6 +320,30 @@ async def initialize_default_data():
         })
 
 # Routes
+@app.post("/api/auth/register")
+async def register_user(user_data: UserRegistration):
+    # Validar email @microxisto.com.br
+    if not user_data.email.endswith("@microxisto.com.br"):
+        raise HTTPException(status_code=400, detail="Email deve ser @microxisto.com.br")
+    
+    # Verificar se usuário já existe
+    existing_user = await db.users.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email já cadastrado")
+    
+    # Criar usuário
+    user = {
+        "id": str(uuid.uuid4()),
+        "email": user_data.email,
+        "password": hash_password(user_data.password),
+        "is_admin": False,
+        "is_approved": False,
+        "created_at": datetime.utcnow()
+    }
+    
+    await db.users.insert_one(user)
+    return {"message": "Usuário cadastrado. Aguarde aprovação do administrador."}
+
 @app.post("/api/auth/login")
 async def login(request: LoginRequest):
     user = await db.users.find_one({"email": request.email})
