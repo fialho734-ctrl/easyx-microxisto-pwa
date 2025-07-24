@@ -1300,12 +1300,20 @@ function App() {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setCurrentPage('login')}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Login
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setCurrentPage('login')}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    Login
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage('register')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Cadastro
+                  </button>
+                </div>
               )}
             </nav>
           </div>
