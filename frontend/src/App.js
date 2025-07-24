@@ -544,7 +544,7 @@ const ProductManagement = ({ token, technologies }) => {
                 <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">Tecnologia</th>
-                <th className="px-4 py-2 text-left">Densidade</th>
+                <th className="px-4 py-2 text-left">Densidade (g/mL)</th>
                 <th className="px-4 py-2 text-left">Natureza</th>
                 <th className="px-4 py-2 text-left">Ações</th>
               </tr>
