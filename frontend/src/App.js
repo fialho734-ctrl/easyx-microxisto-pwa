@@ -990,6 +990,7 @@ Kimberlit	Exion Vida	1.19	liquido	0	0	0	0	4.284	0	0	0	1.785	1.19	1.19	0	0	0	0	0"
                         {element.symbol}
                       </th>
                     ))}
+                    <th className="border border-gray-300 px-2 py-1">Aditivos</th>
                     <th className="border border-gray-300 px-2 py-1">Ações</th>
                   </tr>
                 </thead>
