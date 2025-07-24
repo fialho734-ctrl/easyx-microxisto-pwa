@@ -1560,10 +1560,10 @@ function App() {
   if (currentPage === 'register') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <div className="bg-white p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md">
           <div className="text-center mb-6">
-            <img src="https://i.imgur.com/lwNbD0G.png" alt="MicroXisto" className="h-16 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-800">Cadastro de Usuário</h2>
+            <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-12 lg:h-16 mx-auto mb-4" />
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Cadastro EasyX</h2>
             <p className="text-gray-600 text-sm mt-2">Apenas emails @microxisto.com.br</p>
           </div>
           
