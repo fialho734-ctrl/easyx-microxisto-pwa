@@ -1062,6 +1062,20 @@ Kimberlit	Exion Vida	1.19	liquido	0	0	0	0	4.284	0	0	0	1.785	1.19	1.19	0	0	0	0	0"
                         </td>
                       ))}
                       <td className="border border-gray-300 px-1 py-1">
+                        <input
+                          type="text"
+                          value={row.additives || ''}
+                          onChange={(e) => updateEditableRow(row.id, 'additives', e.target.value)}
+                          className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                          placeholder="Aditivos"
+                          spellCheck="false"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          translate="no"
+                        />
+                      </td>
+                      <td className="border border-gray-300 px-1 py-1">
                         <button
                           onClick={() => removeEditableRow(row.id)}
                           className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
