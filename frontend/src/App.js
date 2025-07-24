@@ -1200,7 +1200,18 @@ Kimberlit	Exion Vida	1.19	liquido	0	0	0	0	4.284	0	0	0	1.785	1.19	1.19	0	0	0	0	0"
 
       {/* Competitors List */}
       <div className="card">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Concorrentes Cadastrados ({competitors.length})</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">Concorrentes Cadastrados ({competitors.length})</h3>
+          {competitors.length > 0 && (
+            <button
+              onClick={deleteAllCompetitors}
+              disabled={loading}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 font-bold"
+            >
+              🗑️ LIMPAR TODOS OS CONCORRENTES
+            </button>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full table-auto text-sm">
             <thead>
