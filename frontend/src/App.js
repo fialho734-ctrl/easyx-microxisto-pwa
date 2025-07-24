@@ -920,9 +920,12 @@ const CompetitorManagement = ({ token }) => {
                 onChange={(e) => setBulkPasteData(e.target.value)}
                 className="w-full h-32 px-3 py-2 border rounded-lg focus:outline-none focus:border-purple-500 font-mono text-xs"
                 placeholder="Cole aqui os dados da sua planilha Excel... (Ctrl+V)
-Exemplo:
-Kimberlit	KBT Radicel	1.55	liquido	0	0	0	0	0	0	7.75	0.775	31	0	0	0	1.55	0	0	0
-Kimberlit	Exion Vida	1.19	liquido	0	0	0	0	4.284	0	0	0	1.785	1.19	1.19	0	0	0	0	0"
+
+⚠️ FORMATO CORRETO (separado por TAB):
+Kimberlit	KBT Radicel	1.55	liquido	0	0	0	0	0	0	7.75	0.775	31	0	0	0	1.55	0	0	0	Aminoácidos
+ICL	UP! Seeds	1.25	liquido	15	5	10	8	3	2	0.5	0.1	2	1	0.5	1.5	0.2	0.1	5	3	Complexo vitamínico
+
+DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                 spellCheck="false"
                 autoComplete="off"
                 autoCorrect="off"
