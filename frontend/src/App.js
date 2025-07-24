@@ -892,9 +892,10 @@ function App() {
   }, []);
 
   const checkAuthStatus = () => {
-    const token = localStorage.getItem('token');
+    const storedToken = localStorage.getItem('token');
     const adminStatus = localStorage.getItem('isAdmin') === 'true';
-    if (token) {
+    if (storedToken) {
+      setToken(storedToken);
       setIsLoggedIn(true);
       setIsAdmin(adminStatus);
     }
