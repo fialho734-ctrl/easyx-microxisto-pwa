@@ -1514,7 +1514,7 @@ function App() {
                     <h4 className="text-xl font-semibold text-gray-800 mb-2">{comparisonData.competitor.company}</h4>
                     <h5 className="text-lg text-gray-600 mb-4">{comparisonData.competitor.product}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.competitor.density} g/cm³</p>
+                      <p>Densidade: {comparisonData.competitor.density} g/mL</p>
                       <p>Natureza: {comparisonData.competitor.nature}</p>
                     </div>
                   </div>
