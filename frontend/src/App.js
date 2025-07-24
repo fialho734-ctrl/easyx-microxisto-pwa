@@ -612,9 +612,13 @@ const CompetitorManagement = ({ token }) => {
   const [importResult, setImportResult] = useState(null);
   const [loading, setLoading] = useState(false);
   
-  // Novo estado para tabela editável
+  // Estados para tabela editável
   const [editableRows, setEditableRows] = useState([]);
   const [showEditableTable, setShowEditableTable] = useState(false);
+  
+  // NOVO: Estado para colagem em bloco
+  const [bulkPasteData, setBulkPasteData] = useState('');
+  const [showBulkPaste, setShowBulkPaste] = useState(false);
 
   const elements = [
     { symbol: 'N', name: 'Nitrogênio' },
@@ -651,6 +655,58 @@ const CompetitorManagement = ({ token }) => {
     }
   };
 
+  // NOVA FUNÇÃO: Processar dados colados em bloco
+  const processBulkPaste = () => {
+    if (!bulkPasteData.trim()) {
+      alert('Cole os dados da sua planilha na área de texto primeiro!');
+      return;
+    }
+
+    const lines = bulkPasteData.trim().split('\n');
+    const newRows = [];
+
+    lines.forEach((line, index) => {
+      // Dividir por tab ou vírgula (dependendo do que foi colado)
+      const columns = line.includes('\t') ? line.split('\t') : line.split(',');
+      
+      if (columns.length >= 4) { // Mínimo: Empresa, Produto, Densidade, Natureza
+        const row = {
+          id: Date.now() + index,
+          company: (columns[0] || '').trim(),
+          product: (columns[1] || '').trim(),
+          density: (columns[2] || '').trim(),
+          nature: (columns[3] || 'liquido').trim().toLowerCase(),
+          composition: {},
+          additives: ''
+        };
+
+        // Processar elementos químicos (colunas 4 a 19)
+        elements.forEach((element, elemIndex) => {
+          const colIndex = 4 + elemIndex;
+          row.composition[element.symbol] = (columns[colIndex] || '').trim();
+        });
+
+        // Aditivos na última coluna se existir
+        if (columns[20]) {
+          row.additives = columns[20].trim();
+        }
+
+        if (row.company && row.product) {
+          newRows.push(row);
+        }
+      }
+    });
+
+    if (newRows.length > 0) {
+      setEditableRows([...editableRows, ...newRows]);
+      setBulkPasteData('');
+      setShowBulkPaste(false);
+      alert(`🎉 ${newRows.length} produtos adicionados à tabela! Agora clique em "Salvar" para confirmar.`);
+    } else {
+      alert('❌ Nenhum produto válido encontrado. Verifique o formato dos dados.');
+    }
+  };
+
   // Função para adicionar nova linha editável
   const addEditableRow = () => {
     const newRow = {
@@ -666,6 +722,13 @@ const CompetitorManagement = ({ token }) => {
       additives: ''
     };
     setEditableRows([...editableRows, newRow]);
+  };
+
+  // Função para limpar todas as linhas
+  const clearAllRows = () => {
+    if (window.confirm('Tem certeza que deseja limpar todos os produtos da tabela?')) {
+      setEditableRows([]);
+    }
   };
 
   // Função para remover linha editável
@@ -692,6 +755,15 @@ const CompetitorManagement = ({ token }) => {
 
   // Função para salvar todas as linhas editáveis
   const saveEditableRows = async () => {
+    if (editableRows.length === 0) {
+      alert('Não há produtos para salvar!');
+      return;
+    }
+
+    if (!window.confirm(`Confirma salvar ${editableRows.length} produtos concorrentes?`)) {
+      return;
+    }
+
     setLoading(true);
     let savedCount = 0;
     let errors = [];
@@ -737,7 +809,7 @@ const CompetitorManagement = ({ token }) => {
     }
 
     setImportResult({
-      message: `${savedCount} concorrentes salvos com sucesso!`,
+      message: `✅ ${savedCount} concorrentes salvos com sucesso!`,
       imported_count: savedCount,
       errors
     });
@@ -799,129 +871,217 @@ const CompetitorManagement = ({ token }) => {
 
   return (
     <div className="space-y-6">
-      {/* Tabela Editável - NOVA FUNCIONALIDADE */}
+      {/* NOVO: Colagem em Bloco - MELHOR SOLUÇÃO */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">✨ Inserir Concorrentes - Tabela Editável</h3>
+          <h3 className="text-xl font-bold text-gray-800">🚀 Inserir 1000+ Produtos - Colagem em Bloco</h3>
           <button
-            onClick={() => setShowEditableTable(!showEditableTable)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            onClick={() => setShowBulkPaste(!showBulkPaste)}
+            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
           >
-            {showEditableTable ? 'Ocultar Tabela' : 'Mostrar Tabela Editável'}
+            {showBulkPaste ? 'Ocultar' : '🚀 Colagem em Bloco'}
           </button>
         </div>
 
-        {showEditableTable && (
+        {showBulkPaste && (
           <div>
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
-              <p className="text-sm text-green-800">
-                <strong>💡 Muito mais fácil!</strong> Adicione linhas, cole seus dados diretamente da sua planilha e salve tudo de uma vez.
+            <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded">
+              <h4 className="font-bold text-purple-800 mb-2">📋 Como usar (MUITO FÁCIL):</h4>
+              <ol className="text-sm text-purple-700 space-y-1">
+                <li><strong>1.</strong> Selecione TODOS os dados na sua planilha Excel (Ctrl+A)</li>
+                <li><strong>2.</strong> Copie (Ctrl+C)</li>
+                <li><strong>3.</strong> Cole na área abaixo (Ctrl+V)</li>
+                <li><strong>4.</strong> Clique "Processar Dados"</li>
+                <li><strong>5.</strong> Revise na tabela e clique "Salvar"</li>
+              </ol>
+              <p className="text-xs text-purple-600 mt-2">
+                <strong>Ordem das colunas:</strong> Empresa | Produto | Densidade | Natureza | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos
               </p>
             </div>
 
-            <div className="mb-4 flex space-x-2">
+            <div className="mb-4">
+              <label className="block text-gray-700 font-bold mb-2">
+                📋 Cole aqui TODOS os dados da sua planilha:
+              </label>
+              <textarea
+                value={bulkPasteData}
+                onChange={(e) => setBulkPasteData(e.target.value)}
+                className="w-full h-32 px-3 py-2 border rounded-lg focus:outline-none focus:border-purple-500 font-mono text-xs"
+                placeholder="Cole aqui os dados da sua planilha Excel... (Ctrl+V)
+Exemplo:
+Kimberlit	KBT Radicel	1.55	liquido	0	0	0	0	0	0	7.75	0.775	31	0	0	0	1.55	0	0	0
+Kimberlit	Exion Vida	1.19	liquido	0	0	0	0	4.284	0	0	0	1.785	1.19	1.19	0	0	0	0	0"
+                spellCheck="false"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                translate="no"
+              />
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                onClick={processBulkPaste}
+                disabled={!bulkPasteData.trim()}
+                className="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+              >
+                🔄 Processar Dados
+              </button>
+              <button
+                onClick={() => setBulkPasteData('')}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                🗑️ Limpar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Tabela Editável - Para revisão */}
+      <div className="card">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">✏️ Tabela de Revisão ({editableRows.length} produtos)</h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowEditableTable(!showEditableTable)}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            >
+              {showEditableTable ? 'Ocultar' : 'Mostrar Tabela'}
+            </button>
+            {editableRows.length > 0 && (
+              <>
+                <button
+                  onClick={clearAllRows}
+                  className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  🗑️ Limpar Tudo
+                </button>
+                <button
+                  onClick={saveEditableRows}
+                  disabled={loading}
+                  className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 font-bold"
+                >
+                  {loading ? '💾 Salvando...' : `💾 SALVAR ${editableRows.length} PRODUTOS`}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {showEditableTable && editableRows.length > 0 && (
+          <div>
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                ⚠️ <strong>Revise os dados abaixo antes de salvar!</strong> Você pode editar qualquer campo diretamente na tabela.
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border border-gray-300 px-2 py-1">Empresa</th>
+                    <th className="border border-gray-300 px-2 py-1">Produto</th>
+                    <th className="border border-gray-300 px-2 py-1">Densidade</th>
+                    <th className="border border-gray-300 px-2 py-1">Natureza</th>
+                    {elements.map(element => (
+                      <th key={element.symbol} className="border border-gray-300 px-1 py-1 min-w-12">
+                        {element.symbol}
+                      </th>
+                    ))}
+                    <th className="border border-gray-300 px-2 py-1">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {editableRows.map(row => (
+                    <tr key={row.id}>
+                      <td className="border border-gray-300 px-1 py-1">
+                        <input
+                          type="text"
+                          value={row.company}
+                          onChange={(e) => updateEditableRow(row.id, 'company', e.target.value)}
+                          className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                          placeholder="Nome da Empresa"
+                          spellCheck="false"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          translate="no"
+                        />
+                      </td>
+                      <td className="border border-gray-300 px-1 py-1">
+                        <input
+                          type="text"
+                          value={row.product}
+                          onChange={(e) => updateEditableRow(row.id, 'product', e.target.value)}
+                          className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                          placeholder="Nome do Produto"
+                          spellCheck="false"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          translate="no"
+                        />
+                      </td>
+                      <td className="border border-gray-300 px-1 py-1">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={row.density}
+                          onChange={(e) => updateEditableRow(row.id, 'density', e.target.value)}
+                          className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                          placeholder="g/mL"
+                          spellCheck="false"
+                          autoComplete="off"
+                        />
+                      </td>
+                      <td className="border border-gray-300 px-1 py-1">
+                        <select
+                          value={row.nature}
+                          onChange={(e) => updateEditableRow(row.id, 'nature', e.target.value)}
+                          className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                        >
+                          <option value="liquido">Líquido</option>
+                          <option value="solido">Sólido</option>
+                        </select>
+                      </td>
+                      {elements.map(element => (
+                        <td key={element.symbol} className="border border-gray-300 px-1 py-1">
+                          <input
+                            type="number"
+                            step="0.001"
+                            value={row.composition[element.symbol]}
+                            onChange={(e) => updateEditableRow(row.id, 'composition', e.target.value, element.symbol)}
+                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
+                            style={{ minWidth: '50px' }}
+                            spellCheck="false"
+                            autoComplete="off"
+                          />
+                        </td>
+                      ))}
+                      <td className="border border-gray-300 px-1 py-1">
+                        <button
+                          onClick={() => removeEditableRow(row.id)}
+                          className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                        >
+                          🗑️
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 flex justify-center">
               <button
                 onClick={addEditableRow}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                ➕ Adicionar Linha
+                ➕ Adicionar Linha Manual
               </button>
-              
-              {editableRows.length > 0 && (
-                <button
-                  onClick={saveEditableRows}
-                  disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-                >
-                  {loading ? '💾 Salvando...' : `💾 Salvar ${editableRows.length} Produto(s)`}
-                </button>
-              )}
             </div>
-
-            {editableRows.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-300 px-2 py-1">Empresa</th>
-                      <th className="border border-gray-300 px-2 py-1">Produto</th>
-                      <th className="border border-gray-300 px-2 py-1">Densidade</th>
-                      <th className="border border-gray-300 px-2 py-1">Natureza</th>
-                      {elements.map(element => (
-                        <th key={element.symbol} className="border border-gray-300 px-1 py-1 min-w-12">
-                          {element.symbol}
-                        </th>
-                      ))}
-                      <th className="border border-gray-300 px-2 py-1">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {editableRows.map(row => (
-                      <tr key={row.id}>
-                        <td className="border border-gray-300 px-1 py-1">
-                          <input
-                            type="text"
-                            value={row.company}
-                            onChange={(e) => updateEditableRow(row.id, 'company', e.target.value)}
-                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                            placeholder="Nome da Empresa"
-                          />
-                        </td>
-                        <td className="border border-gray-300 px-1 py-1">
-                          <input
-                            type="text"
-                            value={row.product}
-                            onChange={(e) => updateEditableRow(row.id, 'product', e.target.value)}
-                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                            placeholder="Nome do Produto"
-                          />
-                        </td>
-                        <td className="border border-gray-300 px-1 py-1">
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={row.density}
-                            onChange={(e) => updateEditableRow(row.id, 'density', e.target.value)}
-                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                            placeholder="g/mL"
-                          />
-                        </td>
-                        <td className="border border-gray-300 px-1 py-1">
-                          <select
-                            value={row.nature}
-                            onChange={(e) => updateEditableRow(row.id, 'nature', e.target.value)}
-                            className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                          >
-                            <option value="liquido">Líquido</option>
-                            <option value="solido">Sólido</option>
-                          </select>
-                        </td>
-                        {elements.map(element => (
-                          <td key={element.symbol} className="border border-gray-300 px-1 py-1">
-                            <input
-                              type="number"
-                              step="0.001"
-                              value={row.composition[element.symbol]}
-                              onChange={(e) => updateEditableRow(row.id, 'composition', e.target.value, element.symbol)}
-                              className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                              style={{ minWidth: '50px' }}
-                            />
-                          </td>
-                        ))}
-                        <td className="border border-gray-300 px-1 py-1">
-                          <button
-                            onClick={() => removeEditableRow(row.id)}
-                            className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
         )}
 
@@ -931,12 +1091,12 @@ const CompetitorManagement = ({ token }) => {
             {importResult.errors && importResult.errors.length > 0 && (
               <div className="mt-2">
                 <p className="text-sm font-medium text-red-600">Erros encontrados:</p>
-                <ul className="list-disc list-inside text-sm text-red-600 mt-1">
-                  {importResult.errors.slice(0, 10).map((error, index) => (
+                <ul className="list-disc list-inside text-sm text-red-600 mt-1 max-h-32 overflow-y-auto">
+                  {importResult.errors.slice(0, 50).map((error, index) => (
                     <li key={index}>{error}</li>
                   ))}
-                  {importResult.errors.length > 10 && (
-                    <li>... e mais {importResult.errors.length - 10} erros</li>
+                  {importResult.errors.length > 50 && (
+                    <li>... e mais {importResult.errors.length - 50} erros</li>
                   )}
                 </ul>
               </div>
@@ -974,9 +1134,6 @@ const CompetitorManagement = ({ token }) => {
             <span>• Si</span>
             <span>• Fe</span>
           </div>
-          <p className="text-xs text-blue-600 mt-2">
-            <strong>Importante:</strong> Densidade em g/mL, elementos químicos em g/L ou g/Kg, use apenas os símbolos químicos (ex: Mg, não Magnésio)
-          </p>
         </div>
 
         <div className="flex items-center space-x-4">
