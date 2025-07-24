@@ -686,7 +686,7 @@ const CompetitorManagement = ({ token }) => {
       density: '',
       nature: 'liquido',
       composition: elements.reduce((acc, element) => {
-        acc[element.symbol] = '';
+        acc[element] = '';
         return acc;
       }, {}),
       additives: ''
