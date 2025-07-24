@@ -445,7 +445,7 @@ const ProductManagement = ({ token, technologies }) => {
             </select>
           </div>
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Densidade</label>
+            <label className="block text-gray-700 font-semibold mb-2">Densidade (g/mL)</label>
             <input
               type="number"
               step="0.01"
