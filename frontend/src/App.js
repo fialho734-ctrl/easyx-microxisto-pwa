@@ -686,7 +686,7 @@ const CompetitorManagement = ({ token }) => {
           row.composition[element.symbol] = (columns[colIndex] || '').trim();
         });
 
-        // Aditivos na última coluna se existir
+        // Aditivos na coluna 20 se existir
         if (columns[20]) {
           row.additives = columns[20].trim();
         }
