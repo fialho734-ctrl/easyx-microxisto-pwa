@@ -1985,7 +1985,7 @@ function App() {
                       <img src={comparisonData.microxisto.logo} alt="MicroXisto" className="h-8" />
                       <h4 className="text-xl font-semibold text-green-800">MicroXisto</h4>
                     </div>
-                    <h5 className="text-lg text-gray-600 mb-4">{comparisonData.microxisto.name}</h5>
+                    <h5 className="text-lg text-gray-600 mb-4" translate="no">{comparisonData.microxisto.name}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>Densidade: {comparisonData.microxisto.density} g/mL</p>
                       <p>Natureza: {comparisonData.microxisto.nature}</p>
