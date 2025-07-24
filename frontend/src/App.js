@@ -1662,7 +1662,7 @@ function App() {
         <div className="bg-white p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md">
           <div className="text-center mb-6">
             <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-12 lg:h-16 mx-auto mb-4" />
-            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Login EasyX</h2>
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Login</h2>
           </div>
           
           <form onSubmit={handleLogin}>
