@@ -875,6 +875,14 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  
+  // Registration states
+  const [registerForm, setRegisterForm] = useState({ email: '', password: '', confirmPassword: '' });
+  const [registerMessage, setRegisterMessage] = useState('');
+
+  // Admin states
+  const [adminTab, setAdminTab] = useState('home');
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
   useEffect(() => {
     fetchTechnologies();
