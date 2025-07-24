@@ -639,21 +639,32 @@ const CompetitorManagement = ({ token }) => {
       // Dividir por tab ou vírgula (dependendo do que foi colado)
       const columns = line.includes('\t') ? line.split('\t') : line.split(',');
       
+      // Debug: mostrar como as colunas estão sendo interpretadas
+      console.log(`Linha ${index + 1}:`, columns);
+      
       if (columns.length >= 4) { // Mínimo: Empresa, Produto, Densidade, Natureza
         const row = {
           id: Date.now() + index,
           company: (columns[0] || '').trim(),
           product: (columns[1] || '').trim(),
-          density: (columns[2] || '').trim(),
+          density: (columns[2] || '0').trim(), // Garantir que não fique vazio
           nature: (columns[3] || 'liquido').trim().toLowerCase(),
           composition: {},
           additives: ''
         };
 
+        // Debug: mostrar o objeto row criado
+        console.log(`Row criado:`, {
+          company: row.company,
+          product: row.product, 
+          density: row.density,
+          nature: row.nature
+        });
+
         // Processar elementos químicos (colunas 4 a 19)
         elements.forEach((element, elemIndex) => {
           const colIndex = 4 + elemIndex;
-          row.composition[element] = (columns[colIndex] || '').trim();
+          row.composition[element] = (columns[colIndex] || '0').trim();
         });
 
         // Aditivos na coluna 20 se existir
