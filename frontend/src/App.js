@@ -1724,7 +1724,7 @@ function App() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             {/* Logo e Título */}
-            <div className="flex items-center justify-center lg:justify-start mb-4 lg:mb-0 pt-1">
+            <div className="flex items-center justify-center lg:justify-start mb-4 lg:mb-0 pt-2">
               <img src="https://i.imgur.com/lwNbD0G.png" alt="MicroXisto" className="h-6 lg:h-8" />
             </div>
             
