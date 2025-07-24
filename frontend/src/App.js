@@ -1797,10 +1797,11 @@ function App() {
       <main className="container mx-auto px-4 py-8">
         {currentPage === 'home' && (
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              <img src="https://i.imgur.com/lwNbD0G.png" alt="MicroXisto" className="h-24 mx-auto mb-6" />
+            <div className="bg-white rounded-lg shadow-md p-6 lg:p-8 text-center">
+              <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6" />
+              <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-4">EasyX</h2>
               <div className="prose max-w-none">
-                <p className="text-lg text-gray-700 mb-6">{homeContent.text}</p>
+                <p className="text-base lg:text-lg text-gray-700 mb-6">{homeContent.text}</p>
                 {homeContent.pdf_url && (
                   <a
                     href={homeContent.pdf_url}
