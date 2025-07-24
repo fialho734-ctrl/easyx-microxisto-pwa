@@ -1628,7 +1628,7 @@ function App() {
     
     return (
       <div className="bg-white rounded-lg shadow-md p-4">
-        <h4 className="font-semibold text-gray-800 mb-3">{title}</h4>
+        <h4 className="font-semibold text-gray-800 mb-3" translate="no">{title}</h4>
         <div className="grid grid-cols-4 gap-2 text-sm">
           {chemicalSymbols.map(symbol => (
             <div key={symbol} className="flex justify-between p-2 bg-gray-50 rounded">
