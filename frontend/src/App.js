@@ -642,13 +642,13 @@ const CompetitorManagement = ({ token }) => {
       // Debug: mostrar como as colunas estão sendo interpretadas
       console.log(`Linha ${index + 1}:`, columns);
       
-      if (columns.length >= 4) { // Mínimo: Empresa, Produto, Densidade, Natureza
+      if (columns.length >= 3) { // Mínimo: Empresa, Natureza, Densidade
         const row = {
           id: Date.now() + index,
           company: (columns[0] || '').trim(),
-          product: (columns[1] || '').trim(),
-          density: (columns[2] || '0').trim(), // Garantir que não fique vazio
-          nature: (columns[3] || 'liquido').trim().toLowerCase(),
+          product: (columns[0] || '').trim(), // Usar empresa como produto se não houver produto separado
+          density: (columns[2] || '0').trim().replace(',', '.'), // Converter vírgula para ponto
+          nature: (columns[1] || 'liquido').trim().toLowerCase(),
           composition: {},
           additives: ''
         };
@@ -661,18 +661,19 @@ const CompetitorManagement = ({ token }) => {
           nature: row.nature
         });
 
-        // Processar elementos químicos (colunas 4 a 19)
+        // Processar elementos químicos (colunas 3 a 18)
         elements.forEach((element, elemIndex) => {
-          const colIndex = 4 + elemIndex;
-          row.composition[element] = (columns[colIndex] || '0').trim();
+          const colIndex = 3 + elemIndex; // Começar da coluna 3
+          const value = (columns[colIndex] || '0').trim().replace(',', '.'); // Converter vírgula para ponto
+          row.composition[element] = value;
         });
 
-        // Aditivos na coluna 20 se existir
-        if (columns[20]) {
-          row.additives = columns[20].trim();
+        // Aditivos na coluna 19 se existir
+        if (columns[19]) {
+          row.additives = columns[19].trim();
         }
 
-        if (row.company && row.product) {
+        if (row.company) {
           newRows.push(row);
         }
       }
