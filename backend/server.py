@@ -522,11 +522,9 @@ async def import_competitors_csv(file: UploadFile = File(...), admin_user: dict 
         errors = []
         
         expected_columns = [
-            'Empresa', 'Produto', 'Natureza', 'Densidade (g/cm³)',
-            'N (g/L ou Kg)', 'P2O5 (g/L ou Kg)', 'K2O (g/L ou Kg)', 'Ca (g/L ou Kg)',
-            'Mg (g/L ou Kg)', 'S (g/L ou Kg)', 'Mo (g/L ou Kg)', 'Co (g/L ou Kg)',
-            'Zn (g/L ou Kg)', 'B (g/L ou Kg)', 'Cu (g/L ou Kg)', 'Mn (g/L ou Kg)',
-            'Ni (g/L ou Kg)', 'Se (g/L ou Kg)', 'Si (g/L ou Kg)', 'Fe (g/L ou Kg)', 'Aditivos'
+            'Empresa', 'Produto', 'Densidade', 'Natureza',
+            'N', 'P', 'K', 'Ca', 'Mg', 'S', 'Mo', 'Co',
+            'Zn', 'B', 'Cu', 'Mn', 'Ni', 'Se', 'Si', 'Fe'
         ]
         
         for row_num, row in enumerate(csv_reader, start=2):
