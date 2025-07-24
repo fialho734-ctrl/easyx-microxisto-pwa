@@ -1827,6 +1827,11 @@ function App() {
                       value={selectedProduct}
                       onChange={(e) => handleProductChange(e.target.value)}
                       className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                      spellCheck="false"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      translate="no"
                     >
                       <option value="">Escolha um produto...</option>
                       {products.map(product => (
