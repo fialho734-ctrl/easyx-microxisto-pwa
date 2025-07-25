@@ -1931,7 +1931,7 @@ function App() {
                   >
                     <option value="">Selecione...</option>
                     {companies.map(company => (
-                      <option key={company.company} value={company.company}>{company.company}</option>
+                      <option key={company.company} value={company.company} translate="no" data-translate="no" lang="en">{company.company}</option>
                     ))}
                   </select>
                 </div>
