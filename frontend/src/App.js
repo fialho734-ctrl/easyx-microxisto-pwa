@@ -1024,6 +1024,8 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                           autoCorrect="off"
                           autoCapitalize="off"
                           translate="no"
+                          data-translate="no"
+                          lang="en"
                         />
                       </td>
                       <td className="border border-gray-300 px-1 py-1">
@@ -1038,6 +1040,8 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                           autoCorrect="off"
                           autoCapitalize="off"
                           translate="no"
+                          data-translate="no"
+                          lang="en"
                         />
                       </td>
                       <td className="border border-gray-300 px-1 py-1">
