@@ -1216,8 +1216,8 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
             <tbody>
               {competitors.map(competitor => (
                 <tr key={competitor.id} className="border-t">
-                  <td className="px-3 py-2 font-semibold">{competitor.company}</td>
-                  <td className="px-3 py-2">{competitor.product}</td>
+                  <td className="px-3 py-2 font-semibold" translate="no" data-translate="no" lang="en">{competitor.company}</td>
+                  <td className="px-3 py-2" translate="no" data-translate="no" lang="en">{competitor.product}</td>
                   <td className="px-3 py-2">{competitor.nature}</td>
                   <td className="px-3 py-2">{competitor.density}</td>
                   <td className="px-3 py-2">
