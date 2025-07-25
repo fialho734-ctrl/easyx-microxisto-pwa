@@ -140,7 +140,7 @@ app.add_middleware(
 # Auth helpers
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(hours=24)
+    expire = datetime.utcnow() + timedelta(days=7)  # 7 dias em vez de 24 horas
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
