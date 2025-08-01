@@ -1,0 +1,53 @@
+{
+  "name": "EasyX - MicroXisto",
+  "short_name": "EasyX",
+  "description": "Sistema de consulta e comparação de produtos MicroXisto",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#006134",
+  "theme_color": "#006134",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/rJRL0ca.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "https://i.imgur.com/rJRL0ca.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "pt-BR",
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "Tecnologias",
+      "short_name": "Tecnologias",
+      "description": "Consultar tecnologias MicroXisto",
+      "url": "/?page=technologies",
+      "icons": [
+        {
+          "src": "https://i.imgur.com/rJRL0ca.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Comparativo",
+      "short_name": "Comparativo",
+      "description": "Comparar produtos com concorrentes",
+      "url": "/?page=comparison",
+      "icons": [
+        {
+          "src": "https://i.imgur.com/rJRL0ca.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}
