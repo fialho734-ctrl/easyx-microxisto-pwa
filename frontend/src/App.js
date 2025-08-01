@@ -3,6 +3,87 @@ import './App.css';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
+// Componente para indicador de status online/offline
+const OfflineIndicator = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  if (isOnline) return null;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-white px-4 py-2 text-center text-sm z-50">
+      📡 Você está offline. Algumas funcionalidades podem estar limitadas.
+    </div>
+  );
+};
+
+// Componente para botão de instalação PWA
+const InstallPWAButton = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setShowInstallButton(false);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('PWA instalado pelo usuário');
+    }
+    
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
+
+  if (!showInstallButton) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50">
+      <button
+        onClick={handleInstallClick}
+        className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 text-sm flex items-center space-x-2"
+      >
+        <span>📱</span>
+        <span>Instalar App</span>
+      </button>
+    </div>
+  );
+};
+
 // Admin Components
 const UserManagement = ({ token }) => {
   const [users, setUsers] = useState([]);
