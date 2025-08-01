@@ -1932,6 +1932,21 @@ function App() {
                         <span className="font-medium text-gray-700">Descrição:</span>
                         <p className="text-gray-600" translate="no">{productDetails.description}</p>
                       </div>
+                      {productDetails.materials_url && (
+                        <div>
+                          <span className="font-medium text-gray-700">Materiais:</span>
+                          <div className="mt-2">
+                            <a
+                              href={productDetails.materials_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                            >
+                              📋 Acessar Materiais
+                            </a>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
