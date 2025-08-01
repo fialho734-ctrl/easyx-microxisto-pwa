@@ -243,7 +243,8 @@ async def initialize_default_data():
                     "Cu": 0.5, "Mn": 1.5, "Ni": 0.2, "Se": 0.1, "Si": 5, "Fe": 3
                 },
                 "additives": "Aminoácidos + Extrato de algas marinhas",
-                "description": "Fertilizante líquido premium da linha AquaX com tecnologia avançada"
+                "description": "Fertilizante líquido premium da linha AquaX com tecnologia avançada",
+                "materials_url": ""
             },
             {
                 "id": str(uuid.uuid4()),
@@ -258,7 +259,8 @@ async def initialize_default_data():
                     "Cu": 1, "Mn": 2, "Ni": 0.3, "Se": 0.2, "Si": 4, "Fe": 4
                 },
                 "additives": "Complexo de micronutrientes quelados",
-                "description": "Micronutrientes essenciais com alta disponibilidade"
+                "description": "Micronutrientes essenciais com alta disponibilidade",
+                "materials_url": ""
             }
         ]
         await db.products.insert_many(sample_products)
