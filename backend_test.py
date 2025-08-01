@@ -226,6 +226,51 @@ class MicroXistoAPITester:
             print("❌ No authentication token available")
             return False
         
+        all_passed = True
+        
+        # Test user management endpoints
+        success, users = self.run_test(
+            "Get All Users (Admin)",
+            "GET",
+            "api/admin/users",
+            200
+        )
+        if success:
+            print(f"   Found {len(users)} total users")
+        all_passed = all_passed and success
+        
+        success, pending_users = self.run_test(
+            "Get Pending Users (Admin)",
+            "GET",
+            "api/admin/users/pending",
+            200
+        )
+        if success:
+            print(f"   Found {len(pending_users)} pending users")
+        all_passed = all_passed and success
+        
+        # Test products management
+        success, products = self.run_test(
+            "Get All Products (Admin)",
+            "GET",
+            "api/admin/products",
+            200
+        )
+        if success:
+            print(f"   Found {len(products)} total products")
+        all_passed = all_passed and success
+        
+        # Test competitors management
+        success, competitors = self.run_test(
+            "Get All Competitors (Admin)",
+            "GET",
+            "api/admin/competitors",
+            200
+        )
+        if success:
+            print(f"   Found {len(competitors)} total competitors")
+        all_passed = all_passed and success
+        
         # Test home content update
         success, response = self.run_test(
             "Update Home Content (Admin)",
@@ -237,8 +282,9 @@ class MicroXistoAPITester:
                 "pdf_url": None
             }
         )
+        all_passed = all_passed and success
         
-        return success
+        return all_passed
 
 def main():
     print("🚀 Starting MicroXisto API Tests")
