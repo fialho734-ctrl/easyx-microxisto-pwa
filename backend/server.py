@@ -110,6 +110,7 @@ class ProductUpdate(BaseModel):
     composition: ProductComposition
     additives: str
     description: str
+    materials_url: Optional[str] = ""  # NOVO CAMPO
 
 class CompetitorUpdate(BaseModel):
     company: str
