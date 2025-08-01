@@ -456,6 +456,7 @@ def main():
     # Run admin tests if authentication worked
     if not auth_failed:
         tester.test_admin_endpoints()
+        tester.test_crud_operations()
     
     # Print final results
     print("\n" + "="*60)
