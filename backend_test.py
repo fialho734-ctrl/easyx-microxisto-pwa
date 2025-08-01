@@ -379,6 +379,10 @@ def main():
     tester.test_competitors() 
     tester.test_home_content()
     
+    # Run PWA and database tests
+    tester.test_pwa_caching_support()
+    tester.test_database_connectivity()
+    
     # Run admin tests if authentication worked
     if not auth_failed:
         tester.test_admin_endpoints()
