@@ -510,6 +510,20 @@ const ProductManagement = ({ token, technologies }) => {
           </div>
         </div>
 
+        <div className="mb-4">
+          <label className="block text-gray-700 font-semibold mb-2">URL dos Materiais (Opcional)</label>
+          <input
+            type="url"
+            value={formData.materials_url}
+            onChange={(e) => setFormData({...formData, materials_url: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+            placeholder="https://exemplo.com/materiais-produto"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Link para materiais técnicos, fichas, vídeos ou documentos relacionados ao produto
+          </p>
+        </div>
+
         <div className="flex space-x-2">
           <button
             onClick={handleSave}
