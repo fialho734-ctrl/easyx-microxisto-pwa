@@ -2236,6 +2236,10 @@ function App() {
             {adminTab === 'competitors' && (
               <CompetitorManagement token={token} />
             )}
+            
+            {adminTab === 'tutorials' && (
+              <AdminTutorials />
+            )}
           </div>
         )}
       </main>
