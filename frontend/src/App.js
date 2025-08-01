@@ -1416,6 +1416,363 @@ const HomeContentManagement = ({ token, homeContent, fetchHomeContent }) => {
   );
 };
 
+const AdminTutorials = () => {
+  const [activeSection, setActiveSection] = useState('technologies');
+
+  const tutorialSections = [
+    { id: 'technologies', title: 'Gerenciar Tecnologias', icon: '⚙️' },
+    { id: 'products', title: 'Gerenciar Produtos', icon: '📦' },
+    { id: 'competitors', title: 'Importar Concorrentes', icon: '🔄' },
+    { id: 'home', title: 'Conteúdo da Home', icon: '🏠' },
+    { id: 'users', title: 'Gerenciar Usuários', icon: '👥' }
+  ];
+
+  const renderTechnologiesTutorial = () => (
+    <div className="space-y-6">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+        <h3 className="text-2xl font-bold text-green-800 mb-4 flex items-center">
+          ⚙️ Como Gerenciar Tecnologias MicroXisto
+        </h3>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg p-4 border-l-4 border-green-500">
+            <h4 className="font-bold text-green-700 mb-2">📝 1. Adicionar Nova Tecnologia</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Vá para a aba <strong>"Tecnologias"</strong> no painel administrativo</li>
+              <li>Preencha o campo <strong>"Nome"</strong> (ex: AquaX, MicroX, NanoX)</li>
+              <li>Cole a <strong>"URL do Logo"</strong> da tecnologia</li>
+              <li>Escreva uma <strong>"Descrição"</strong> detalhada da tecnologia</li>
+              <li>Clique em <strong>"Salvar"</strong></li>
+            </ol>
+            <div className="mt-3 p-3 bg-blue-50 rounded">
+              <p className="text-xs text-blue-700">
+                💡 <strong>Dica:</strong> Use URLs de imagens hospedadas (ex: imgur, cloud storage) para garantir que os logos sejam exibidos corretamente
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-700 mb-2">✏️ 2. Editar Tecnologia Existente</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Encontre a tecnologia na lista de <strong>"Tecnologias Cadastradas"</strong></li>
+              <li>Clique no botão <strong>"Editar"</strong> (azul)</li>
+              <li>Modifique os campos desejados</li>
+              <li>Clique em <strong>"Salvar"</strong> ou <strong>"Cancelar"</strong></li>
+            </ol>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-red-500">
+            <h4 className="font-bold text-red-700 mb-2">🗑️ 3. Remover Tecnologia</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Clique no botão <strong>"Remover"</strong> (vermelho) ao lado da tecnologia</li>
+              <li>Confirme a remoção na caixa de diálogo</li>
+            </ol>
+            <div className="mt-3 p-3 bg-yellow-50 rounded">
+              <p className="text-xs text-yellow-700">
+                ⚠️ <strong>Atenção:</strong> Remover uma tecnologia pode afetar produtos vinculados a ela
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderProductsTutorial = () => (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-2xl font-bold text-blue-800 mb-4 flex items-center">
+          📦 Como Gerenciar Produtos MicroXisto
+        </h3>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-700 mb-2">📝 1. Adicionar Novo Produto</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Vá para a aba <strong>"Produtos"</strong> no painel administrativo</li>
+              <li>Preencha os campos básicos:
+                <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                  <li><strong>Nome:</strong> Nome do produto</li>
+                  <li><strong>URL do Logo:</strong> Link da imagem do produto</li>
+                  <li><strong>Tecnologia:</strong> Selecione uma das tecnologias cadastradas</li>
+                  <li><strong>Densidade:</strong> Em g/mL (ex: 1.25)</li>
+                  <li><strong>Natureza:</strong> Líquido ou Sólido</li>
+                </ul>
+              </li>
+              <li>Preencha a <strong>"Composição Química"</strong>:
+                <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                  <li>Digite valores para cada elemento (N, P, K, Ca, Mg, S, etc.)</li>
+                  <li>Use pontos para decimais (ex: 15.5)</li>
+                  <li>Deixe zero os elementos que não estão presentes</li>
+                </ul>
+              </li>
+              <li>Adicione <strong>"Aditivos"</strong> e <strong>"Descrição"</strong></li>
+              <li>Opcionalmente, adicione <strong>"URL dos Materiais"</strong> para documentação técnica</li>
+              <li>Clique em <strong>"Salvar"</strong></li>
+            </ol>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-green-500">
+            <h4 className="font-bold text-green-700 mb-2">⚗️ 2. Preenchimento da Composição Química</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="font-semibold mb-2">Elementos Principais:</p>
+                <ul className="space-y-1 text-gray-700">
+                  <li><strong>N:</strong> Nitrogênio</li>
+                  <li><strong>P:</strong> Fósforo</li>
+                  <li><strong>K:</strong> Potássio</li>
+                  <li><strong>Ca:</strong> Cálcio</li>
+                  <li><strong>Mg:</strong> Magnésio</li>
+                  <li><strong>S:</strong> Enxofre</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold mb-2">Micronutrientes:</p>
+                <ul className="space-y-1 text-gray-700">
+                  <li><strong>Mo:</strong> Molibdênio</li>
+                  <li><strong>Co:</strong> Cobalto</li>
+                  <li><strong>Zn:</strong> Zinco</li>
+                  <li><strong>B:</strong> Boro</li>
+                  <li><strong>Cu:</strong> Cobre</li>
+                  <li><strong>Mn:</strong> Manganês</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-3 p-3 bg-green-50 rounded">
+              <p className="text-xs text-green-700">
+                💡 <strong>Dica:</strong> Os valores são exibidos automaticamente em negrito quando maiores que zero nas comparações
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCompetitorsTutorial = () => (
+    <div className="space-y-6">
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+        <h3 className="text-2xl font-bold text-purple-800 mb-4 flex items-center">
+          🔄 Como Importar Dados de Concorrentes
+        </h3>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg p-4 border-l-4 border-purple-500">
+            <h4 className="font-bold text-purple-700 mb-2">🚀 1. Colagem em Bloco (RECOMENDADO)</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Prepare sua planilha Excel/Google Sheets com o formato correto:
+                <div className="mt-2 p-3 bg-gray-50 rounded text-xs font-mono">
+                  Empresa | Produto | Natureza | Densidade | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos
+                </div>
+              </li>
+              <li>Selecione <strong>TODOS</strong> os dados na planilha (Ctrl+A ou Cmd+A)</li>
+              <li>Copie os dados (Ctrl+C ou Cmd+C)</li>
+              <li>Vá para <strong>"Concorrentes"</strong> → clique em <strong>"🚀 Colagem em Bloco"</strong></li>
+              <li>Cole os dados na área de texto (Ctrl+V ou Cmd+V)</li>
+              <li>Clique em <strong>"🔄 Processar Dados"</strong></li>
+              <li>Revise os dados na tabela editável</li>
+              <li>Clique em <strong>"💾 SALVAR X PRODUTOS"</strong></li>
+            </ol>
+            <div className="mt-3 p-3 bg-green-50 rounded">
+              <p className="text-xs text-green-700">
+                ✅ <strong>Vantagem:</strong> Permite importar 1000+ produtos de uma só vez de forma muito rápida!
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-700 mb-2">📁 2. Importação via CSV (Alternativo)</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Salve sua planilha como arquivo <strong>.csv</strong></li>
+              <li>Certifique-se que as colunas estão na ordem correta</li>
+              <li>Na seção <strong>"Importar via CSV"</strong>, clique em <strong>"Escolher arquivo"</strong></li>
+              <li>Selecione seu arquivo .csv</li>
+              <li>Clique em <strong>"Importar CSV"</strong></li>
+            </ol>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-orange-500">
+            <h4 className="font-bold text-orange-700 mb-2">📋 3. Formato de Dados - MUITO IMPORTANTE</h4>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Exemplo de linha correta:</p>
+                <div className="mt-1 p-2 bg-gray-50 rounded text-xs font-mono">
+                  ICL | Kelmax | líquido | 1,45 | 0 | 15,95 | 0 | 0 | 0 | 0 | 13,05 | 0,6525 | 0 | 0 | 0 | 0 | 1,305 | 0 | 0 | 0 | 33,4% Extratos de Algas
+                </div>
+              </div>
+              <div className="text-sm text-gray-700 space-y-2">
+                <p><strong>Coluna 1:</strong> Nome da Empresa</p>
+                <p><strong>Coluna 2:</strong> Nome do Produto</p>
+                <p><strong>Coluna 3:</strong> Natureza (líquido/sólido)</p>
+                <p><strong>Coluna 4:</strong> Densidade em g/mL</p>
+                <p><strong>Colunas 5-20:</strong> Elementos químicos na ordem: N, P, K, Ca, Mg, S, Mo, Co, Zn, B, Cu, Mn, Ni, Se, Si, Fe</p>
+                <p><strong>Coluna 21:</strong> Aditivos (opcional)</p>
+              </div>
+            </div>
+            <div className="mt-3 p-3 bg-yellow-50 rounded">
+              <p className="text-xs text-yellow-700">
+                ⚠️ <strong>Dica:</strong> Vírgulas decimais (1,45) são automaticamente convertidas para pontos (1.45)
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-red-500">
+            <h4 className="font-bold text-red-700 mb-2">🗑️ 4. Gerenciar Concorrentes Existentes</h4>
+            <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
+              <li><strong>Visualizar:</strong> Todos os concorrentes aparecem na tabela inferior</li>
+              <li><strong>Remover individual:</strong> Clique em "Remover" na linha do concorrente</li>
+              <li><strong>Limpar todos:</strong> Use o botão "🗑️ LIMPAR TODOS OS CONCORRENTES" (cuidado!)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderHomeTutorial = () => (
+    <div className="space-y-6">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+        <h3 className="text-2xl font-bold text-green-800 mb-4 flex items-center">
+          🏠 Como Gerenciar Conteúdo da Página Inicial
+        </h3>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg p-4 border-l-4 border-green-500">
+            <h4 className="font-bold text-green-700 mb-2">📝 1. Editar Texto Principal</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Vá para a aba <strong>"Conteúdo Home"</strong> no painel administrativo</li>
+              <li>Digite ou edite o texto no campo <strong>"Texto Principal"</strong></li>
+              <li>Use quebras de linha para organizar o conteúdo</li>
+              <li>Clique em <strong>"Salvar Alterações"</strong></li>
+            </ol>
+            <div className="mt-3 p-3 bg-blue-50 rounded">
+              <p className="text-xs text-blue-700">
+                💡 <strong>Dica:</strong> Este texto aparece logo abaixo do logo EasyX na página inicial
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-700 mb-2">📄 2. Adicionar Link para PDF</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Cole a URL completa do PDF no campo <strong>"URL do PDF"</strong></li>
+              <li>Exemplo: https://exemplo.com/catalogo-microxisto.pdf</li>
+              <li>Clique em <strong>"Salvar Alterações"</strong></li>
+              <li>Um botão de download aparecerá automaticamente na página inicial</li>
+            </ol>
+            <div className="mt-3 p-3 bg-green-50 rounded">
+              <p className="text-xs text-green-700">
+                ✅ <strong>Resultado:</strong> Visitantes poderão baixar o PDF diretamente da página inicial
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderUsersTutorial = () => (
+    <div className="space-y-6">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+        <h3 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center">
+          👥 Como Gerenciar Usuários
+        </h3>
+        <div className="space-y-4">
+          <div className="bg-white rounded-lg p-4 border-l-4 border-yellow-500">
+            <h4 className="font-bold text-yellow-700 mb-2">⏳ 1. Aprovar Usuários Pendentes</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Novos usuários aparecem na seção <strong>"Usuários Pendentes de Aprovação"</strong></li>
+              <li>Verifique se o email é @microxisto.com.br válido</li>
+              <li>Clique em <strong>"Aprovar"</strong> (verde) para liberar acesso</li>
+              <li>Ou clique em <strong>"Rejeitar"</strong> (vermelho) para negar</li>
+            </ol>
+            <div className="mt-3 p-3 bg-yellow-50 rounded">
+              <p className="text-xs text-yellow-700">
+                ⚠️ <strong>Importante:</strong> Apenas emails @microxisto.com.br podem se cadastrar
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-700 mb-2">📋 2. Visualizar Todos os Usuários</h4>
+            <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
+              <li><strong>Email:</strong> Endereço de email do usuário</li>
+              <li><strong>Status:</strong> Aprovado (verde) ou Pendente (vermelho)</li>
+              <li><strong>Tipo:</strong> Admin (azul) ou Usuário (cinza)</li>
+              <li><strong>Cadastro:</strong> Data de registro</li>
+            </ul>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 border-l-4 border-red-500">
+            <h4 className="font-bold text-red-700 mb-2">🗑️ 3. Remover Usuários</h4>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+              <li>Clique em <strong>"Remover"</strong> na linha do usuário desejado</li>
+              <li>Confirme a remoção na caixa de diálogo</li>
+            </ol>
+            <div className="mt-3 p-3 bg-red-50 rounded">
+              <p className="text-xs text-red-700">
+                🛡️ <strong>Proteção:</strong> O usuário admin principal (agrofialho@gmail.com) não pode ser removido
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Tutorial Navigation */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+          📚 Tutoriais do Painel Administrativo
+        </h2>
+        <p className="text-gray-600 text-center mb-6">
+          Guias completos para usar todas as funcionalidades do sistema EasyX
+        </p>
+        
+        <div className="flex flex-wrap justify-center gap-3">
+          {tutorialSections.map(section => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeSection === section.id 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {section.icon} {section.title}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tutorial Content */}
+      {activeSection === 'technologies' && renderTechnologiesTutorial()}
+      {activeSection === 'products' && renderProductsTutorial()}
+      {activeSection === 'competitors' && renderCompetitorsTutorial()}
+      {activeSection === 'home' && renderHomeTutorial()}
+      {activeSection === 'users' && renderUsersTutorial()}
+
+      {/* Additional Help */}
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+          💡 Dicas Gerais
+        </h3>
+        <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-700">
+          <div className="space-y-2">
+            <p><strong>🔄 PWA (App Mobile):</strong> O sistema funciona offline quando instalado como app</p>
+            <p><strong>🎨 Anti-Tradução:</strong> Nomes químicos e empresas não são traduzidos automaticamente</p>
+            <p><strong>📱 Responsivo:</strong> Interface adaptada para desktop, tablet e mobile</p>
+          </div>
+          <div className="space-y-2">
+            <p><strong>🔐 Segurança:</strong> Apenas admins acessam este painel</p>
+            <p><strong>💾 Backup:</strong> Dados são salvos automaticamente no MongoDB</p>
+            <p><strong>⚡ Performance:</strong> Cache inteligente para acesso rápido</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [technologies, setTechnologies] = useState([]);
