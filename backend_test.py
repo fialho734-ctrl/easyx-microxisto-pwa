@@ -359,6 +359,76 @@ class MicroXistoAPITester:
             all_passed = False
         
         return all_passed
+    
+    def test_crud_operations(self):
+        """Test CRUD operations for admin endpoints"""
+        print("\n" + "="*50)
+        print("TESTING CRUD OPERATIONS")
+        print("="*50)
+        
+        if not self.token:
+            print("❌ No authentication token available")
+            return False
+        
+        all_passed = True
+        
+        # Test creating a new technology
+        test_tech_data = {
+            "name": "TestX Technology",
+            "logo": "https://example.com/test-logo.png",
+            "description": "Test technology for API testing"
+        }
+        
+        success, created_tech = self.run_test(
+            "Create Technology (Admin)",
+            "POST",
+            "api/admin/technologies",
+            200,
+            data=test_tech_data
+        )
+        
+        if success and created_tech:
+            tech_id = created_tech.get('id')
+            print(f"   ✅ Created technology with ID: {tech_id}")
+            
+            # Test updating the technology
+            updated_data = {
+                "name": "TestX Technology Updated",
+                "logo": "https://example.com/updated-logo.png", 
+                "description": "Updated test technology description"
+            }
+            
+            success, response = self.run_test(
+                "Update Technology (Admin)",
+                "PUT",
+                f"api/admin/technologies/{tech_id}",
+                200,
+                data=updated_data
+            )
+            
+            if success:
+                print("   ✅ Technology updated successfully")
+            else:
+                all_passed = False
+            
+            # Test deleting the technology
+            success, response = self.run_test(
+                "Delete Technology (Admin)",
+                "DELETE",
+                f"api/admin/technologies/{tech_id}",
+                200
+            )
+            
+            if success:
+                print("   ✅ Technology deleted successfully")
+            else:
+                all_passed = False
+                
+        else:
+            print("   ❌ Failed to create test technology")
+            all_passed = False
+        
+        return all_passed
 
 def main():
     print("🚀 Starting MicroXisto API Tests")
