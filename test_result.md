@@ -168,12 +168,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PWA OfflineStatusIndicator Integration"
-    - "PWA Service Worker Implementation" 
+    - "PWA OfflineStatusIndicator Integration" 
+    - "PWA Service Worker Implementation"
     - "Admin Panel Help Tutorials"
   stuck_tasks: []
-  test_all: false
-  test_priority: "high_first"
+  test_all: true
+  test_priority: "completed"
 
 agent_communication:
   - agent: "main"
