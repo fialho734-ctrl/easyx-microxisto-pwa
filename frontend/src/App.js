@@ -1417,7 +1417,7 @@ const HomeContentManagement = ({ token, homeContent, fetchHomeContent }) => {
 };
 
 const AdminTutorials = () => {
-  const [activeSection, setActiveSection] = useState('technologies');
+  const [activeSection, setActiveSection] = React.useState('technologies');
 
   const tutorialSections = [
     { id: 'technologies', title: 'Gerenciar Tecnologias', icon: '⚙️' },
