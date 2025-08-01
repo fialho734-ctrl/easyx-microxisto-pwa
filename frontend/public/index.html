@@ -93,6 +93,63 @@
             </div>
         </a>
         <script>
+            // Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then((registration) => {
+                            console.log('SW registered: ', registration);
+                            
+                            // Verificar atualizações
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        console.log('Nova versão disponível');
+                                        // Opcional: mostrar notificação de atualização
+                                        if (confirm('Nova versão disponível. Atualizar agora?')) {
+                                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                            window.location.reload();
+                                        }
+                                    }
+                                });
+                            });
+                        })
+                        .catch((registrationError) => {
+                            console.log('SW registration failed: ', registrationError);
+                        });
+                });
+
+                // Detectar quando app volta online
+                navigator.serviceWorker.ready.then((registration) => {
+                    window.addEventListener('online', () => {
+                        console.log('App está online novamente');
+                        // Opcional: mostrar toast de reconexão
+                    });
+                    
+                    window.addEventListener('offline', () => {
+                        console.log('App está offline');
+                        // Opcional: mostrar toast de offline
+                    });
+                });
+            }
+
+            // Detectar instalação PWA
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                
+                // Opcional: mostrar botão de instalação customizado
+                console.log('PWA pode ser instalado');
+            });
+
+            // Detectar quando PWA foi instalado
+            window.addEventListener('appinstalled', (evt) => {
+                console.log('PWA foi instalado com sucesso');
+                deferredPrompt = null;
+            });
+        </script>
             !(function (t, e) {
                 var o, n, p, r;
                 e.__SV ||
