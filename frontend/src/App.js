@@ -2207,6 +2207,12 @@ function App() {
                 >
                   Concorrentes
                 </button>
+                <button
+                  onClick={() => setAdminTab('tutorials')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'tutorials' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  📚 Tutoriais
+                </button>
               </div>
             </div>
 
