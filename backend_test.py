@@ -284,6 +284,80 @@ class MicroXistoAPITester:
         )
         all_passed = all_passed and success
         
+    def test_pwa_caching_support(self):
+        """Test PWA caching support - verify all endpoints return proper JSON for caching"""
+        print("\n" + "="*50)
+        print("TESTING PWA CACHING SUPPORT")
+        print("="*50)
+        
+        all_passed = True
+        
+        # Test all main endpoints that should be cached by Service Worker
+        endpoints_to_test = [
+            ("Technologies", "api/technologies"),
+            ("Home Content", "api/home"),
+            ("Competitor Companies", "api/competitors/companies")
+        ]
+        
+        for name, endpoint in endpoints_to_test:
+            success, response = self.run_test(
+                f"PWA Cache Test - {name}",
+                "GET",
+                endpoint,
+                200
+            )
+            
+            if success:
+                # Verify response is JSON serializable (important for caching)
+                try:
+                    import json
+                    json.dumps(response)
+                    print(f"   ✅ {name} response is JSON serializable for caching")
+                except:
+                    print(f"   ❌ {name} response is NOT JSON serializable")
+                    all_passed = False
+            else:
+                all_passed = False
+        
+        return all_passed
+    
+    def test_database_connectivity(self):
+        """Test database connectivity and data persistence"""
+        print("\n" + "="*50)
+        print("TESTING DATABASE CONNECTIVITY")
+        print("="*50)
+        
+        all_passed = True
+        
+        # Test data retrieval to verify DB connection
+        success, technologies = self.run_test(
+            "Database Connection Test - Technologies",
+            "GET",
+            "api/technologies",
+            200
+        )
+        
+        if success and technologies:
+            print(f"   ✅ Database connection working - retrieved {len(technologies)} technologies")
+            
+            # Verify expected data structure
+            if len(technologies) >= 5:
+                print("   ✅ Expected number of technologies found")
+            else:
+                print(f"   ❌ Expected at least 5 technologies, found {len(technologies)}")
+                all_passed = False
+                
+            # Check data integrity
+            for tech in technologies[:3]:  # Check first 3
+                if all(key in tech for key in ['id', 'name', 'logo', 'description']):
+                    print(f"   ✅ Technology '{tech['name']}' has all required fields")
+                else:
+                    print(f"   ❌ Technology '{tech.get('name', 'Unknown')}' missing required fields")
+                    all_passed = False
+        else:
+            print("   ❌ Database connection failed")
+            all_passed = False
+        
         return all_passed
 
 def main():
