@@ -1648,13 +1648,23 @@ function App() {
     return (
       <div className="bg-white rounded-lg shadow-md p-4">
         <h4 className="font-semibold text-gray-800 mb-3" translate="no">{title}</h4>
-        <div className="grid grid-cols-4 gap-2 text-sm">
-          {chemicalSymbols.map(symbol => (
-            <div key={symbol} className="flex justify-between p-2 bg-gray-50 rounded">
-              <span className="font-medium" translate="no" spellCheck="false">{symbol}:</span>
-              <span translate="no">{composition[symbol] || 0} g/L</span>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-sm">
+          {chemicalSymbols.map(symbol => {
+            const value = composition[symbol] || 0;
+            const hasValue = value > 0;
+            
+            return (
+              <div key={symbol} className="flex justify-between p-2 bg-gray-50 rounded">
+                <span className="font-medium" translate="no" spellCheck="false">{symbol}:</span>
+                <span 
+                  translate="no" 
+                  className={hasValue ? 'font-bold text-green-700' : 'text-gray-600'}
+                >
+                  {value} g/L
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
