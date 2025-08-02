@@ -24,6 +24,7 @@
                 padding: 0;
                 overflow-x: hidden;
                 min-height: 100vh;
+                max-height: 100vh;
             }
             
             /* Ocultar qualquer texto que possa vazar dos scripts */
@@ -31,9 +32,16 @@
                 display: none !important;
             }
             
-            /* Garantir que o root ocupe toda a altura */
+            /* Garantir que o root ocupe toda a altura sem overflow */
             #root {
                 min-height: 100vh;
+                max-height: 100vh;
+                overflow-y: auto;
+            }
+            
+            /* Ocultar qualquer elemento que possa estar vazando */
+            body > *:not(#root):not(script):not(a#emergent-badge) {
+                display: none !important;
             }
         </style>
         <!--
