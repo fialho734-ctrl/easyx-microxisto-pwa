@@ -84,10 +84,34 @@
         
         <!-- Service Worker - Limpo -->
         <script>
+            // FORÇAR LIMPEZA DE CACHE
             if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js');
+                // Limpar cache antigo
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        if (name.includes('easyx-v1')) {
+                            caches.delete(name);
+                        }
+                    }
                 });
+                
+                // Registrar novo service worker
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js?v=' + Date.now())
+                        .then(function() {
+                            // Forçar reload para limpar cache
+                            if (!sessionStorage.getItem('cache-cleared')) {
+                                sessionStorage.setItem('cache-cleared', 'true');
+                                window.location.reload(true);
+                            }
+                        });
+                });
+            }
+            
+            // FORÇAR LIMPEZA COMPLETA DO BROWSER
+            if (!sessionStorage.getItem('force-refresh')) {
+                sessionStorage.setItem('force-refresh', 'true');
+                window.location.reload(true);
             }
         </script>
     </body>
