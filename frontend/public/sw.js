@@ -7,6 +7,7 @@ const urlsToCache = [
   '/static/js/bundle.js',
   '/static/css/main.css',
   '/manifest.json',
+  'https://customer-assets.emergentagent.com/job_product-compass-2/artifacts/anyq4exi_folha.png',
   'https://i.imgur.com/rJRL0ca.png',
   'https://i.imgur.com/lwNbD0G.png',
   'https://i.imgur.com/C1n0y7l.png',
