@@ -82,36 +82,46 @@
             </div>
         </a>
         
-        <!-- Service Worker - Limpo -->
+        <!-- Service Worker - LIMPEZA FORÇADA -->
         <script>
-            // FORÇAR LIMPEZA DE CACHE
-            if ('serviceWorker' in navigator) {
-                // Limpar cache antigo
-                caches.keys().then(function(names) {
-                    for (let name of names) {
-                        if (name.includes('easyx-v1')) {
+            // LIMPEZA TOTAL IMEDIATA
+            (function() {
+                // Limpar TUDO do cache
+                if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                        names.forEach(function(name) {
                             caches.delete(name);
-                        }
-                    }
-                });
-                
-                // Registrar novo service worker
-                window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js?v=' + Date.now())
-                        .then(function() {
-                            // Forçar reload para limpar cache
-                            if (!sessionStorage.getItem('cache-cleared')) {
-                                sessionStorage.setItem('cache-cleared', 'true');
-                                window.location.reload(true);
-                            }
                         });
-                });
-            }
+                    });
+                }
+                
+                // Limpar sessionStorage e localStorage problemáticos
+                try {
+                    sessionStorage.clear();
+                    localStorage.removeItem('cache-cleared');
+                } catch(e) {}
+                
+                // Desregistrar service workers antigos
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        for(let registration of registrations) {
+                            registration.unregister();
+                        }
+                    });
+                }
+                
+                // Forçar reload com cache bypass
+                if (!sessionStorage.getItem('cleaned-v2')) {
+                    sessionStorage.setItem('cleaned-v2', 'true');
+                    window.location.reload(true);
+                }
+            })();
             
-            // FORÇAR LIMPEZA COMPLETA DO BROWSER
-            if (!sessionStorage.getItem('force-refresh')) {
-                sessionStorage.setItem('force-refresh', 'true');
-                window.location.reload(true);
+            // Registrar novo service worker após limpeza
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js?v=2' + Date.now());
+                });
             }
         </script>
     </body>
