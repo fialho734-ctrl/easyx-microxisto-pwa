@@ -17,6 +17,25 @@
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#006134" />
         <meta name="msapplication-TileImage" content="https://i.imgur.com/rJRL0ca.png" />
+        <style>
+            /* Evitar scroll desnecessário e código visível */
+            body {
+                margin: 0;
+                padding: 0;
+                overflow-x: hidden;
+                min-height: 100vh;
+            }
+            
+            /* Ocultar qualquer texto que possa vazar dos scripts */
+            script {
+                display: none !important;
+            }
+            
+            /* Garantir que o root ocupe toda a altura */
+            #root {
+                min-height: 100vh;
+            }
+        </style>
         <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
