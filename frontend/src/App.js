@@ -2269,7 +2269,7 @@ function App() {
         {currentPage === 'home' && (
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6 lg:p-8 text-center">
-              <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6" />
+              <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6 object-contain" />
               <div className="prose max-w-none">
                 <p className="text-base lg:text-lg text-gray-700 mb-6">{homeContent.text}</p>
                 {homeContent.pdf_url && (
