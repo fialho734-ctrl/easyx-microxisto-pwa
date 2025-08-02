@@ -82,45 +82,24 @@
             </div>
         </a>
         
-        <!-- Service Worker - LIMPEZA FORÇADA -->
+        <!-- Service Worker Simples -->
         <script>
-            // LIMPEZA TOTAL IMEDIATA
-            (function() {
-                // Limpar TUDO do cache
-                if ('caches' in window) {
-                    caches.keys().then(function(names) {
-                        names.forEach(function(name) {
+            // Limpar cache antigo apenas uma vez
+            if ('caches' in window && !sessionStorage.getItem('cache-cleared-v2')) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                        if (name.includes('easyx-v1')) {
                             caches.delete(name);
-                        });
-                    });
-                }
-                
-                // Limpar sessionStorage e localStorage problemáticos
-                try {
-                    sessionStorage.clear();
-                    localStorage.removeItem('cache-cleared');
-                } catch(e) {}
-                
-                // Desregistrar service workers antigos
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                        for(let registration of registrations) {
-                            registration.unregister();
                         }
                     });
-                }
-                
-                // Forçar reload com cache bypass
-                if (!sessionStorage.getItem('cleaned-v2')) {
-                    sessionStorage.setItem('cleaned-v2', 'true');
-                    window.location.reload(true);
-                }
-            })();
+                });
+                sessionStorage.setItem('cache-cleared-v2', 'true');
+            }
             
-            // Registrar novo service worker após limpeza
+            // Service Worker
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js?v=2' + Date.now());
+                    navigator.serviceWorker.register('/sw.js');
                 });
             }
         </script>
