@@ -1,5 +1,5 @@
-const CACHE_NAME = 'easyx-v2';
-const API_CACHE_NAME = 'easyx-api-v2';
+const CACHE_NAME = 'easyx-v3';
+const API_CACHE_NAME = 'easyx-api-v3';
 
 // URLs para cache estático
 const urlsToCache = [
