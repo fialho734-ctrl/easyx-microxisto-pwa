@@ -1,339 +1,451 @@
-const CACHE_NAME = 'easyx-v5';
-const API_CACHE_NAME = 'easyx-api-v5';
+// Service Worker SIMPLES E FUNCIONAL para funcionar OFFLINE
+const CACHE_NAME = 'easyx-offline-v6';
 
-// URLs para cache estático ESSENCIAIS
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  'https://customer-assets.emergentagent.com/job_product-compass-2/artifacts/anyq4exi_folha.png',
-  'https://i.imgur.com/rJRL0ca.png',
-  'https://i.imgur.com/lwNbD0G.png',
-  'https://i.imgur.com/C1n0y7l.png',
-  'https://i.imgur.com/xQOsNWd.png',
-  'https://i.imgur.com/X1nSIwA.png',
-  'https://i.imgur.com/Ev41QpU.png',
-  'https://i.imgur.com/U3hgNcO.png'
-];
-
-// Instalar Service Worker
+// INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
-  console.log('🚀 Service Worker: Installing...');
+  console.log('🚀 SW: Installing v6...');
+  
+  // Pular waiting imediatamente
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('📦 Caching static files...');
-        // Cache assets essenciais primeiro
-        return cache.addAll(urlsToCache).catch((error) => {
-          console.error('❌ Error caching static files:', error);
-          // Cache individualmente se falhar em grupo
-          return Promise.all(
-            urlsToCache.map(url => 
-              cache.add(url).catch(err => console.log(`Failed to cache ${url}:`, err))
-            )
-          );
-        });
+        console.log('📦 Caching essential files...');
+        
+        // Cache a página principal primeiro
+        return fetch('/')
+          .then(response => {
+            if (response.ok) {
+              return cache.put('/', response.clone());
+            }
+          })
+          .catch(err => console.log('Failed to cache main page'));
       })
       .then(() => {
-        console.log('✅ Service Worker: Installation complete');
-        self.skipWaiting();
+        console.log('✅ SW: Install complete');
       })
-      .catch((error) => {
-        console.error('❌ Service Worker installation failed:', error);
+      .catch(error => {
+        console.error('❌ SW: Install failed:', error);
       })
   );
 });
 
-// Ativar Service Worker
+// ATIVAR - Limpar cache antigo e assumir controle
 self.addEventListener('activate', (event) => {
-  console.log('⚡ Service Worker: Activating...');
+  console.log('⚡ SW: Activating v6...');
+  
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
-            console.log('🗑️ Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      console.log('✅ Service Worker: Activated');
-      return self.clients.claim();
-    })
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('🗑️ Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => {
+        console.log('✅ SW: Activated, claiming clients');
+        return self.clients.claim();
+      })
   );
 });
 
-// Interceptar requisições com estratégia inteligente
+// FETCH - Estratégia ULTRA SIMPLES
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
-  // HTML principal - SEMPRE cache first para funcionar offline
-  if (event.request.mode === 'navigate' || 
-      url.pathname === '/' || 
-      url.pathname === '/index.html') {
-    event.respondWith(htmlCacheStrategy(event.request));
+  // Ignorar requests externos e chrome-extension
+  if (!url.origin.includes(self.location.origin) || 
+      url.protocol === 'chrome-extension:') {
+    return;
   }
-  // APIs essenciais (OFFLINE-FIRST)
-  else if (isCoreAPI(url)) {
-    event.respondWith(cacheFirstStrategy(event.request));
-  }
-  // APIs administrativas (NETWORK-ONLY)
-  else if (isAdminAPI(url)) {
-    event.respondWith(networkOnlyStrategy(event.request));
-  }
-  // Assets estáticos (CACHE-FIRST)
-  else if (isStaticAsset(url)) {
-    event.respondWith(cacheFirstStrategy(event.request));
-  }
-  // Outros (NETWORK-FIRST com fallback)
-  else {
-    event.respondWith(networkFirstStrategy(event.request));
-  }
+  
+  console.log('🔍 SW: Handling request:', url.pathname);
+  
+  event.respondWith(
+    handleRequest(event.request)
+  );
 });
 
-// Estratégia especial para HTML - GARANTIR funcionamento offline
-async function htmlCacheStrategy(request) {
+// HANDLE REQUEST - Cache inteligente
+async function handleRequest(request) {
+  const url = new URL(request.url);
+  
   try {
-    // Primeiro tenta cache
-    const cachedResponse = await caches.match('/');
-    if (cachedResponse) {
-      console.log('📱 OFFLINE: Serving HTML from cache');
-      return cachedResponse;
+    // Para navegação (HTML), sempre tentar cache primeiro
+    if (request.mode === 'navigate' || url.pathname === '/') {
+      return await handleNavigation(request);
     }
     
-    // Se não tem cache, tenta rede
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put('/', networkResponse.clone());
-      cache.put('/index.html', networkResponse.clone());
-      return networkResponse;
+    // Para APIs que devem funcionar offline
+    if (isOfflineAPI(url)) {
+      return await handleOfflineAPI(request);
     }
     
-    throw new Error('Network failed');
+    // Para assets estáticos
+    if (isStaticAsset(url)) {
+      return await handleStaticAsset(request);
+    }
+    
+    // Para admin (sempre rede)
+    if (isAdminAPI(url)) {
+      return await fetch(request);
+    }
+    
+    // Default: rede com fallback cache
+    return await networkWithCacheFallback(request);
     
   } catch (error) {
-    // Fallback: tenta qualquer versão em cache
-    const cachedResponse = await caches.match('/') || await caches.match('/index.html');
-    if (cachedResponse) {
-      console.log('🔄 OFFLINE: Using fallback HTML cache');
-      return cachedResponse;
+    console.log('❌ SW: Request failed:', url.pathname, error);
+    
+    // Fallback final
+    const cached = await caches.match(request);
+    if (cached) {
+      return cached;
     }
     
-    // Último recurso: página offline básica
-    return new Response(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>EasyX - Offline</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-          body { 
-            font-family: system-ui; 
-            text-align: center; 
-            padding: 50px; 
-            background: #f3f4f6; 
-          }
-          .offline-msg { 
-            background: #fee; 
-            border: 2px solid #f87171; 
-            border-radius: 8px; 
-            padding: 20px; 
-            max-width: 400px; 
-            margin: 0 auto; 
-          }
-        </style>
-      </head>
-      <body>
-        <div class="offline-msg">
-          <h1>📱 EasyX</h1>
-          <p>App está offline. Conecte-se à internet para carregar.</p>
-          <button onclick="window.location.reload()">🔄 Tentar Novamente</button>
-        </div>
-      </body>
-      </html>
-    `, {
-      headers: { 'Content-Type': 'text/html' }
-    });
+    // Se é navegação e falhou, retorna página offline
+    if (request.mode === 'navigate') {
+      return getOfflinePage();
+    }
+    
+    throw error;
   }
 }
 
-// Verificar se é API essencial (deve funcionar offline)
-function isCoreAPI(url) {
+// NAVEGAÇÃO - HTML principal
+async function handleNavigation(request) {
+  console.log('🏠 SW: Handling navigation');
+  
+  // Primeiro tenta cache
+  const cached = await caches.match('/');
+  if (cached) {
+    console.log('📱 SW: Serving cached HTML');
+    
+    // Background update se online
+    if (navigator.onLine) {
+      updateCacheInBackground('/');
+    }
+    
+    return cached;
+  }
+  
+  // Se não tem cache, busca na rede
+  try {
+    const response = await fetch('/');
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put('/', response.clone());
+      console.log('🌐 SW: Cached new HTML');
+      return response;
+    }
+  } catch (error) {
+    console.log('❌ SW: Network failed for HTML');
+  }
+  
+  // Fallback: página offline
+  return getOfflinePage();
+}
+
+// OFFLINE APIs - Tecnologias, Concorrentes
+async function handleOfflineAPI(request) {
+  const url = new URL(request.url);
+  console.log('🔄 SW: Handling offline API:', url.pathname);
+  
+  // Cache first para APIs offline
+  const cached = await caches.match(request);
+  if (cached) {
+    console.log('📱 SW: API from cache');
+    
+    // Background sync se online
+    if (navigator.onLine) {
+      updateCacheInBackground(request.url);
+    }
+    
+    return cached;
+  }
+  
+  // Buscar na rede se não tem cache
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+      console.log('🌐 SW: API cached from network');
+      return response;
+    }
+  } catch (error) {
+    console.log('❌ SW: API network failed');
+  }
+  
+  // Sem cache e sem rede - erro JSON
+  return new Response(JSON.stringify({
+    error: 'offline',
+    message: 'Dados não disponíveis offline. Conecte-se à internet.'
+  }), {
+    status: 503,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+// STATIC ASSETS - JS, CSS, imagens
+async function handleStaticAsset(request) {
+  console.log('📁 SW: Handling static asset');
+  
+  // Cache first para assets
+  const cached = await caches.match(request);
+  if (cached) {
+    return cached;
+  }
+  
+  // Buscar na rede
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+      return response;
+    }
+  } catch (error) {
+    console.log('❌ SW: Static asset failed');
+  }
+  
+  throw new Error('Asset not available');
+}
+
+// NETWORK + CACHE FALLBACK
+async function networkWithCacheFallback(request) {
+  try {
+    const response = await fetch(request);
+    
+    // Cache se sucesso
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    
+    return response;
+    
+  } catch (error) {
+    // Fallback para cache
+    const cached = await caches.match(request);
+    if (cached) {
+      console.log('🔄 SW: Using cache fallback');
+      return cached;
+    }
+    
+    throw error;
+  }
+}
+
+// CHECKERS - Identificar tipo de request
+function isOfflineAPI(url) {
   return url.pathname.startsWith('/api/technologies') ||
          url.pathname.startsWith('/api/competitors') ||
          url.pathname.startsWith('/api/products') ||
          url.pathname === '/api/home';
 }
 
-// Verificar se é API administrativa
 function isAdminAPI(url) {
   return url.pathname.startsWith('/api/admin') ||
          url.pathname.startsWith('/api/auth');
 }
 
-// Verificar se é asset estático
 function isStaticAsset(url) {
   return url.pathname.startsWith('/static/') ||
          url.pathname.endsWith('.js') ||
          url.pathname.endsWith('.css') ||
          url.pathname.endsWith('.png') ||
+         url.pathname.endsWith('.jpg') ||
          url.pathname.endsWith('.ico') ||
-         url.pathname.endsWith('.json');
+         url.pathname.endsWith('.json') ||
+         url.pathname.includes('imgur.com') ||
+         url.pathname.includes('customer-assets');
 }
 
-// CACHE-FIRST: Prioriza cache (para funcionar offline)
-async function cacheFirstStrategy(request) {
+// BACKGROUND UPDATE
+async function updateCacheInBackground(url) {
   try {
-    // Primeiro tenta buscar no cache
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      console.log('📱 CACHE: Serving from cache -', request.url);
-      
-      // Atualiza cache em background se estiver online
-      if (navigator.onLine) {
-        backgroundUpdate(request);
-      }
-      
-      return cachedResponse;
-    }
-
-    // Se não tem cache, busca na rede e armazena
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(API_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
-      console.log('🌐 NETWORK: Cached new data -', request.url);
-    }
-    return networkResponse;
-    
-  } catch (error) {
-    console.log('❌ OFFLINE: Request failed -', request.url);
-    
-    // Retorna erro JSON amigável
-    return new Response(JSON.stringify({
-      error: 'offline',
-      message: 'Esta funcionalidade requer conexão com a internet.'
-    }), {
-      status: 503,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
-
-// NETWORK-FIRST: Prioriza rede com fallback para cache
-async function networkFirstStrategy(request) {
-  try {
-    const networkResponse = await fetch(request);
-    
-    // Cache response se for sucesso
-    if (networkResponse.ok) {
-      const cache = await caches.open(API_CACHE_NAME);
-      cache.put(request, networkResponse.clone());
-    }
-    
-    return networkResponse;
-    
-  } catch (error) {
-    // Fallback para cache se disponível
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      console.log('🔄 FALLBACK: Using cached version -', request.url);
-      return cachedResponse;
-    }
-    
-    // Se não tem cache, retorna erro
-    return new Response('Offline', { status: 503 });
-  }
-}
-
-// NETWORK-ONLY: Sempre da rede (para admin)
-async function networkOnlyStrategy(request) {
-  return fetch(request);
-}
-
-// Atualização em background
-async function backgroundUpdate(request) {
-  try {
-    const response = await fetch(request);
+    const response = await fetch(url);
     if (response.ok) {
-      const cache = await caches.open(API_CACHE_NAME);
-      await cache.put(request, response.clone());
-      console.log('🔄 BACKGROUND: Updated cache -', request.url);
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(url, response.clone());
+      console.log('🔄 SW: Background cache updated');
     }
   } catch (error) {
-    // Silenciosamente ignora erros de background update
+    // Silent fail para background update
   }
 }
 
-// Message handler para cache dinâmico
+// PÁGINA OFFLINE básica
+function getOfflinePage() {
+  const offlineHTML = `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>EasyX - Offline</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: linear-gradient(135deg, #006134, #83b942);
+          color: white;
+          height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 20px;
+        }
+        .offline-container {
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(10px);
+          border-radius: 16px;
+          padding: 40px 30px;
+          max-width: 400px;
+          width: 100%;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .logo { font-size: 48px; margin-bottom: 16px; }
+        h1 { font-size: 24px; margin-bottom: 12px; font-weight: 600; }
+        p { font-size: 16px; margin-bottom: 24px; opacity: 0.9; line-height: 1.4; }
+        .retry-btn {
+          background: #83b942;
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background 0.2s;
+          width: 100%;
+        }
+        .retry-btn:hover { background: #6fa136; }
+        .status { 
+          margin-top: 20px; 
+          font-size: 14px; 
+          opacity: 0.8; 
+        }
+        .spinner {
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top: 2px solid white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          animation: spin 1s linear infinite;
+          display: inline-block;
+          margin-right: 8px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="offline-container">
+        <div class="logo">🌱</div>
+        <h1>EasyX MicroXisto</h1>
+        <p>App funcionando offline.<br>Conecte-se à internet para sincronizar dados.</p>
+        <button class="retry-btn" onclick="location.reload()">
+          🔄 Tentar Reconectar
+        </button>
+        <div class="status" id="status">
+          <div class="spinner"></div>
+          Verificando conexão...
+        </div>
+      </div>
+      
+      <script>
+        // Check connection periodically
+        function checkConnection() {
+          if (navigator.onLine) {
+            document.getElementById('status').innerHTML = '🟢 Online - Recarregando...';
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            document.getElementById('status').innerHTML = '🔴 Offline - Aguardando conexão...';
+          }
+        }
+        
+        setInterval(checkConnection, 2000);
+        checkConnection();
+        
+        window.addEventListener('online', checkConnection);
+        window.addEventListener('offline', checkConnection);
+      </script>
+    </body>
+    </html>
+  `;
+  
+  return new Response(offlineHTML, {
+    headers: { 'Content-Type': 'text/html' }
+  });
+}
+
+// MESSAGE HANDLER - Cache dinâmico
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CACHE_DYNAMIC_DATA') {
-    cacheDynamicData();
+    cacheEssentialData();
   }
 });
 
-// Cache dados dinâmicos (produtos por tecnologia, concorrentes)
-async function cacheDynamicData() {
+// CACHE dados essenciais
+async function cacheEssentialData() {
+  console.log('🔄 SW: Starting essential data cache...');
+  
   try {
-    console.log('🔄 Starting dynamic data caching...');
-    const cache = await caches.open(API_CACHE_NAME);
+    const cache = await caches.open(CACHE_NAME);
+    const urlsToCache = [
+      '/api/technologies',
+      '/api/competitors/companies',
+      '/api/home'
+    ];
     
-    // Cache tecnologias
-    const techResponse = await fetch('/api/technologies');
-    if (techResponse.ok) {
-      await cache.put('/api/technologies', techResponse.clone());
-      const technologies = await techResponse.json();
-      
-      // Cache produtos de cada tecnologia
-      for (const tech of technologies) {
-        try {
-          const productsUrl = `/api/technologies/${tech.id}/products`;
-          const productsResponse = await fetch(productsUrl);
-          if (productsResponse.ok) {
-            await cache.put(productsUrl, productsResponse.clone());
-            console.log(`📦 Cached: ${tech.name} products`);
-          }
-        } catch (err) {
-          console.log(`❌ Failed to cache: ${tech.name} products`);
+    for (const url of urlsToCache) {
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          await cache.put(url, response.clone());
+          console.log(`✅ SW: Cached ${url}`);
         }
+      } catch (err) {
+        console.log(`❌ SW: Failed to cache ${url}`);
       }
     }
     
-    // Cache empresas concorrentes
-    const companiesResponse = await fetch('/api/competitors/companies');
-    if (companiesResponse.ok) {
-      await cache.put('/api/competitors/companies', companiesResponse.clone());
-      const companies = await companiesResponse.json();
-      
-      // Cache produtos das principais empresas
-      const mainCompanies = companies.slice(0, 10); // Top 10
-      for (const company of mainCompanies) {
-        try {
-          const companyProductsUrl = `/api/competitors/companies/${encodeURIComponent(company.company)}/products`;
-          const companyResponse = await fetch(companyProductsUrl);
-          if (companyResponse.ok) {
-            await cache.put(companyProductsUrl, companyResponse.clone());
-            console.log(`📦 Cached: ${company.company} products`);
+    // Cache produtos das tecnologias
+    try {
+      const techResponse = await fetch('/api/technologies');
+      if (techResponse.ok) {
+        const technologies = await techResponse.json();
+        
+        for (const tech of technologies.slice(0, 5)) { // Primeiras 5
+          try {
+            const productsUrl = `/api/technologies/${tech.id}/products`;
+            const productsResponse = await fetch(productsUrl);
+            if (productsResponse.ok) {
+              await cache.put(productsUrl, productsResponse.clone());
+              console.log(`✅ SW: Cached products for ${tech.name}`);
+            }
+          } catch (err) {
+            console.log(`❌ SW: Failed to cache products for ${tech.name}`);
           }
-        } catch (err) {
-          console.log(`❌ Failed to cache: ${company.company} products`);
         }
       }
+    } catch (err) {
+      console.log('❌ SW: Failed to cache technology products');
     }
     
-    // Cache home content
-    const homeResponse = await fetch('/api/home');
-    if (homeResponse.ok) {
-      await cache.put('/api/home', homeResponse.clone());
-    }
-    
-    console.log('✅ Dynamic data caching completed!');
+    console.log('✅ SW: Essential data caching completed');
     
   } catch (error) {
-    console.log('❌ Dynamic caching failed:', error);
+    console.log('❌ SW: Essential data caching failed:', error);
   }
 }
