@@ -1,9 +1,10 @@
 const CACHE_NAME = 'easyx-v4';
 const API_CACHE_NAME = 'easyx-api-v4';
 
-// URLs para cache estático
+// URLs para cache estático ESSENCIAIS
 const urlsToCache = [
   '/',
+  '/index.html',
   '/static/js/bundle.js',
   '/static/css/main.css',
   '/manifest.json',
