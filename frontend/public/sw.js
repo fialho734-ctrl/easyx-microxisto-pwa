@@ -25,11 +25,23 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('📦 Caching static files...');
-        return cache.addAll(urlsToCache);
+        // Cache assets essenciais primeiro
+        return cache.addAll(urlsToCache).catch((error) => {
+          console.error('❌ Error caching static files:', error);
+          // Cache individualmente se falhar em grupo
+          return Promise.all(
+            urlsToCache.map(url => 
+              cache.add(url).catch(err => console.log(`Failed to cache ${url}:`, err))
+            )
+          );
+        });
       })
       .then(() => {
         console.log('✅ Service Worker: Installation complete');
         self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error('❌ Service Worker installation failed:', error);
       })
   );
 });
