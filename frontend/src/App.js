@@ -2562,7 +2562,22 @@ function App() {
                 </div>
               </div>
             )}
-          </div>
+              </div>
+            ) : (
+              <div className="max-w-md mx-auto">
+                <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">🔒 Acesso Restrito</h3>
+                  <p className="text-gray-600 mb-6">Para acessar o comparativo de produtos, você precisa estar logado.</p>
+                  <button 
+                    onClick={() => setCurrentPage('login')}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Fazer Login
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {currentPage === 'admin' && isAdmin && (
