@@ -1,0 +1,41 @@
+{
+  "name": "easyx-microxisto",
+  "version": 2,
+  "buildCommand": "cd frontend && yarn build",
+  "outputDirectory": "frontend/build", 
+  "framework": "create-react-app",
+  "regions": ["gru1"],
+  "functions": {
+    "frontend/build/static/**": {
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control", 
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
+  ]
+}
