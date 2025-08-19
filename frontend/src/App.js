@@ -2299,10 +2299,12 @@ function App() {
         )}
 
         {currentPage === 'technologies' && (
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Tecnologias MicroXisto</h2>
-            
-            <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
+          <>
+            {isLoggedIn ? (
+              <div className="max-w-6xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Tecnologias MicroXisto</h2>
+                
+                <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2">Selecione a Tecnologia</label>
