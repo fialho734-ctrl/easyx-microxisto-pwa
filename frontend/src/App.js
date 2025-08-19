@@ -49,6 +49,17 @@ const InstallPWAButton = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    // Trigger cache dinâmico após carregamento
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        // Aguarda 3 segundos para não atrapalhar carregamento inicial
+        setTimeout(() => {
+          registration.active.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
+          console.log('🔄 Iniciando cache offline dos dados essenciais...');
+        }, 3000);
+      });
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
