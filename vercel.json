@@ -2,7 +2,7 @@
   "name": "easyx-microxisto",
   "version": 2,
   "buildCommand": "cd frontend && yarn build",
-  "outputDirectory": "frontend/build",
+  "outputDirectory": "frontend/build", 
   "framework": "create-react-app",
   "regions": ["gru1"],
   "functions": {
@@ -14,10 +14,6 @@
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "https://your-backend-api.vercel.app/api/$1"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -27,7 +23,7 @@
       "source": "/sw.js",
       "headers": [
         {
-          "key": "Cache-Control",
+          "key": "Cache-Control", 
           "value": "public, max-age=0, must-revalidate"
         }
       ]
