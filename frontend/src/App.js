@@ -2521,12 +2521,20 @@ function App() {
                     <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
                     <p className="text-gray-600 text-sm" translate="no">{comparisonData.microxisto.additives}</p>
                     
-                    {/* Descrição do produto MicroXisto - SEMPRE MOSTRA */}
-                    <div className="mt-4 pt-3 border-t border-green-200">
-                      <h6 className="font-semibold text-green-800 mb-2">Descrição</h6>
-                      <p className="text-gray-600 text-sm" translate="no">
-                        {comparisonData.microxisto.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
+                    {/* Descrição do produto MicroXisto - FORÇA SEMPRE APARECER */}
+                    <div className="mt-4 pt-3 border-t border-green-200" style={{display: 'block !important', visibility: 'visible !important'}}>
+                      <h6 className="font-semibold text-green-800 mb-2" style={{display: 'block !important'}}>
+                        📝 Descrição
+                      </h6>
+                      <p className="text-gray-600 text-sm bg-yellow-100 p-2 rounded" translate="no" style={{display: 'block !important'}}>
+                        {comparisonData.microxisto.description || 'TEXTO PADRÃO: Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
                       </p>
+                      
+                      {/* DEBUG VISUAL TEMPORÁRIO */}
+                      <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-xs">
+                        🔍 DEBUG: Esta seção DEVE aparecer sempre. Se não vê isso, há problema de cache.
+                        <br />Descrição: {comparisonData.microxisto.description ? 'SIM' : 'NÃO (usando padrão)'}
+                      </div>
                     </div>
                   </div>
                 </div>
