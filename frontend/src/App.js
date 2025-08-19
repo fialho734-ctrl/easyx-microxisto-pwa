@@ -2426,8 +2426,10 @@ function App() {
         )}
 
         {currentPage === 'comparison' && (
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Comparativo de Concorrentes</h2>
+          <>
+            {isLoggedIn ? (
+              <div className="max-w-6xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Comparativo de Concorrentes</h2>
             
             <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
