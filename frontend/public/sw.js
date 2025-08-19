@@ -51,7 +51,7 @@ self.addEventListener('install', (event) => {
     ])
     .then(() => {
       console.log('✅ Service Worker: Installation complete');
-      self.skipWaiting(); // Force activate immediately
+      self.skipWaiting();
     })
   );
 });
@@ -71,34 +71,32 @@ self.addEventListener('activate', (event) => {
       );
     }).then(() => {
       console.log('✅ Service Worker: Activated');
-      return self.clients.claim(); // Take control immediately
+      return self.clients.claim();
     })
   );
 });
 
-// Interceptar requisições - ESTRATÉGIA INTELIGENTE
+// Interceptar requisições
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  
   // OFFLINE-FIRST para funcionalidades core
   if (isCoreAPI(event.request)) {
     event.respondWith(cacheFirstStrategy(event.request));
   }
   // NETWORK-FIRST para admin e materiais
-  else if (isAdminAPI(event.request) || isMaterialsLink(event.request)) {
+  else if (isAdminAPI(event.request)) {
     event.respondWith(networkFirstStrategy(event.request));
   }
   // CACHE-FIRST para assets estáticos
   else if (isStaticAsset(event.request)) {
     event.respondWith(cacheFirstStrategy(event.request));
   }
-  // DEFAULT: Network-first com fallback
+  // DEFAULT: Network-first
   else {
     event.respondWith(networkFirstStrategy(event.request));
   }
 });
 
-// Verificar se é API essencial (DEVE funcionar offline)
+// Verificar se é API essencial
 function isCoreAPI(request) {
   const url = new URL(request.url);
   return url.pathname.startsWith('/api/technologies') ||
@@ -107,19 +105,11 @@ function isCoreAPI(request) {
          url.pathname === '/api/home';
 }
 
-// Verificar se é API administrativa (precisa estar online)
+// Verificar se é API administrativa
 function isAdminAPI(request) {
   const url = new URL(request.url);
   return url.pathname.startsWith('/api/admin') ||
          url.pathname.startsWith('/api/auth');
-}
-
-// Verificar se é link de materiais (precisa estar online)
-function isMaterialsLink(request) {
-  const url = new URL(request.url);
-  return url.hostname.includes('drive.google.com') ||
-         url.hostname.includes('dropbox.com') ||
-         url.pathname.includes('materials');
 }
 
 // Verificar se é asset estático
@@ -129,59 +119,42 @@ function isStaticAsset(request) {
          url.pathname.endsWith('.js') ||
          url.pathname.endsWith('.css') ||
          url.pathname.endsWith('.png') ||
-         url.pathname.endsWith('.jpg') ||
          url.pathname.endsWith('.ico');
 }
 
-// ESTRATÉGIA CACHE-FIRST (Para funcionalidades offline)
+// ESTRATÉGIA CACHE-FIRST
 async function cacheFirstStrategy(request) {
   try {
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       console.log('📱 OFFLINE: Serving from cache -', request.url);
-      
-      // Background sync - atualiza cache silenciosamente quando online
-      if (navigator.onLine && isCoreAPI(request)) {
-        backgroundSync(request);
-      }
-      
       return cachedResponse;
     }
 
-    // Se não está em cache, buscar na rede
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
       const cache = await caches.open(API_CACHE_NAME);
       cache.put(request, networkResponse.clone());
-      console.log('🌐 ONLINE: Cached new data -', request.url);
     }
     return networkResponse;
     
   } catch (error) {
     console.log('❌ OFFLINE: Failed to serve -', request.url);
-    
-    // Fallback para API essenciais offline
-    if (isCoreAPI(request)) {
-      return new Response(JSON.stringify({
-        error: 'offline',
-        message: 'Dados em cache não disponíveis. Conecte-se à internet para atualizar.'
-      }), {
-        status: 503,
-        statusText: 'Service Unavailable (Offline)',
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    throw error;
+    return new Response(JSON.stringify({
+      error: 'offline',
+      message: 'Conecte-se à internet para carregar os dados.'
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
-// ESTRATÉGIA NETWORK-FIRST (Para funcionalidades que precisam estar online)
+// ESTRATÉGIA NETWORK-FIRST
 async function networkFirstStrategy(request) {
   try {
     const networkResponse = await fetch(request);
     
-    // Cache apenas se for sucesso e não for admin
     if (networkResponse.ok && !isAdminAPI(request)) {
       const cache = await caches.open(API_CACHE_NAME);
       cache.put(request, networkResponse.clone());
@@ -190,7 +163,6 @@ async function networkFirstStrategy(request) {
     return networkResponse;
     
   } catch (error) {
-    // Fallback para cache se disponível
     const cachedResponse = await caches.match(request);
     if (cachedResponse) {
       console.log('🔄 FALLBACK: Serving cached version -', request.url);
@@ -198,78 +170,6 @@ async function networkFirstStrategy(request) {
     }
     
     throw error;
-  }
-}
-
-// Background sync para atualizar dados silenciosamente
-async function backgroundSync(request) {
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(API_CACHE_NAME);
-      await cache.put(request, response.clone());
-      console.log('🔄 SYNC: Updated cache in background -', request.url);
-    }
-  } catch (error) {
-    console.log('⚠️ SYNC: Background update failed -', request.url);
-  }
-}
-
-// Cache inicial de dados dinâmicos
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'CACHE_DYNAMIC_DATA') {
-    cacheDynamicData();
-  }
-});
-
-// Função para cachear dados dinâmicos (produtos por tecnologia, etc)
-async function cacheDynamicData() {
-  try {
-    const cache = await caches.open(API_CACHE_NAME);
-    
-    // Buscar todas as tecnologias
-    const techResponse = await fetch('/api/technologies');
-    if (techResponse.ok) {
-      const technologies = await techResponse.json();
-      
-      // Cachear produtos de cada tecnologia
-      for (const tech of technologies) {
-        try {
-          const productsUrl = `/api/technologies/${tech.id}/products`;
-          const productsResponse = await fetch(productsUrl);
-          if (productsResponse.ok) {
-            await cache.put(productsUrl, productsResponse.clone());
-            console.log(`📦 Cached products for ${tech.name}`);
-          }
-        } catch (err) {
-          console.log(`Failed to cache products for ${tech.name}:`, err);
-        }
-      }
-    }
-    
-    // Cachear produtos de empresas concorrentes (principais)
-    const companiesResponse = await fetch('/api/competitors/companies');
-    if (companiesResponse.ok) {
-      const companies = await companiesResponse.json();
-      
-      // Cachear produtos das 5 principais empresas
-      for (const company of companies.slice(0, 5)) {
-        try {
-          const companyProductsUrl = `/api/competitors/companies/${encodeURIComponent(company.company)}/products`;
-          const companyProductsResponse = await fetch(companyProductsUrl);
-          if (companyProductsResponse.ok) {
-            await cache.put(companyProductsUrl, companyProductsResponse.clone());
-            console.log(`📦 Cached competitor products for ${company.company}`);
-          }
-        } catch (err) {
-          console.log(`Failed to cache products for ${company.company}:`, err);
-        }
-      }
-    }
-    
-    console.log('✅ Dynamic data caching completed');
-  } catch (error) {
-    console.log('❌ Dynamic data caching failed:', error);
   }
 }
     Promise.all([
