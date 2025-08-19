@@ -50,7 +50,7 @@
         
         <!-- Service Worker Simples -->
         <script>
-            // FORÇAR ATUALIZAÇÃO NO MOBILE
+            // FORÇAR NOVA VERSÃO DO SERVICE WORKER
             if ('serviceWorker' in navigator) {
                 // Desregistrar workers antigos
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -63,7 +63,7 @@
                 if ('caches' in window) {
                     caches.keys().then(function(names) {
                         names.forEach(function(name) {
-                            if (name.includes('easyx-v1') || name.includes('easyx-v2')) {
+                            if (name.includes('easyx-v') && !name.includes('v5')) {
                                 caches.delete(name);
                             }
                         });
@@ -72,19 +72,35 @@
                 
                 // Registrar novo service worker
                 window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js?v=3&t=' + Date.now())
+                    navigator.serviceWorker.register('/sw.js?v=5&t=' + Date.now())
                         .then(function(registration) {
-                            console.log('SW atualizado:', registration);
+                            console.log('✅ SW v5 registered:', registration);
+                            
+                            // Aguardar ativação e então cachear dados
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'activated') {
+                                        // Cachear dados essenciais imediatamente
+                                        setTimeout(() => {
+                                            newWorker.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
+                                        }, 1000);
+                                    }
+                                });
+                            });
+                        })
+                        .catch(function(error) {
+                            console.log('❌ SW registration failed:', error);
                         });
                 });
             }
             
-            // Forçar reload uma vez para limpar cache
-            if (!sessionStorage.getItem('force-updated-v3')) {
-                sessionStorage.setItem('force-updated-v3', 'true');
+            // Forçar reload uma vez para aplicar nova versão
+            if (!sessionStorage.getItem('sw-v5-loaded')) {
+                sessionStorage.setItem('sw-v5-loaded', 'true');
                 setTimeout(function() {
                     window.location.reload(true);
-                }, 1000);
+                }, 2000);
             }
         </script>
     </body>
