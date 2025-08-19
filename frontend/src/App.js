@@ -2483,6 +2483,37 @@ function App() {
               <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
                 <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">Comparação de Produtos</h3>
                 
+                {/* EXEMPLO DE TESTE - SEMPRE MOSTRAR UMA COMPARAÇÃO */}
+                {!comparisonData && (
+                  <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
+                    <p className="text-yellow-700 text-sm">🧪 <strong>TESTE:</strong> Exemplo de comparação para verificar a descrição</p>
+                    <button 
+                      onClick={() => setComparisonData({
+                        competitor: {
+                          company: "ICL",
+                          product: "Kelmax",
+                          density: 1.45,
+                          nature: "líquido",
+                          composition: {N: 0, P: 159.5, K: 0, Ca: 0, Mg: 0, S: 0},
+                          additives: "33,4% Extratos de Algas"
+                        },
+                        microxisto: {
+                          name: "CitroX",
+                          technology: "AquaX",
+                          density: 1.04,
+                          nature: "Líquido",
+                          composition: {N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0},
+                          additives: "D'Limoneno",
+                          description: "Blend de Emulsificantes, Surfactantes e tensoativos. Emulsifica calda, diminui fitotoxidez e reduz perdas"
+                        }
+                      })}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600"
+                    >
+                      Testar Descrição
+                    </button>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
                   <div className="text-center">
                     <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
