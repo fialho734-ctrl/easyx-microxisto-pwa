@@ -72,7 +72,7 @@ const InstallPWAButton = () => {
   if (!showInstallButton) return null;
 
   return (
-    <div className="fixed bottom-28 right-4 z-40">
+    <div className="fixed bottom-4 right-4 z-50">
       <button
         onClick={handleInstallClick}
         className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 text-sm flex items-center space-x-2"
