@@ -1,0 +1,26 @@
+{
+  "name": "easyx-microxisto",
+  "version": "1.0.0",
+  "description": "Sistema PWA de consulta e comparação de produtos MicroXisto",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && yarn start",
+    "build": "cd frontend && yarn build",
+    "preview": "cd frontend && yarn build && serve -s build",
+    "backend": "cd backend && python server.py"
+  },
+  "keywords": [
+    "pwa",
+    "microxisto",
+    "agricultura",
+    "fertilizantes",
+    "react",
+    "fastapi"
+  ],
+  "author": "MicroXisto Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16",
+    "yarn": ">=1.22"
+  }
+}
