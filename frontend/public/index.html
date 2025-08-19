@@ -84,23 +84,41 @@
         
         <!-- Service Worker Simples -->
         <script>
-            // Limpar cache antigo apenas uma vez
-            if ('caches' in window && !sessionStorage.getItem('cache-cleared-v2')) {
-                caches.keys().then(function(names) {
-                    names.forEach(function(name) {
-                        if (name.includes('easyx-v1')) {
-                            caches.delete(name);
-                        }
-                    });
+            // FORÇAR ATUALIZAÇÃO NO MOBILE
+            if ('serviceWorker' in navigator) {
+                // Desregistrar workers antigos
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
                 });
-                sessionStorage.setItem('cache-cleared-v2', 'true');
+                
+                // Limpar cache antigo
+                if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                        names.forEach(function(name) {
+                            if (name.includes('easyx-v1') || name.includes('easyx-v2')) {
+                                caches.delete(name);
+                            }
+                        });
+                    });
+                }
+                
+                // Registrar novo service worker
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js?v=3&t=' + Date.now())
+                        .then(function(registration) {
+                            console.log('SW atualizado:', registration);
+                        });
+                });
             }
             
-            // Service Worker
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js');
-                });
+            // Forçar reload uma vez para limpar cache
+            if (!sessionStorage.getItem('force-updated-v3')) {
+                sessionStorage.setItem('force-updated-v3', 'true');
+                setTimeout(function() {
+                    window.location.reload(true);
+                }, 1000);
             }
         </script>
     </body>
