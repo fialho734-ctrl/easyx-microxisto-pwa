@@ -2521,13 +2521,13 @@ function App() {
                     <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
                     <p className="text-gray-600 text-sm" translate="no">{comparisonData.microxisto.additives}</p>
                     
-                    {/* Descrição do produto MicroXisto */}
-                    {comparisonData.microxisto.description && (
-                      <div className="mt-4 pt-3 border-t border-green-200">
-                        <h6 className="font-semibold text-green-800 mb-2">Descrição</h6>
-                        <p className="text-gray-600 text-sm" translate="no">{comparisonData.microxisto.description}</p>
-                      </div>
-                    )}
+                    {/* Descrição do produto MicroXisto - SEMPRE MOSTRA */}
+                    <div className="mt-4 pt-3 border-t border-green-200">
+                      <h6 className="font-semibold text-green-800 mb-2">Descrição</h6>
+                      <p className="text-gray-600 text-sm" translate="no">
+                        {comparisonData.microxisto.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
