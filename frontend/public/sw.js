@@ -70,8 +70,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
+  // HTML principal - SEMPRE cache first para funcionar offline
+  if (event.request.mode === 'navigate' || 
+      url.pathname === '/' || 
+      url.pathname === '/index.html') {
+    event.respondWith(htmlCacheStrategy(event.request));
+  }
   // APIs essenciais (OFFLINE-FIRST)
-  if (isCoreAPI(url)) {
+  else if (isCoreAPI(url)) {
     event.respondWith(cacheFirstStrategy(event.request));
   }
   // APIs administrativas (NETWORK-ONLY)
@@ -87,6 +93,73 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(networkFirstStrategy(event.request));
   }
 });
+
+// Estratégia especial para HTML - GARANTIR funcionamento offline
+async function htmlCacheStrategy(request) {
+  try {
+    // Primeiro tenta cache
+    const cachedResponse = await caches.match('/');
+    if (cachedResponse) {
+      console.log('📱 OFFLINE: Serving HTML from cache');
+      return cachedResponse;
+    }
+    
+    // Se não tem cache, tenta rede
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put('/', networkResponse.clone());
+      cache.put('/index.html', networkResponse.clone());
+      return networkResponse;
+    }
+    
+    throw new Error('Network failed');
+    
+  } catch (error) {
+    // Fallback: tenta qualquer versão em cache
+    const cachedResponse = await caches.match('/') || await caches.match('/index.html');
+    if (cachedResponse) {
+      console.log('🔄 OFFLINE: Using fallback HTML cache');
+      return cachedResponse;
+    }
+    
+    // Último recurso: página offline básica
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>EasyX - Offline</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body { 
+            font-family: system-ui; 
+            text-align: center; 
+            padding: 50px; 
+            background: #f3f4f6; 
+          }
+          .offline-msg { 
+            background: #fee; 
+            border: 2px solid #f87171; 
+            border-radius: 8px; 
+            padding: 20px; 
+            max-width: 400px; 
+            margin: 0 auto; 
+          }
+        </style>
+      </head>
+      <body>
+        <div class="offline-msg">
+          <h1>📱 EasyX</h1>
+          <p>App está offline. Conecte-se à internet para carregar.</p>
+          <button onclick="window.location.reload()">🔄 Tentar Novamente</button>
+        </div>
+      </body>
+      </html>
+    `, {
+      headers: { 'Content-Type': 'text/html' }
+    });
+  }
+}
 
 // Verificar se é API essencial (deve funcionar offline)
 function isCoreAPI(url) {
