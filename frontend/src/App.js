@@ -33,8 +33,24 @@ const OfflineIndicator = () => {
 const InstallPWAButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // Detectar iOS
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
+                              window.navigator.standalone === true;
+    
+    setIsIOS(isIOSDevice);
+    
+    // Se é iOS e não está instalado, mostra instruções
+    if (isIOSDevice && !isInStandaloneMode) {
+      setShowIOSInstructions(true);
+    }
+
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -42,8 +58,9 @@ const InstallPWAButton = () => {
     };
 
     const handleAppInstalled = () => {
-      setDeferredPrompt(null);
       setShowInstallButton(false);
+      setShowIOSInstructions(false);
+      setDeferredPrompt(null);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -67,32 +84,113 @@ const InstallPWAButton = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      console.log('PWA instalado pelo usuário');
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`PWA install result: ${outcome}`);
+      setDeferredPrompt(null);
+      setShowInstallButton(false);
     }
-    
-    setDeferredPrompt(null);
-    setShowInstallButton(false);
   };
 
-  if (!showInstallButton) return null;
+  const handleIOSInstallClick = () => {
+    setShowIOSInstructions(!showIOSInstructions);
+  };
 
-  return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <button
-        onClick={handleInstallClick}
-        className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 text-sm flex items-center space-x-2"
-      >
-        <span>📱</span>
-        <span>Instalar App</span>
-      </button>
-    </div>
-  );
+  // Botão Android/Chrome (automático)
+  if (showInstallButton && !isIOS) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={handleInstallClick}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 text-sm flex items-center space-x-2"
+        >
+          <span>📱</span>
+          <span>Instalar App</span>
+        </button>
+      </div>
+    );
+  }
+
+  // Botão iOS (manual com instruções)
+  if (showIOSInstructions && isIOS) {
+    return (
+      <>
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={handleIOSInstallClick}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 text-sm flex items-center space-x-2"
+          >
+            <span>🍎</span>
+            <span>Instalar iOS</span>
+          </button>
+        </div>
+        
+        {showIOSInstructions && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">📱 Instalar no iPhone</h3>
+                <p className="text-sm text-gray-600">Para usar como app nativo:</p>
+              </div>
+              
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <span className="text-blue-600 font-bold">1</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Toque no botão Compartilhar</p>
+                    <p className="text-gray-500">📤 Na barra inferior do Safari</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <span className="text-blue-600 font-bold">2</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Role para baixo</p>
+                    <p className="text-gray-500">Encontre "Adicionar à Tela de Início"</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <span className="text-blue-600 font-bold">3</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Toque "Adicionar"</p>
+                    <p className="text-gray-500">O EasyX aparecerá na sua tela inicial!</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex space-x-3">
+                <button
+                  onClick={() => setShowIOSInstructions(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    setShowIOSInstructions(false);
+                    alert('Use o botão Compartilhar 📤 do Safari para instalar!');
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                >
+                  Entendi
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  return null;
 };
 
 // Admin Components
