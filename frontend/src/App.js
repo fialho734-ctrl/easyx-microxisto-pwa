@@ -2326,6 +2326,12 @@ function App() {
                   Tecnologias
                 </button>
                 <button
+                  onClick={() => setCurrentPage('cultures')}
+                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'cultures' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
+                >
+                  🌾 Culturas
+                </button>
+                <button
                   onClick={() => setCurrentPage('comparison')}
                   className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'comparison' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
                 >
