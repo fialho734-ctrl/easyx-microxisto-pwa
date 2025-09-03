@@ -331,6 +331,34 @@ async def initialize_default_data():
             "text": "Bem-vindo ao sistema MicroXisto! Explore nossas tecnologias avançadas em nutrição vegetal.",
             "pdf_url": None
         })
+    
+    # Initialize cultures - NOVA FUNCIONALIDADE
+    cultures_exist = await db.cultures.count_documents({})
+    if cultures_exist == 0:
+        cultures = [
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Soja",
+                "image": "https://i.imgur.com/soybean-icon.png",  # Você pode substituir por URLs reais
+                "link": "https://drive.google.com/drive/folders/soja-microxisto",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Milho", 
+                "image": "https://i.imgur.com/corn-icon.png",
+                "link": "https://drive.google.com/drive/folders/milho-microxisto",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Algodão",
+                "image": "https://i.imgur.com/cotton-icon.png",
+                "link": "https://drive.google.com/drive/folders/algodao-microxisto",
+                "created_at": datetime.utcnow()
+            }
+        ]
+        await db.cultures.insert_many(cultures)
 
 # Routes
 @app.post("/api/auth/register")
