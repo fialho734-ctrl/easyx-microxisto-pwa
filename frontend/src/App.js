@@ -46,9 +46,12 @@ const InstallPWAButton = () => {
     
     setIsIOS(isIOSDevice);
     
-    // Se é iOS e não está instalado, mostra instruções
+    // Se é iOS e não está instalado, mostra instruções APENAS depois de um tempo
     if (isIOSDevice && !isInStandaloneMode) {
-      setShowIOSInstructions(true);
+      // Aguarda 5 segundos para não interferir com autenticação
+      setTimeout(() => {
+        setShowIOSInstructions(true);
+      }, 5000);
     }
 
     const handleBeforeInstallPrompt = (e) => {
@@ -71,7 +74,7 @@ const InstallPWAButton = () => {
       navigator.serviceWorker.ready.then((registration) => {
         // Aguarda 3 segundos para não atrapalhar carregamento inicial
         setTimeout(() => {
-          registration.active.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
+          registration.active?.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
           console.log('🔄 Iniciando cache offline dos dados essenciais...');
         }, 3000);
       });
