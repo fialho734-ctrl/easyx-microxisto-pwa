@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#006134" />
+        <meta name="description" content="EasyX - Sistema de consulta MicroXisto" />
+        <meta name="google" content="notranslate" />
+        <meta name="translate" content="no" />
+        <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+        <link rel="apple-touch-icon" href="https://customer-assets.emergentagent.com/job_product-compass-2/artifacts/anyq4exi_folha.png" />
+        <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="EasyX" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <title>EasyX - MicroXisto</title>
+        <style>
+            /* Reset e controle de overflow */
+            * {
+                box-sizing: border-box;
+            }
+            
+            html, body {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                overflow-x: hidden;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
+            
+            body {
+                background-color: #f3f4f6;
+            }
+            
+            #root {
+                height: 100vh;
+                overflow-y: auto;
+            }
+            
+            /* Esconder elementos desnecessários */
+            script, noscript {
+                display: none !important;
+            }
+        </style>
+    </head>
+    <body>
+        <noscript>Você precisa habilitar JavaScript para usar este app.</noscript>
+        <div id="root"></div>
+        
+        <!-- Service Worker SIMPLES V6 -->
+        <script>
+            console.log('🚀 Loading Service Worker v6...');
+            
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    // Limpar tudo primeiro
+                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                        registrations.forEach(function(registration) {
+                            registration.unregister();
+                        });
+                        
+                        // Registrar novo SW após limpar
+                        setTimeout(function() {
+                            navigator.serviceWorker.register('/sw.js?v=6')
+                                .then(function(registration) {
+                                    console.log('✅ SW v6 registered successfully');
+                                    
+                                    // Aguardar ativação
+                                    if (registration.active) {
+                                        // Cachear dados essenciais após 3 segundos
+                                        setTimeout(function() {
+                                            registration.active.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
+                                            console.log('📦 Starting essential data cache...');
+                                        }, 3000);
+                                    }
+                                    
+                                    registration.addEventListener('updatefound', function() {
+                                        const newWorker = registration.installing;
+                                        newWorker.addEventListener('statechange', function() {
+                                            if (newWorker.state === 'activated') {
+                                                setTimeout(function() {
+                                                    newWorker.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
+                                                }, 1000);
+                                            }
+                                        });
+                                    });
+                                })
+                                .catch(function(error) {
+                                    console.error('❌ SW registration failed:', error);
+                                });
+                        }, 500);
+                    });
+                });
+            }
+        </script>
+    </body>
+</html>
