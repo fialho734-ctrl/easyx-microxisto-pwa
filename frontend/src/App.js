@@ -1924,6 +1924,7 @@ function App() {
     fetchTechnologies();
     fetchHomeContent();
     fetchCompetitorCompanies();
+    fetchCultures(); // NOVA FUNCIONALIDADE
     checkAuthStatus();
   }, []);
 
