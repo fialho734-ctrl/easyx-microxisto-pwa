@@ -1967,6 +1967,19 @@ function App() {
     }
   };
 
+  // Fetch cultures - NOVA FUNCIONALIDADE
+  const fetchCultures = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/cultures`);
+      if (response.ok) {
+        const data = await response.json();
+        setCultures(data);
+      }
+    } catch (error) {
+      console.error('Error fetching cultures:', error);
+    }
+  };
+
   const handleTechChange = async (techId) => {
     setSelectedTech(techId);
     setSelectedProduct('');
