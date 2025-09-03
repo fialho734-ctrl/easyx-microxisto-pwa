@@ -2549,6 +2549,66 @@ function App() {
           </>
         )}
 
+        {/* NOVA FUNCIONALIDADE - CULTURAS */}
+        {currentPage === 'cultures' && (
+          <>
+            {isLoggedIn ? (
+              <div className="max-w-6xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">🌾 Culturas MicroXisto</h2>
+                
+                {cultures.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    {cultures.map(culture => (
+                      <div key={culture.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                        <div className="p-6 text-center">
+                          <div className="mb-4">
+                            <img 
+                              src={culture.image} 
+                              alt={culture.name}
+                              className="w-20 h-20 mx-auto rounded-full object-cover border-4 border-green-100"
+                              onError={(e) => {
+                                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiByeD0iNDAiIGZpbGw9IiM4M0I5NDIiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMzAiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj7wn4y+PC90ZXh0Pgo8L3N2Zz4K';
+                              }}
+                            />
+                          </div>
+                          <h3 className="text-xl font-bold text-gray-800 mb-4">{culture.name}</h3>
+                          <a
+                            href={culture.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-semibold"
+                          >
+                            📁 Acessar Materiais
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                    <div className="text-6xl mb-4">🌱</div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">Nenhuma cultura disponível</h3>
+                    <p className="text-gray-500">Em breve, novas culturas serão adicionadas ao sistema.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="max-w-md mx-auto">
+                <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">🔒 Acesso Restrito</h3>
+                  <p className="text-gray-600 mb-6">Para acessar as culturas MicroXisto, você precisa estar logado.</p>
+                  <button 
+                    onClick={() => setCurrentPage('login')}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Fazer Login
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {currentPage === 'comparison' && (
           <>
             {isLoggedIn ? (
