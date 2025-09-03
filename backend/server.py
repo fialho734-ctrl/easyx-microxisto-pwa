@@ -32,6 +32,15 @@ class Technology(BaseModel):
     logo: str
     description: str
 
+class Culture(BaseModel):
+    id: Optional[str] = None
+    name: str
+    image: str  # URL da figurinha
+    link: str   # Link para pasta de arquivos
+    name: str
+    logo: str
+    description: str
+
 class ProductComposition(BaseModel):
     N: float = 0
     P: float = 0
