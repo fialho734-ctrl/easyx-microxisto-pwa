@@ -1904,6 +1904,9 @@ function App() {
   const [selectedComparisonProduct, setSelectedComparisonProduct] = useState('');
   const [comparisonData, setComparisonData] = useState(null);
 
+  // Cultures states - NOVA FUNCIONALIDADE
+  const [cultures, setCultures] = useState([]);
+
   // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
