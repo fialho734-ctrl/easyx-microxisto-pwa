@@ -2807,6 +2807,12 @@ function App() {
                 >
                   📚 Tutoriais
                 </button>
+                <button
+                  onClick={() => setAdminTab('cultures')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'cultures' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                >
+                  🌾 Culturas
+                </button>
               </div>
             </div>
 
