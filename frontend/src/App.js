@@ -2840,6 +2840,10 @@ function App() {
             {adminTab === 'tutorials' && (
               <AdminTutorials />
             )}
+            
+            {adminTab === 'cultures' && (
+              <CultureManagement token={token} cultures={cultures} fetchCultures={fetchCultures} />
+            )}
           </div>
         )}
       </main>
