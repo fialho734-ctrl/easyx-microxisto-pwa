@@ -379,6 +379,101 @@ async def get_products_by_technology(tech_id: str):
     products = await db.products.find({"technology_id": tech_id}, {"_id": 0}).to_list(None)
     return products
 
+# ==========================================
+# CULTURES APIs - NOVA FUNCIONALIDADE  
+# ==========================================
+
+@app.get("/api/cultures")
+async def get_cultures():
+    """Get all cultures for users"""
+    cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+    return cultures
+
+@app.post("/api/admin/cultures")
+async def create_culture(culture: Culture, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Create new culture (admin only)"""
+    try:
+        # Verify admin token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Create culture with unique ID
+        culture_data = culture.dict()
+        culture_data["id"] = str(uuid.uuid4())
+        culture_data["created_at"] = datetime.utcnow()
+        
+        await db.cultures.insert_one(culture_data)
+        return {"message": "Culture created successfully", "culture": culture_data}
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.put("/api/admin/cultures/{culture_id}")
+async def update_culture(culture_id: str, culture: Culture, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Update culture (admin only)"""
+    try:
+        # Verify admin token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Update culture
+        culture_data = culture.dict()
+        culture_data["updated_at"] = datetime.utcnow()
+        
+        result = await db.cultures.update_one(
+            {"id": culture_id}, 
+            {"$set": culture_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Culture not found")
+        
+        return {"message": "Culture updated successfully"}
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/admin/cultures/{culture_id}")
+async def delete_culture(culture_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete culture (admin only)"""
+    try:
+        # Verify admin token  
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Delete culture
+        result = await db.cultures.delete_one({"id": culture_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Culture not found")
+        
+        return {"message": "Culture deleted successfully"}
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/admin/cultures")
+async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get all cultures for admin management"""
+    try:
+        # Verify admin token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+        return cultures
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ==========================================
+# END CULTURES APIs
+# ==========================================
+
 @app.get("/api/products/{product_id}")
 async def get_product(product_id: str):
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
