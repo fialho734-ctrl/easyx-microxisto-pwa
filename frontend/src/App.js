@@ -2461,7 +2461,7 @@ function App() {
         
         setComparisonData({
           competitor: competitorData,
-          microxisto: microxistoData
+          product: microxistoData
         });
       } catch (error) {
         console.error('Error loading comparison:', error);
