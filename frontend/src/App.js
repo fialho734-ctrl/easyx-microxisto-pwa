@@ -2403,6 +2403,7 @@ function App() {
   const [produtosSelecionados, setProdutosSelecionados] = useState([]);
   const [produtoAtual, setProdutoAtual] = useState({ produto_id: '', dose_lha: 0, valor_litro: 0 });
   const [resumoManejo, setResumoManejo] = useState(null);
+  const [allProducts, setAllProducts] = useState([]); // NOVO: todos os produtos para planejamento
 
 
   // Propósito options - NOVA FUNCIONALIDADE
