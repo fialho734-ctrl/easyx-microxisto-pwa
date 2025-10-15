@@ -2168,6 +2168,8 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [viewMode, setViewMode] = useState('comparison'); // 'comparison' or 'standalone'
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
 
   // Auth states
