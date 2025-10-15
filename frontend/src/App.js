@@ -723,6 +723,23 @@ const ProductManagement = ({ token, technologies }) => {
           </p>
         </div>
 
+        <div className="mb-4">
+          <label className="block text-gray-700 font-semibold mb-2">Propósito (Opcional)</label>
+          <select
+            value={formData.proposito || ''}
+            onChange={(e) => setFormData({...formData, proposito: e.target.value})}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+          >
+            <option value="">Selecione o propósito...</option>
+            {PROPOSITO_OPTIONS.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+          <p className="text-sm text-gray-500 mt-1">
+            Propósito do produto para sugestões automáticas no comparativo
+          </p>
+        </div>
+
         <div className="flex space-x-2">
           <button
             onClick={handleSave}
@@ -738,7 +755,7 @@ const ProductManagement = ({ token, technologies }) => {
                 setFormData({
                   name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
                   composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-                  additives: '', description: '', materials_url: ''
+                  additives: '', description: '', materials_url: '', proposito: ''
                 });
               }}
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
