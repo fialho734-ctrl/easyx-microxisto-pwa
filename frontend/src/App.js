@@ -1737,7 +1737,6 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                       </button>
                     </div>
                   </td>
-                  </td>
                 </tr>
               ))}
             </tbody>
