@@ -3205,6 +3205,32 @@ function App() {
                     </div>
                   </div>
                 </div>
+                  </>
+                ) : (
+                  // Visualização apenas do concorrente
+                  <div>
+                    <div className="text-center mb-6 p-6 bg-gray-50 rounded-lg">
+                      <h4 className="text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
+                      <h5 className="text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
+                      <div className="text-sm text-gray-600 space-y-2">
+                        <p><strong>Densidade:</strong> {comparisonData.competitor.density} g/mL</p>
+                        <p><strong>Natureza:</strong> {comparisonData.competitor.nature}</p>
+                        {comparisonData.competitor.proposito && (
+                          <p className="font-bold text-blue-600 text-base mt-3">🎯 Propósito: {comparisonData.competitor.proposito}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {renderCompositionTable(comparisonData.competitor.composition, `Composição Química`)}
+
+                    {comparisonData.competitor.additives && (
+                      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-semibold text-gray-800 mb-2">Aditivos:</h4>
+                        <p className="text-sm text-gray-600" translate="no">{comparisonData.competitor.additives}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
               </div>
