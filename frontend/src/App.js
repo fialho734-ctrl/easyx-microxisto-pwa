@@ -2390,6 +2390,18 @@ function App() {
   // Cultures states - NOVA FUNCIONALIDADE
   const [cultures, setCultures] = useState([]);
 
+  // Planejamento states
+  const [planejamentos, setPlanejamentos] = useState([]);
+  const [planejamentoForm, setPlanejamentoForm] = useState({
+    cultura: '',
+    colheita_esperada: 0,
+    area_tratada: 0,
+    valor_saca: 0,
+    produtos_selecionados: []
+  });
+  const [calculoResultado, setCalculoResultado] = useState(null);
+
+
   // Propósito options - NOVA FUNCIONALIDADE
   const PROPOSITO_OPTIONS = [
     'Nitrogênio',
