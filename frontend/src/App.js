@@ -3085,13 +3085,50 @@ function App() {
                 </div>
               </div>
               
-              <button
-                onClick={loadComparison}
-                disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
-                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                {loading ? 'Carregando...' : 'Comparar Produtos'}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={loadComparison}
+                  disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  {loading ? 'Carregando...' : 'Comparar Produtos'}
+                </button>
+                
+                {selectedCompetitor && (
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const response = await fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`);
+                        const competitorData = await response.json();
+                        
+                        setComparisonData({
+                          competitor: competitorData,
+                          product: null
+                        });
+
+                        // Buscar sugestões se tiver propósito
+                        if (competitorData.proposito) {
+                          const suggestionsResponse = await fetch(
+                            `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
+                          );
+                          if (suggestionsResponse.ok) {
+                            const suggestions = await suggestionsResponse.json();
+                            setSuggestedProducts(suggestions);
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Error loading competitor:', error);
+                      }
+                      setLoading(false);
+                    }}
+                    disabled={loading}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {loading ? 'Carregando...' : 'Ver Concorrente'}
+                  </button>
+                )}
+              </div>
             </div>
             
             {/* Suggested Products Alert - Shown AFTER comparison */}
