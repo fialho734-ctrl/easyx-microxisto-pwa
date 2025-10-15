@@ -2183,6 +2183,7 @@ function App() {
       const response = await fetch(`${API_BASE}/api/competitors/companies`);
       const data = await response.json();
       setCompanies(data);
+      setFilteredCompanies(data); // Initialize filtered companies
     } catch (error) {
       console.error('Error fetching companies:', error);
     }
