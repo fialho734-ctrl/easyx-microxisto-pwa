@@ -29,6 +29,107 @@ const OfflineIndicator = () => {
   );
 };
 
+// Componente para notificação de atualização disponível
+const UpdateNotification = () => {
+  const [showUpdate, setShowUpdate] = useState(false);
+  const [newVersion, setNewVersion] = useState('');
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      // Escutar mensagens do Service Worker
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'NEW_VERSION_AVAILABLE') {
+          setNewVersion(event.data.version || 'nova versão');
+          setShowUpdate(true);
+          console.log('🔔 Nova versão disponível:', event.data.version);
+        }
+      });
+
+      // Verificar se há uma atualização esperando
+      navigator.serviceWorker.ready.then((registration) => {
+        if (registration.waiting) {
+          setShowUpdate(true);
+          console.log('🔔 Atualização detectada e esperando');
+        }
+
+        // Escutar quando novo SW for instalado
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                setShowUpdate(true);
+                console.log('🔔 Nova versão instalada');
+              }
+            });
+          }
+        });
+      });
+
+      // Verificar por atualizações a cada 30 segundos
+      const intervalId = setInterval(() => {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.update().catch(err => {
+            console.log('Erro ao verificar atualização:', err);
+          });
+        });
+      }, 30000);
+
+      return () => clearInterval(intervalId);
+    }
+  }, []);
+
+  const handleUpdate = () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        if (registration.waiting) {
+          // Forçar o novo SW a ativar
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        // Recarregar a página
+        window.location.reload();
+      });
+    } else {
+      // Fallback: apenas recarregar
+      window.location.reload();
+    }
+  };
+
+  const handleDismiss = () => {
+    setShowUpdate(false);
+  };
+
+  if (!showUpdate) return null;
+
+  return (
+    <div className="fixed top-0 left-0 right-0 bg-green-600 text-white px-4 py-3 shadow-lg z-50 animate-slide-down">
+      <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🎉</span>
+          <div>
+            <p className="font-semibold text-sm md:text-base">Nova versão disponível!</p>
+            <p className="text-xs md:text-sm opacity-90">Atualize para obter os recursos mais recentes.</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleUpdate}
+            className="bg-white text-green-600 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-green-50 transition whitespace-nowrap"
+          >
+            🔄 Atualizar Agora
+          </button>
+          <button
+            onClick={handleDismiss}
+            className="bg-green-700 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-800 transition"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Componente para botão de instalação PWA
 const InstallPWAButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -2963,6 +3064,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Componentes PWA */}
+      <UpdateNotification />
       <OfflineIndicator />
       <InstallPWAButton />
       

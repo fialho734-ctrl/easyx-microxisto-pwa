@@ -266,6 +266,22 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Update Notification Animation */
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.5s ease-out;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .container {

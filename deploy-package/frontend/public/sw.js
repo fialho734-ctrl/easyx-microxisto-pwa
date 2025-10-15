@@ -1,11 +1,12 @@
 // Service Worker SIMPLES E FUNCIONAL para funcionar OFFLINE
-const CACHE_NAME = 'easyx-offline-v6';
+const CACHE_NAME = 'easyx-offline-v7';
+const APP_VERSION = '2.1.0'; // Versão com tabelas de nutrientes e auto-update
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v6...');
+  console.log('🚀 SW: Installing v7 (App v' + APP_VERSION + ')...');
   
-  // Pular waiting imediatamente
+  // Pular waiting imediatamente para atualizar mais rápido
   self.skipWaiting();
   
   event.waitUntil(
@@ -24,6 +25,15 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('✅ SW: Install complete');
+        // Notificar todos os clientes sobre nova versão
+        self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'NEW_VERSION_AVAILABLE',
+              version: APP_VERSION
+            });
+          });
+        });
       })
       .catch(error => {
         console.error('❌ SW: Install failed:', error);
@@ -33,7 +43,7 @@ self.addEventListener('install', (event) => {
 
 // ATIVAR - Limpar cache antigo e assumir controle
 self.addEventListener('activate', (event) => {
-  console.log('⚡ SW: Activating v6...');
+  console.log('⚡ SW: Activating v7 (App v' + APP_VERSION + ')...');
   
   event.waitUntil(
     caches.keys()
@@ -50,6 +60,18 @@ self.addEventListener('activate', (event) => {
       .then(() => {
         console.log('✅ SW: Activated, claiming clients');
         return self.clients.claim();
+      })
+      .then(() => {
+        // Notificar todos os clientes sobre ativação
+        return self.clients.matchAll();
+      })
+      .then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_ACTIVATED',
+            version: APP_VERSION
+          });
+        });
       })
   );
 });
