@@ -1721,13 +1721,22 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <button
-                      onClick={() => deleteCompetitor(competitor.id)}
-                      disabled={loading}
-                      className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
-                    >
-                      Remover
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditCompetitor(competitor)}
+                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCompetitor(competitor.id)}
+                        disabled={loading}
+                        className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  </td>
                   </td>
                 </tr>
               ))}
