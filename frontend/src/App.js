@@ -3406,7 +3406,7 @@ function App() {
                             value=""
                             onChange={(e) => {
                               if (e.target.value) {
-                                const produto = products.find(p => p.id === e.target.value);
+                                const produto = allProducts.find(p => p.id === e.target.value);
                                 if (produto) {
                                   setProdutosSelecionados([...produtosSelecionados, {
                                     produto_id: produto.id,
