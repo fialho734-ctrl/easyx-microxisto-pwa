@@ -836,6 +836,22 @@ const CompetitorManagement = ({ token }) => {
   const [bulkPasteData, setBulkPasteData] = useState('');
   const [showBulkPaste, setShowBulkPaste] = useState(false);
 
+  // NOVO: Estados para edição individual
+  const [editingCompetitor, setEditingCompetitor] = useState(null);
+  const [formData, setFormData] = useState({
+    company: '', product: '', density: 0, nature: 'Líquido',
+    composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
+    additives: '', proposito: ''
+  });
+  const [showIndividualForm, setShowIndividualForm] = useState(false);
+
+  const PROPOSITO_OPTIONS = [
+    'Nitrogênio', 'Fósforo', 'Potássio', 'Cálcio', 'Magnésio', 'Enxofre', 'Manganês', 
+    'Zinco', 'Molibdênio', 'Cobre', 'Boro', 'Níquel', 'Complexo Mn', 'Complexo Zn', 
+    'Complexo Cu', 'Complexo B', 'CoMo', 'CoMoNi', 'CaB', 'Indutor', 'Enchimento de Grãos', 
+    'TS', 'Estruturador', 'Condicionador', 'Desalojante', 'Sanitário', 'Antiestresse'
+  ];
+
   const elements = [
     'N', 'P', 'K', 'Ca', 'Mg', 'S', 'Mo', 'Co', 'Zn', 'B', 'Cu', 'Mn', 'Ni', 'Se', 'Si', 'Fe'
   ];
