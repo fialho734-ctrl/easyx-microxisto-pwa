@@ -574,7 +574,7 @@ const ProductManagement = ({ token, technologies }) => {
         setFormData({
           name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
           composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-          additives: '', description: '', materials_url: ''
+          additives: '', description: '', materials_url: '', proposito: ''
         });
       }
     } catch (error) {
