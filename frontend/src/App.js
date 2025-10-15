@@ -2374,6 +2374,37 @@ function App() {
     }
   };
 
+  // NEW: Fetch suggested products when competitor is selected
+  const handleCompetitorSelection = async (competitorId) => {
+    setSelectedCompetitor(competitorId);
+    
+    if (competitorId) {
+      try {
+        // Fetch competitor details
+        const response = await fetch(`${API_BASE}/api/competitors/${competitorId}`);
+        const competitorData = await response.json();
+        
+        // If competitor has a proposito, fetch suggested MicroXisto products
+        if (competitorData.proposito) {
+          const suggestionsResponse = await fetch(
+            `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
+          );
+          if (suggestionsResponse.ok) {
+            const suggestions = await suggestionsResponse.json();
+            setSuggestedProducts(suggestions);
+          }
+        } else {
+          setSuggestedProducts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching competitor details:', error);
+        setSuggestedProducts([]);
+      }
+    } else {
+      setSuggestedProducts([]);
+    }
+  };
+
   const loadComparison = async () => {
     if (selectedCompetitor && selectedComparisonProduct) {
       setLoading(true);
@@ -2388,7 +2419,7 @@ function App() {
         
         setComparisonData({
           competitor: competitorData,
-          microxisto: microxistoData
+          product: microxistoData
         });
       } catch (error) {
         console.error('Error loading comparison:', error);
