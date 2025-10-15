@@ -66,7 +66,8 @@ class Product(BaseModel):
     composition: ProductComposition
     additives: str
     description: str
-    materials_url: Optional[str] = ""  # NOVO CAMPO
+    materials_url: Optional[str] = ""
+    proposito: Optional[str] = ""  # NOVO CAMPO para sugestões
 
 class Competitor(BaseModel):
     id: Optional[str] = None
