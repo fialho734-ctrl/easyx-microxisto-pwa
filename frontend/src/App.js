@@ -2871,140 +2871,320 @@ function App() {
         {currentPage === 'comparison' && (
           <>
             {isLoggedIn ? (
-              <div className="max-w-6xl mx-auto">
+              <div className="max-w-7xl mx-auto">
                 <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Comparativo de Concorrentes</h2>
             
-            <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Empresa Concorrente</label>
-                  <select
-                    value={selectedCompany}
-                    onChange={(e) => handleCompanyChange(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
-                  >
-                    <option value="">Selecione...</option>
-                    {companies.map(company => (
-                      <option key={company.company} value={company.company} translate="no" data-translate="no" lang="en">{company.company}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
-                  <select
-                    value={selectedCompetitor}
-                    onChange={(e) => setSelectedCompetitor(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
-                    disabled={!selectedCompany}
-                  >
-                    <option value="">Selecione...</option>
-                    {competitorProducts.map(product => (
-                      <option key={product.id} value={product.id} translate="no">{product.product}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Tecnologia MicroXisto</label>
-                  <select
-                    value={selectedComparisonTech}
-                    onChange={(e) => {
-                      setSelectedComparisonTech(e.target.value);
-                      handleTechChange(e.target.value);
-                    }}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
-                  >
-                    <option value="">Selecione...</option>
-                    {technologies.map(tech => (
-                      <option key={tech.id} value={tech.id}>{tech.name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto MicroXisto</label>
-                  <select
-                    value={selectedComparisonProduct}
-                    onChange={(e) => setSelectedComparisonProduct(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
-                    disabled={!selectedComparisonTech}
-                    spellCheck="false"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    translate="no"
-                  >
-                    <option value="">Selecione...</option>
-                    {products.map(product => (
-                      <option key={product.id} value={product.id} translate="no">{product.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              
-              <button
-                onClick={loadComparison}
-                disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
-                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                {loading ? 'Carregando...' : 'Comparar Produtos'}
-              </button>
-            </div>
-            
-            {comparisonData && (
-              <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">Comparação de Produtos</h3>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
-                  <div className="text-center">
-                    <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
-                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.competitor.density} g/mL</p>
-                      <p>Natureza: {comparisonData.competitor.nature}</p>
+                {/* Enhanced Search Form */}
+                <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
+                  {/* Propósito Selection - NEW */}
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <label className="block text-gray-800 font-bold mb-3 text-base">
+                      🎯 Propósito do Produto <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={selectedProposito}
+                      onChange={(e) => handlePropositoChange(e.target.value)}
+                      className="w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-green-500 text-base font-medium"
+                    >
+                      <option value="">Selecione o propósito...</option>
+                      {PROPOSITO_OPTIONS.map(option => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </select>
+                    {selectedProposito && suggestedProducts.length > 0 && (
+                      <div className="mt-3 p-3 bg-green-50 rounded border border-green-200">
+                        <p className="text-sm font-semibold text-green-800 mb-2">
+                          💡 Produtos MicroXisto recomendados para "{selectedProposito}":
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {suggestedProducts.map(product => (
+                            <span key={product.id} className="px-3 py-1 bg-green-600 text-white rounded-full text-sm">
+                              {product.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Competitor Search with Autocomplete - ENHANCED */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                        🔍 Buscar Empresa Concorrente
+                      </label>
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        placeholder="Digite para buscar..."
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
+                      />
+                      {searchTerm && filteredCompanies.length > 0 && (
+                        <div className="mt-2 max-h-48 overflow-y-auto border rounded-lg bg-white shadow-lg">
+                          {filteredCompanies.slice(0, 10).map((company, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                setSearchTerm('');
+                                handleCompanyChange(company.company);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-green-50 border-b last:border-b-0 text-sm"
+                            >
+                              {company.company}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Ou Selecione da Lista</label>
+                      <select
+                        value={selectedCompany}
+                        onChange={(e) => handleCompanyChange(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
+                      >
+                        <option value="">Selecione...</option>
+                        {companies.map(company => (
+                          <option key={company.company} value={company.company} translate="no">
+                            {company.company}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                  
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <img src={comparisonData.microxisto.logo} alt="MicroXisto" className="h-6 lg:h-8" />
-                      <h4 className="text-lg lg:text-xl font-semibold text-green-800">MicroXisto</h4>
+
+                  {/* Product Selection Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-6">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
+                      <select
+                        value={selectedCompetitor}
+                        onChange={(e) => setSelectedCompetitor(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
+                        disabled={!selectedCompany}
+                      >
+                        <option value="">Selecione...</option>
+                        {competitorProducts.map(product => (
+                          <option key={product.id} value={product.id} translate="no">{product.product}</option>
+                        ))}
+                      </select>
                     </div>
-                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.microxisto.name}</h5>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.microxisto.density} g/mL</p>
-                      <p>Natureza: {comparisonData.microxisto.nature}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                  {renderCompositionTable(comparisonData.competitor.composition, `${comparisonData.competitor.company} - ${comparisonData.competitor.product}`)}
-                  {renderCompositionTable(comparisonData.microxisto.composition, `MicroXisto - ${comparisonData.microxisto.name}`)}
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-gray-800 mb-2">Aditivos - <span translate="no">{comparisonData.competitor.company}</span></h5>
-                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.competitor.additives}</p>
-                  </div>
-                  
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
-                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.microxisto.additives}</p>
                     
-                    {/* Descrição do produto MicroXisto */}
-                    <div className="mt-4 pt-3 border-t border-green-200">
-                      <h6 className="font-semibold text-green-800 mb-2">📝 Descrição</h6>
-                      <p className="text-gray-600 text-sm" translate="no">
-                        {comparisonData.microxisto.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
-                      </p>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Tecnologia MicroXisto</label>
+                      <select
+                        value={selectedComparisonTech}
+                        onChange={(e) => {
+                          setSelectedComparisonTech(e.target.value);
+                          handleTechChange(e.target.value);
+                        }}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
+                      >
+                        <option value="">Selecione...</option>
+                        {technologies.map(tech => (
+                          <option key={tech.id} value={tech.id}>{tech.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto MicroXisto</label>
+                      <select
+                        value={selectedComparisonProduct}
+                        onChange={(e) => setSelectedComparisonProduct(e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
+                        disabled={!selectedComparisonTech}
+                        translate="no"
+                      >
+                        <option value="">Selecione...</option>
+                        {products.map(product => (
+                          <option key={product.id} value={product.id} translate="no">{product.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
+                  
+                  {/* Action Buttons - ENHANCED */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={loadComparison}
+                      disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
+                      className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold text-base"
+                    >
+                      {loading ? 'Carregando...' : '🔄 Comparar Produtos'}
+                    </button>
+                    
+                    {selectedCompetitor && (
+                      <button
+                        onClick={() => setViewMode('standalone')}
+                        className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold text-base"
+                      >
+                        👁️ Ver Concorrente Isolado
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+            
+                {/* Comparison Results - ENHANCED RESPONSIVE LAYOUT */}
+                {comparisonData && viewMode === 'comparison' && (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                    <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">Comparação de Produtos</h3>
+                    
+                    {/* Mobile: Side-by-Side Layout */}
+                    <div className="block lg:hidden mb-6">
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                        <div className="text-center p-3 bg-gray-50 rounded-lg">
+                          <h4 className="text-sm font-semibold text-gray-800 mb-1" translate="no">{comparisonData.competitor.company}</h4>
+                          <h5 className="text-xs text-gray-600 mb-2" translate="no">{comparisonData.competitor.product}</h5>
+                          <div className="text-xs text-gray-600 space-y-1">
+                            <p>Dens: {comparisonData.competitor.density}</p>
+                            <p>{comparisonData.competitor.nature}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <img src={comparisonData.product.logo} alt={comparisonData.product.name} className="h-12 mx-auto mb-2 object-contain" />
+                          <h5 className="text-xs text-gray-600 mb-2" translate="no">{comparisonData.product.name}</h5>
+                          <div className="text-xs text-gray-600 space-y-1">
+                            <p>Dens: {comparisonData.product.density}</p>
+                            <p>{comparisonData.product.nature}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Desktop: Original Layout */}
+                    <div className="hidden lg:grid lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
+                      <div className="text-center">
+                        <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
+                        <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>Densidade: {comparisonData.competitor.density} g/mL</p>
+                          <p>Natureza: {comparisonData.competitor.nature}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <img src={comparisonData.product.logo} alt={comparisonData.product.name} className="h-16 lg:h-20 mx-auto mb-4 object-contain" />
+                        <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.product.name}</h5>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>Densidade: {comparisonData.product.density} g/mL</p>
+                          <p>Natureza: {comparisonData.product.nature}</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Composition Table - Responsive */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full table-auto text-sm">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="px-2 py-2 text-left text-xs lg:text-sm">Elemento</th>
+                            <th className="px-2 py-2 text-center text-xs lg:text-sm" translate="no">{comparisonData.competitor.company}</th>
+                            <th className="px-2 py-2 text-center text-xs lg:text-sm">MicroXisto</th>
+                            <th className="px-2 py-2 text-center text-xs lg:text-sm">Diferença</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.keys(comparisonData.competitor.composition).map(element => {
+                            const compValue = comparisonData.competitor.composition[element];
+                            const prodValue = comparisonData.product.composition[element];
+                            const diff = prodValue - compValue;
+                            
+                            return (
+                              <tr key={element} className="border-t hover:bg-gray-50">
+                                <td className="px-2 py-2 font-semibold text-xs lg:text-sm">{element}</td>
+                                <td className={`px-2 py-2 text-center text-xs lg:text-sm ${compValue > 0 ? 'font-bold' : ''}`}>
+                                  {compValue > 0 ? compValue : '-'}
+                                </td>
+                                <td className={`px-2 py-2 text-center text-xs lg:text-sm ${prodValue > 0 ? 'font-bold' : ''}`}>
+                                  {prodValue > 0 ? prodValue : '-'}
+                                </td>
+                                <td className={`px-2 py-2 text-center font-semibold text-xs lg:text-sm ${
+                                  diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-400'
+                                }`}>
+                                  {diff > 0 ? `+${diff.toFixed(2)}` : diff < 0 ? diff.toFixed(2) : '0'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {/* Additives Comparison */}
+                    <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="p-3 lg:p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-semibold text-gray-800 mb-2 text-sm lg:text-base">Aditivos Concorrente:</h4>
+                        <p className="text-xs lg:text-sm text-gray-600" translate="no">{comparisonData.competitor.additives || 'Nenhum aditivo especificado'}</p>
+                      </div>
+                      <div className="p-3 lg:p-4 bg-green-50 rounded-lg">
+                        <h4 className="font-semibold text-green-800 mb-2 text-sm lg:text-base">Aditivos MicroXisto:</h4>
+                        <p className="text-xs lg:text-sm text-gray-700" translate="no">{comparisonData.product.additives || 'Nenhum aditivo especificado'}</p>
+                        {comparisonData.product.description && (
+                          <>
+                            <hr className="my-2 border-green-200" />
+                            <p className="text-xs lg:text-sm text-gray-700 mt-2">
+                              <strong>Descrição:</strong> {comparisonData.product.description}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Standalone Competitor View - NEW */}
+                {selectedCompetitor && viewMode === 'standalone' && (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl lg:text-2xl font-bold text-gray-800">Visualização do Concorrente</h3>
+                      <button
+                        onClick={() => setViewMode('comparison')}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
+                      >
+                        ← Voltar para Comparação
+                      </button>
+                    </div>
+
+                    {comparisonData && (
+                      <div>
+                        <div className="text-center mb-6 p-4 bg-gray-50 rounded-lg">
+                          <h4 className="text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
+                          <h5 className="text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
+                          <div className="text-sm text-gray-600 space-y-2">
+                            <p><strong>Densidade:</strong> {comparisonData.competitor.density} g/mL</p>
+                            <p><strong>Natureza:</strong> {comparisonData.competitor.nature}</p>
+                            {comparisonData.competitor.proposito && (
+                              <p><strong>Propósito:</strong> {comparisonData.competitor.proposito}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <h4 className="font-bold text-gray-800 mb-3">Composição Química:</h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
+                          {Object.entries(comparisonData.competitor.composition)
+                            .filter(([, value]) => value > 0)
+                            .map(([element, value]) => (
+                              <div key={element} className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className="font-bold text-blue-800 text-lg">{element}</div>
+                                <div className="text-sm text-gray-700 mt-1">{value}</div>
+                              </div>
+                            ))}
+                        </div>
+
+                        {comparisonData.competitor.additives && (
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-800 mb-2">Aditivos:</h4>
+                            <p className="text-sm text-gray-600" translate="no">{comparisonData.competitor.additives}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="max-w-md mx-auto">
