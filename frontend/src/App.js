@@ -3434,6 +3434,18 @@ function App() {
                     {produtosSelecionados.length > 0 && (
                       <button
                         onClick={() => {
+                          // Dados de referência (valores por 1 sc/ha)
+                          const dadosReferencia = {
+                            Soja: {
+                              extracao: { N: 4.8, P: 0.9, K: 2.6, Ca: 1.1, Mg: 0.5, S: 0.8, B: 4.6, Cu: 1.2, Fe: 20.1, Mn: 8.7, Zn: 4.9, Mo: 0.1 },
+                              exportacao: { N: 3.4, P: 0.7, K: 1.1, Ca: 0.2, Mg: 0.1, S: 0.5, B: 1.6, Cu: 0.7, Fe: 4.8, Mn: 1.8, Zn: 2.4, Mo: 0.036 }
+                            },
+                            Milho: {
+                              extracao: { N: 1.3, P: 0.5, K: 1.2, Ca: 0.1, Mg: 0.2, S: 0.2, B: 1.2, Cu: 0.4, Fe: 9.7, Mn: 2.2, Zn: 2.3, Mo: 0.1 },
+                              exportacao: { N: 0.9, P: 0.5, K: 0.4, Ca: 0.02, Mg: 0.06, S: 0.06, B: 0.2, Cu: 0.06, Fe: 1.25, Mn: 0.44, Zn: 1.48, Mo: 0.035 }
+                            }
+                          };
+                          
                           // Calcular resumo do manejo
                           let totalNutrientes = {};
                           let custoTotal = 0;
@@ -3466,12 +3478,46 @@ function App() {
                             ? custoPorHectare / planejamentoForm.valor_saca 
                             : 0;
                           
+                          // Calcular extração e exportação baseado na cultura
+                          const culturaNormalizada = planejamentoForm.cultura.toLowerCase();
+                          let extracao = {};
+                          let exportacao = {};
+                          
+                          if (culturaNormalizada.includes('soja')) {
+                            const multiplicador = planejamentoForm.colheita_esperada;
+                            Object.keys(dadosReferencia.Soja.extracao).forEach(nutriente => {
+                              // N, P, K, Ca, Mg, S: Kg/ha -> converter para g/ha (* 1000)
+                              if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
+                                extracao[nutriente] = dadosReferencia.Soja.extracao[nutriente] * multiplicador * 1000;
+                                exportacao[nutriente] = dadosReferencia.Soja.exportacao[nutriente] * multiplicador * 1000;
+                              } else {
+                                // B, Cu, Fe, Mn, Zn, Mo: já em g/ha
+                                extracao[nutriente] = dadosReferencia.Soja.extracao[nutriente] * multiplicador;
+                                exportacao[nutriente] = dadosReferencia.Soja.exportacao[nutriente] * multiplicador;
+                              }
+                            });
+                          } else if (culturaNormalizada.includes('milho')) {
+                            const multiplicador = planejamentoForm.colheita_esperada;
+                            Object.keys(dadosReferencia.Milho.extracao).forEach(nutriente => {
+                              if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
+                                extracao[nutriente] = dadosReferencia.Milho.extracao[nutriente] * multiplicador * 1000;
+                                exportacao[nutriente] = dadosReferencia.Milho.exportacao[nutriente] * multiplicador * 1000;
+                              } else {
+                                extracao[nutriente] = dadosReferencia.Milho.extracao[nutriente] * multiplicador;
+                                exportacao[nutriente] = dadosReferencia.Milho.exportacao[nutriente] * multiplicador;
+                              }
+                            });
+                          }
+                          
                           setResumoManejo({
                             produtos: resumoProdutos,
                             totalNutrientes,
                             custoTotal,
                             custoPorHectare,
-                            valorSacasPorHa
+                            valorSacasPorHa,
+                            extracao,
+                            exportacao,
+                            cultura: planejamentoForm.cultura
                           });
                         }}
                         className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base"
