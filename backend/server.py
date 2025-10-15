@@ -21,7 +21,7 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
 # JWT settings
-SECRET_KEY = "microxisto-secret-key-2025"
+SECRET_KEY = os.environ.get('SECRET_KEY', 'microxisto-secret-key-2025-fallback')
 ALGORITHM = "HS256"
 security = HTTPBearer()
 
