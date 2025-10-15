@@ -2732,6 +2732,20 @@ function App() {
     }, 300);
   };
 
+  // Carregar todos os produtos para o planejamento
+  const fetchAllProducts = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/products`);
+      if (response.ok) {
+        const data = await response.json();
+        setAllProducts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching all products:', error);
+    }
+  };
+
+
   const loadComparison = async () => {
     if (selectedCompetitor && selectedComparisonProduct) {
       setLoading(true);
