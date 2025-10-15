@@ -43,7 +43,7 @@ self.addEventListener('install', (event) => {
 
 // ATIVAR - Limpar cache antigo e assumir controle
 self.addEventListener('activate', (event) => {
-  console.log('⚡ SW: Activating v6...');
+  console.log('⚡ SW: Activating v7 (App v' + APP_VERSION + ')...');
   
   event.waitUntil(
     caches.keys()
@@ -60,6 +60,18 @@ self.addEventListener('activate', (event) => {
       .then(() => {
         console.log('✅ SW: Activated, claiming clients');
         return self.clients.claim();
+      })
+      .then(() => {
+        // Notificar todos os clientes sobre ativação
+        return self.clients.matchAll();
+      })
+      .then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_ACTIVATED',
+            version: APP_VERSION
+          });
+        });
       })
   );
 });
