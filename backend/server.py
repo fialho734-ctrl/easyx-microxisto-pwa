@@ -77,6 +77,7 @@ class Competitor(BaseModel):
     nature: str
     composition: ProductComposition
     additives: str
+    proposito: Optional[str] = ""  # NOVO CAMPO
 
 class User(BaseModel):
     id: Optional[str] = None
