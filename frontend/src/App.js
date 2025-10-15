@@ -3628,6 +3628,13 @@ function App() {
                             </table>
                           </div>
                         </div>
+                        
+                        {/* Mensagem de aviso */}
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-300 text-center">
+                          <p className="text-sm text-gray-700 italic">
+                            ℹ️ Esses são apenas valores de referência e não refletem a realidade específica das cultivares.
+                          </p>
+                        </div>
                       </div>
                     )}
                     
