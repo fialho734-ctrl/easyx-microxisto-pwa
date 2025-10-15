@@ -3276,13 +3276,15 @@ function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div>
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Cultura</label>
-                      <input
-                        type="text"
+                      <select
                         value={planejamentoForm.cultura}
                         onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura: e.target.value})}
-                        placeholder="Ex: Soja, Milho, Algodão..."
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
+                      >
+                        <option value="">Selecione a cultura...</option>
+                        <option value="Soja">Soja</option>
+                        <option value="Milho">Milho</option>
+                      </select>
                     </div>
                     
                     <div>
