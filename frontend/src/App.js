@@ -880,7 +880,8 @@ const CompetitorManagement = ({ token }) => {
           density: (columns[3] || '0').trim().replace(',', '.'), // Densidade na coluna 3, converter vírgula para ponto
           nature: (columns[2] || 'liquido').trim().toLowerCase(), // Natureza na coluna 2
           composition: {},
-          additives: ''
+          additives: '',
+          proposito: ''
         };
 
         // Debug: mostrar o objeto row criado
@@ -901,6 +902,11 @@ const CompetitorManagement = ({ token }) => {
         // Aditivos na coluna 20 se existir
         if (columns[20]) {
           row.additives = columns[20].trim();
+        }
+
+        // Propósito na coluna 21 se existir
+        if (columns[21]) {
+          row.proposito = columns[21].trim();
         }
 
         if (row.company && row.product) {
