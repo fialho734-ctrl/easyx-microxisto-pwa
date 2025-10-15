@@ -3051,7 +3051,7 @@ function App() {
                 </div>
               </div>
               
-              {/* Suggested Products - Shown when competitor is selected */}
+              {/* Sugestões aparecem após clicar em Sugestão */}
               {suggestedProducts.length > 0 && (
                 <div className="mb-4 p-4 bg-green-50 rounded-lg border-2 border-green-300">
                   <p className="text-sm font-bold text-green-900 mb-2">
@@ -3067,13 +3067,51 @@ function App() {
                 </div>
               )}
               
-              <button
-                onClick={loadComparison}
-                disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
-                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                {loading ? 'Carregando...' : 'Comparar Produtos'}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={loadComparison}
+                  disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
+                >
+                  {loading ? 'Carregando...' : 'Comparar Produtos'}
+                </button>
+                
+                {selectedCompetitor && (
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      setSuggestedProducts([]);
+                      try {
+                        const response = await fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`);
+                        const competitorData = await response.json();
+                        
+                        if (competitorData.proposito) {
+                          const suggestionsResponse = await fetch(
+                            `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
+                          );
+                          if (suggestionsResponse.ok) {
+                            const suggestions = await suggestionsResponse.json();
+                            setSuggestedProducts(suggestions);
+                            if (suggestions.length === 0) {
+                              alert('Nenhum produto MicroXisto encontrado com o propósito: ' + competitorData.proposito);
+                            }
+                          }
+                        } else {
+                          alert('Este concorrente não tem propósito definido.');
+                        }
+                      } catch (error) {
+                        console.error('Error fetching suggestions:', error);
+                        alert('Erro ao buscar sugestões.');
+                      }
+                      setLoading(false);
+                    }}
+                    disabled={loading}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
+                  >
+                    {loading ? 'Carregando...' : '💡 Sugestão'}
+                  </button>
+                )}
+              </div>
             </div>
             
             {comparisonData && (
