@@ -576,6 +576,12 @@ async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Dep
 # END CULTURES APIs
 # ==========================================
 
+@app.get("/api/products")
+async def get_all_products():
+    """Get all products (for planejamento)"""
+    products = await db.products.find({}, {"_id": 0}).to_list(None)
+    return products
+
 @app.get("/api/products/{product_id}")
 async def get_product(product_id: str):
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
