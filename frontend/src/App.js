@@ -2419,6 +2419,44 @@ function App() {
     }
   };
 
+  // NEW: Filter products for autocomplete and auto-select company
+  const handleProductSearchChange = async (value) => {
+    setProductSearchTerm(value);
+    
+    if (value.trim() === '') {
+      setFilteredProducts([]);
+      return;
+    }
+    
+    // Buscar em todos os produtos de todos os concorrentes
+    try {
+      const response = await fetch(`${API_BASE}/api/competitors`);
+      const allCompetitors = await response.json();
+      
+      const filtered = allCompetitors.filter(competitor =>
+        competitor.product.toLowerCase().includes(value.toLowerCase())
+      );
+      
+      setFilteredProducts(filtered.slice(0, 10)); // Limitar a 10 resultados
+    } catch (error) {
+      console.error('Error searching products:', error);
+    }
+  };
+
+  // NEW: Handle product selection from autocomplete
+  const handleProductSelect = (competitor) => {
+    setProductSearchTerm('');
+    setFilteredProducts([]);
+    
+    // Selecionar a empresa automaticamente
+    handleCompanyChange(competitor.company);
+    
+    // Aguardar um momento e então selecionar o produto
+    setTimeout(() => {
+      setSelectedCompetitor(competitor.id);
+    }, 300);
+  };
+
   const loadComparison = async () => {
     if (selectedCompetitor && selectedComparisonProduct) {
       setLoading(true);
