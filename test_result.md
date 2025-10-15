@@ -162,15 +162,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Comparativo Page Enhancements"
-    - "Planejamento Feature"
-    - "App Icon Update"
+    - "Planejamento - Nutrient Extraction and Exportation Tables"
   stuck_tasks: []
   test_all: false
-  test_priority: "sequential"
+  test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
     message: "Fase 1 concluída! Culturas feature totalmente implementado (backend API + frontend user view + admin management). Testado via screenshots - tudo funcionando. Aguardando dados do usuário: 1) Arquivo/link do novo ícone do app, 2) Dados para colagem em bloco do campo propósito para Fase 2."
   - agent: "testing"
     message: "Backend testing completed successfully! All 20 API tests passed (100% success rate). Key findings: 1) All main API endpoints working correctly for PWA caching (technologies, products, competitors, home content), 2) Admin authentication working with proper JWT tokens, 3) All admin endpoints functional (user management, CRUD operations), 4) Database connectivity excellent with MongoDB, 5) PWA support confirmed - all responses are JSON serializable for Service Worker caching, 6) Full CRUD operations tested and working (create/update/delete). The backend is fully ready to support PWA offline functionality and admin tutorials feature. No critical issues found."
+  - agent: "main"
+    message: "Implementação concluída! Adicionadas tabelas de Extração e Exportação de Nutrientes na seção Planejamento. As tabelas aparecem após clicar em 'Calcular Resumo do Manejo', logo abaixo de 'Total de Nutrientes Aportados'. Valores de referência por saca/ha para Soja e Milho são multiplicados pela colheita esperada. Testado com screenshots para Soja (60 sc/ha) e Milho - cálculos confirmados corretos. Design responsivo com cores distintas (laranja para Extração, roxo para Exportação). Pronto para testes mais abrangentes se necessário."
