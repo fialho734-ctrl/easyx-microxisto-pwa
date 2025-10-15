@@ -3060,20 +3060,20 @@ function App() {
                   
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-2 mb-2">
-                      <img src={comparisonData.microxisto.logo} alt="MicroXisto" className="h-6 lg:h-8" />
+                      <img src={comparisonData.product.logo} alt="MicroXisto" className="h-6 lg:h-8" />
                       <h4 className="text-lg lg:text-xl font-semibold text-green-800">MicroXisto</h4>
                     </div>
-                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.microxisto.name}</h5>
+                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.product.name}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.microxisto.density} g/mL</p>
-                      <p>Natureza: {comparisonData.microxisto.nature}</p>
+                      <p>Densidade: {comparisonData.product.density} g/mL</p>
+                      <p>Natureza: {comparisonData.product.nature}</p>
                     </div>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   {renderCompositionTable(comparisonData.competitor.composition, `${comparisonData.competitor.company} - ${comparisonData.competitor.product}`)}
-                  {renderCompositionTable(comparisonData.microxisto.composition, `MicroXisto - ${comparisonData.microxisto.name}`)}
+                  {renderCompositionTable(comparisonData.product.composition, `MicroXisto - ${comparisonData.product.name}`)}
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-6">
@@ -3084,13 +3084,13 @@ function App() {
                   
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
-                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.microxisto.additives}</p>
+                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.product.additives}</p>
                     
                     {/* Descrição do produto MicroXisto */}
                     <div className="mt-4 pt-3 border-t border-green-200">
                       <h6 className="font-semibold text-green-800 mb-2">📝 Descrição</h6>
                       <p className="text-gray-600 text-sm" translate="no">
-                        {comparisonData.microxisto.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
+                        {comparisonData.product.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
                       </p>
                     </div>
                   </div>
