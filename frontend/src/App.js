@@ -2098,6 +2098,35 @@ function App() {
   // Cultures states - NOVA FUNCIONALIDADE
   const [cultures, setCultures] = useState([]);
 
+  // Propósito options - NOVA FUNCIONALIDADE
+  const PROPOSITO_OPTIONS = [
+    'Nitrogênio',
+    'Fósforo', 
+    'Potássio',
+    'Complexo Mn',
+    'Complexo Zn',
+    'Complexo Cu',
+    'Complexo B',
+    'CoMo',
+    'CoMoNi',
+    'CaB',
+    'Indutor',
+    'Enchimento de Grãos',
+    'TS',
+    'Estruturador',
+    'Condicionador',
+    'Desalojante',
+    'Sanitário'
+  ];
+
+  // New comparison states for enhanced features
+  const [selectedProposito, setSelectedProposito] = useState('');
+  const [suggestedProducts, setSuggestedProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredCompanies, setFilteredCompanies] = useState([]);
+  const [viewMode, setViewMode] = useState('comparison'); // 'comparison' or 'standalone'
+
+
   // Auth states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
