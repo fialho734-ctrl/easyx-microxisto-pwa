@@ -1243,6 +1243,7 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                       </th>
                     ))}
                     <th className="border border-gray-300 px-2 py-1">Aditivos</th>
+                    <th className="border border-gray-300 px-2 py-1">Propósito</th>
                     <th className="border border-gray-300 px-2 py-1">Ações</th>
                   </tr>
                 </thead>
