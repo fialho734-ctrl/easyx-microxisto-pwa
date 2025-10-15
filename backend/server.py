@@ -418,12 +418,6 @@ async def get_products_by_technology(tech_id: str):
     return products
 
 
-@app.get("/api/products")
-async def get_all_products():
-    """Get all products (for planejamento)"""
-    products = await db.products.find({}, {"_id": 0}).to_list(None)
-    return products
-
 # ==========================================
 # CULTURES APIs - NOVA FUNCIONALIDADE  
 # ==========================================
