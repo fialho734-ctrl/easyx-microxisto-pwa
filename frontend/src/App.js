@@ -2967,7 +2967,7 @@ function App() {
                   <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
                   <select
                     value={selectedCompetitor}
-                    onChange={(e) => setSelectedCompetitor(e.target.value)}
+                    onChange={(e) => handleCompetitorSelection(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedCompany}
                   >
