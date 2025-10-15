@@ -3003,29 +3003,9 @@ function App() {
                   <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
                   <select
                     value={selectedCompetitor}
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       setSelectedCompetitor(e.target.value);
-                      setSuggestedProducts([]);
-                      
-                      // Buscar sugestões quando selecionar concorrente
-                      if (e.target.value) {
-                        try {
-                          const response = await fetch(`${API_BASE}/api/competitors/${e.target.value}`);
-                          const competitorData = await response.json();
-                          
-                          if (competitorData.proposito) {
-                            const suggestionsResponse = await fetch(
-                              `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
-                            );
-                            if (suggestionsResponse.ok) {
-                              const suggestions = await suggestionsResponse.json();
-                              setSuggestedProducts(suggestions);
-                            }
-                          }
-                        } catch (error) {
-                          console.error('Error fetching suggestions:', error);
-                        }
-                      }
+                      setSuggestedProducts([]); // Limpar sugestões anteriores
                     }}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedCompany}
