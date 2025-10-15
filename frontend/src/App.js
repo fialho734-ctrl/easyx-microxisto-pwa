@@ -2158,7 +2158,8 @@ function App() {
     'Estruturador',
     'Condicionador',
     'Desalojante',
-    'Sanitário'
+    'Sanitário',
+    'Antiestresse'
   ];
 
   // New comparison states for enhanced features
