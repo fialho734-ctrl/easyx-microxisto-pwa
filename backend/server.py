@@ -127,6 +127,7 @@ class CompetitorUpdate(BaseModel):
     nature: str
     composition: ProductComposition
     additives: str
+    proposito: Optional[str] = ""  # NOVO CAMPO
 
 # Lifespan manager
 @asynccontextmanager
