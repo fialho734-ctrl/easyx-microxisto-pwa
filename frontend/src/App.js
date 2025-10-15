@@ -3064,6 +3064,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Componentes PWA */}
+      <UpdateNotification />
       <OfflineIndicator />
       <InstallPWAButton />
       
