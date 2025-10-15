@@ -142,6 +142,18 @@ frontend:
         agent: "main"
         comment: "CultureManagement component created and integrated into admin panel. Features: Create/Edit/Delete cultures, form with name/image/link fields, image preview, responsive grid display of registered cultures with Edit/Remove buttons. Successfully tested via screenshot - shows form and 3 registered cultures."
 
+  - task: "Planejamento - Nutrient Extraction and Exportation Tables"
+    implemented: true
+    working: true
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added two new tables (Extração and Exportação de Nutrientes) below 'Total de Nutrientes Aportados' section. Tables appear after clicking 'Calcular Resumo do Manejo'. Reference values per sack/ha for Soja and Milho multiply by 'Colheita esperada'. Displays N, P, K, Ca, Mg, S in Kg/ha and B, Cu, Fe, Mn, Zn, Mo in g/ha. Tested via screenshots with Soja (60 sc/ha) and Milho - calculations confirmed correct. Tables have responsive design (orange for Extração, purple for Exportação) and mobile-friendly layout."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
