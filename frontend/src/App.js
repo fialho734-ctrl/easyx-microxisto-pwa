@@ -3552,6 +3552,83 @@ function App() {
                       </div>
                     </div>
                     
+                    {/* Tabelas de Extração e Exportação */}
+                    {(resumoManejo.extracao && Object.keys(resumoManejo.extracao).length > 0) && (
+                      <div className="mb-6 space-y-4">
+                        {/* Tabela de Extração */}
+                        <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                          <h4 className="font-semibold text-orange-900 mb-3">
+                            🌱 Extração de Nutrientes ({resumoManejo.cultura})
+                          </h4>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs md:text-sm">
+                              <thead className="bg-orange-100">
+                                <tr>
+                                  <th className="px-2 py-2 text-left">Nutriente</th>
+                                  <th className="px-2 py-2 text-center">Unidade</th>
+                                  <th className="px-2 py-2 text-right">Quantidade</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.entries(resumoManejo.extracao)
+                                  .filter(([, valor]) => valor > 0)
+                                  .map(([nutriente, valor]) => {
+                                    const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
+                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
+                                    const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
+                                    
+                                    return (
+                                      <tr key={nutriente} className="border-t border-orange-200">
+                                        <td className="px-2 py-2 font-semibold text-orange-900">{nutriente}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{unidade}</td>
+                                        <td className="px-2 py-2 text-right font-bold text-orange-800">{valorExibicao}</td>
+                                      </tr>
+                                    );
+                                  })
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                        
+                        {/* Tabela de Exportação */}
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <h4 className="font-semibold text-purple-900 mb-3">
+                            📦 Exportação de Nutrientes ({resumoManejo.cultura})
+                          </h4>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs md:text-sm">
+                              <thead className="bg-purple-100">
+                                <tr>
+                                  <th className="px-2 py-2 text-left">Nutriente</th>
+                                  <th className="px-2 py-2 text-center">Unidade</th>
+                                  <th className="px-2 py-2 text-right">Quantidade</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.entries(resumoManejo.exportacao)
+                                  .filter(([, valor]) => valor > 0)
+                                  .map(([nutriente, valor]) => {
+                                    const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
+                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
+                                    const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
+                                    
+                                    return (
+                                      <tr key={nutriente} className="border-t border-purple-200">
+                                        <td className="px-2 py-2 font-semibold text-purple-900">{nutriente}</td>
+                                        <td className="px-2 py-2 text-center text-gray-600">{unidade}</td>
+                                        <td className="px-2 py-2 text-right font-bold text-purple-800">{valorExibicao}</td>
+                                      </tr>
+                                    );
+                                  })
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Tabela de Produtos */}
                     <div className="overflow-x-auto mb-6">
                       <table className="w-full text-sm">
