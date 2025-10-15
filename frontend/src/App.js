@@ -3244,6 +3244,151 @@ function App() {
           </>
         )}
 
+
+        {currentPage === 'planejamento' && (
+          <>
+            {isLoggedIn ? (
+              <div className="max-w-6xl mx-auto">
+                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">📊 Planejamento de Aplicação</h2>
+                
+                <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Dados do Planejamento</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Cultura</label>
+                      <input
+                        type="text"
+                        value={planejamentoForm.cultura}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura: e.target.value})}
+                        placeholder="Ex: Soja, Milho, Algodão..."
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sacas)</label>
+                      <input
+                        type="number"
+                        value={planejamentoForm.colheita_esperada}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: parseFloat(e.target.value) || 0})}
+                        placeholder="Ex: 3000"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Área Tratada (hectares)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={planejamentoForm.area_tratada}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, area_tratada: parseFloat(e.target.value) || 0})}
+                        placeholder="Ex: 50"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor da Saca (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={planejamentoForm.valor_saca}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: parseFloat(e.target.value) || 0})}
+                        placeholder="Ex: 120.00"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                      />
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      if (!planejamentoForm.cultura || planejamentoForm.colheita_esperada === 0) {
+                        alert('Preencha pelo menos a Cultura e a Colheita Esperada');
+                        return;
+                      }
+                      
+                      // Cálculos simples
+                      const receita_bruta = planejamentoForm.colheita_esperada * planejamentoForm.valor_saca;
+                      const produtividade = planejamentoForm.area_tratada > 0 ? planejamentoForm.colheita_esperada / planejamentoForm.area_tratada : 0;
+                      
+                      setCalculoResultado({
+                        receita_bruta,
+                        produtividade,
+                        area: planejamentoForm.area_tratada,
+                        sacas: planejamentoForm.colheita_esperada
+                      });
+                    }}
+                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base"
+                  >
+                    📊 Calcular
+                  </button>
+                </div>
+                
+                {/* Resultados */}
+                {calculoResultado && (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                    <h3 className="text-xl font-bold text-green-800 mb-4">Resultados do Planejamento</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600 mb-1">Receita Bruta Estimada</div>
+                        <div className="text-2xl font-bold text-green-800">
+                          R$ {calculoResultado.receita_bruta.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="text-sm text-gray-600 mb-1">Produtividade</div>
+                        <div className="text-2xl font-bold text-blue-800">
+                          {calculoResultado.produtividade.toFixed(1)} sc/ha
+                        </div>
+                      </div>
+                      
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="text-sm text-gray-600 mb-1">Área Total</div>
+                        <div className="text-2xl font-bold text-yellow-800">
+                          {calculoResultado.area.toFixed(1)} ha
+                        </div>
+                      </div>
+                      
+                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                        <div className="text-sm text-gray-600 mb-1">Total de Sacas</div>
+                        <div className="text-2xl font-bold text-purple-800">
+                          {calculoResultado.sacas.toLocaleString('pt-BR')} sc
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                      <h4 className="font-semibold text-gray-800 mb-2">💡 Próximos Passos:</h4>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Consulte a seção <strong>Comparativo</strong> para escolher os melhores produtos</li>
+                        <li>• Use a função <strong>Sugestão</strong> para encontrar produtos MicroXisto adequados</li>
+                        <li>• Entre em contato com nossa equipe para um orçamento detalhado</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="max-w-md mx-auto">
+                <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">🔒 Acesso Restrito</h3>
+                  <p className="text-gray-600 mb-6">Para acessar o planejamento, você precisa estar logado.</p>
+                  <button 
+                    onClick={() => setCurrentPage('login')}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Fazer Login
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {currentPage === 'comparison' && (
           <>
             {isLoggedIn ? (
