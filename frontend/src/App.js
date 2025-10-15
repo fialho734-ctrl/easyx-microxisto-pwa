@@ -1005,7 +1005,8 @@ const CompetitorManagement = ({ token }) => {
             acc[element] = parseFloat(row.composition[element]) || 0;
             return acc;
           }, {}),
-          additives: row.additives.trim()
+          additives: row.additives.trim(),
+          proposito: row.proposito ? row.proposito.trim() : ''
         };
 
         const response = await fetch(`${API_BASE}/api/admin/competitors`, {
