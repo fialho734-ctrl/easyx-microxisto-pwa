@@ -3098,25 +3098,20 @@ function App() {
             
             {comparisonData && (
               <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">
-                  {comparisonData.product ? 'Comparação de Produtos' : 'Detalhes do Concorrente'}
-                </h3>
+                <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">Comparação de Produtos</h3>
                 
-                {comparisonData.product ? (
-                  // Comparação completa (concorrente + microxisto)
-                  <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
-                      <div className="text-center">
-                        <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
-                        <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>Densidade: {comparisonData.competitor.density} g/mL</p>
-                          <p>Natureza: {comparisonData.competitor.nature}</p>
-                          {comparisonData.competitor.proposito && (
-                            <p className="font-bold text-blue-600 mt-2">🎯 Propósito: {comparisonData.competitor.proposito}</p>
-                          )}
-                        </div>
-                      </div>                  
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
+                  <div className="text-center">
+                    <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
+                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p>Densidade: {comparisonData.competitor.density} g/mL</p>
+                      <p>Natureza: {comparisonData.competitor.nature}</p>
+                      {comparisonData.competitor.proposito && (
+                        <p className="font-bold text-blue-600 mt-2">🎯 Propósito: {comparisonData.competitor.proposito}</p>
+                      )}
+                    </div>
+                  </div>                  
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-2 mb-2">
                       <img src={comparisonData.product.logo} alt="MicroXisto" className="h-6 lg:h-8" />
