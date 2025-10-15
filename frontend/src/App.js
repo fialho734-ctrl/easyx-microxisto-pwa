@@ -1130,7 +1130,7 @@ const CompetitorManagement = ({ token }) => {
                 placeholder="Cole aqui os dados da sua planilha Excel... (Ctrl+V)
 
 ✅ FORMATO CORRETO (baseado no seu exemplo):
-ICL	Kelmax	líquido	1,45	0	15,95	0	0	0	0	13,05	0,6525	0	0	0	0	1,305	0	0	0	33,4% Extratos de Algas
+ICL     Kelmax  líquido 1,45    0       15,95   0       0       0       0       13,05   0,6525  0       0       0       0       1,305   0       0       0       33,4% Extratos de Algas
 
 DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                 spellCheck="false"
@@ -1527,6 +1527,197 @@ const HomeContentManagement = ({ token, homeContent, fetchHomeContent }) => {
     </div>
   );
 };
+const CultureManagement = ({ token, cultures, fetchCultures }) => {
+  const [editingCulture, setEditingCulture] = useState(null);
+  const [formData, setFormData] = useState({ name: '', image: '', link: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleEdit = (culture) => {
+    setEditingCulture(culture);
+    setFormData({ name: culture.name, image: culture.image, link: culture.link });
+  };
+
+  const handleSave = async () => {
+    if (!formData.name || !formData.image || !formData.link) {
+      alert('Preencha todos os campos obrigatórios!');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const url = editingCulture 
+        ? `${API_BASE}/api/admin/cultures/${editingCulture.id}`
+        : `${API_BASE}/api/admin/cultures`;
+      
+      const method = editingCulture ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (response.ok) {
+        fetchCultures();
+        setEditingCulture(null);
+        setFormData({ name: '', image: '', link: '' });
+        alert(editingCulture ? 'Cultura atualizada com sucesso!' : 'Cultura adicionada com sucesso!');
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Erro ao salvar cultura');
+      }
+    } catch (error) {
+      console.error('Error saving culture:', error);
+      alert('Erro ao salvar cultura');
+    }
+    setLoading(false);
+  };
+
+  const handleDelete = async (cultureId) => {
+    if (!window.confirm('Tem certeza que deseja remover esta cultura?')) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/cultures/${cultureId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchCultures();
+        alert('Cultura removida com sucesso!');
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Erro ao remover cultura');
+      }
+    } catch (error) {
+      console.error('Error deleting culture:', error);
+      alert('Erro ao remover cultura');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Form */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          {editingCulture ? 'Editar Cultura' : 'Nova Cultura'}
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Nome da Cultura</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+              placeholder="Ex: Soja, Milho, Algodão..."
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">URL da Imagem/Ícone</label>
+            <input
+              type="text"
+              value={formData.image}
+              onChange={(e) => setFormData({...formData, image: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+              placeholder="https://exemplo.com/icone-cultura.png"
+            />
+            {formData.image && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-500 mb-1">Preview:</p>
+                <img src={formData.image} alt="Preview" className="h-16 w-16 object-contain border rounded" />
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-gray-700 font-semibold mb-2">Link para Pasta de Materiais</label>
+            <input
+              type="url"
+              value={formData.link}
+              onChange={(e) => setFormData({...formData, link: e.target.value})}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+              placeholder="https://drive.google.com/drive/folders/..."
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Link para pasta do Google Drive, Dropbox ou outro repositório de arquivos
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 flex space-x-2">
+          <button
+            onClick={handleSave}
+            disabled={loading || !formData.name || !formData.image || !formData.link}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {loading ? 'Salvando...' : 'Salvar'}
+          </button>
+          {editingCulture && (
+            <button
+              onClick={() => {
+                setEditingCulture(null);
+                setFormData({ name: '', image: '', link: '' });
+              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Cultures List */}
+      <div className="card">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Culturas Cadastradas</h3>
+        {cultures.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">Nenhuma cultura cadastrada ainda.</p>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {cultures.map(culture => (
+              <div key={culture.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <div className="flex items-center space-x-4 mb-3">
+                  <img src={culture.image} alt={culture.name} className="h-16 w-16 object-contain" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-green-800">{culture.name}</h4>
+                    <a 
+                      href={culture.link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline break-all"
+                    >
+                      Ver materiais →
+                    </a>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(culture)}
+                    className="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(culture.id)}
+                    disabled={loading}
+                    className="flex-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
 
 const AdminTutorials = () => {
   const [activeSection, setActiveSection] = React.useState('technologies');
