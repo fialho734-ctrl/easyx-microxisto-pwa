@@ -2450,6 +2450,7 @@ function App() {
   const loadComparison = async () => {
     if (selectedCompetitor && selectedComparisonProduct) {
       setLoading(true);
+      setSuggestedProducts([]); // Limpar sugestões anteriores
       try {
         const [competitorResponse, microxistoResponse] = await Promise.all([
           fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`),
@@ -2463,6 +2464,21 @@ function App() {
           competitor: competitorData,
           product: microxistoData
         });
+
+        // Buscar sugestões APÓS a comparação se o concorrente tiver propósito
+        if (competitorData.proposito) {
+          try {
+            const suggestionsResponse = await fetch(
+              `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
+            );
+            if (suggestionsResponse.ok) {
+              const suggestions = await suggestionsResponse.json();
+              setSuggestedProducts(suggestions);
+            }
+          } catch (error) {
+            console.error('Error fetching suggestions:', error);
+          }
+        }
       } catch (error) {
         console.error('Error loading comparison:', error);
       }
