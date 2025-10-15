@@ -9,13 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://customer-assets.emergentagent.com/job_product-compass-2/artifacts/anyq4exi_folha.png",
+      "src": "https://customer-assets.emergentagent.com/job_farmtech-hub-8/artifacts/v83z9g2d_WhatsApp_Image_2025-10-15_at_09.40.31-removebg-preview.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "https://customer-assets.emergentagent.com/job_product-compass-2/artifacts/anyq4exi_folha.png",
+      "src": "https://customer-assets.emergentagent.com/job_farmtech-hub-8/artifacts/v83z9g2d_WhatsApp_Image_2025-10-15_at_09.40.31-removebg-preview.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
@@ -32,7 +32,7 @@
       "url": "/?page=technologies",
       "icons": [
         {
-          "src": "https://customer-assets.emergentagent.com/job_product-compass-2/artifacts/anyq4exi_folha.png",
+          "src": "https://customer-assets.emergentagent.com/job_farmtech-hub-8/artifacts/v83z9g2d_WhatsApp_Image_2025-10-15_at_09.40.31-removebg-preview.png",
           "sizes": "96x96"
         }
       ]
@@ -44,7 +44,7 @@
       "url": "/?page=comparison",
       "icons": [
         {
-          "src": "https://customer-assets.emergentagent.com/job_product-compass-2/artifacts/anyq4exi_folha.png",
+          "src": "https://customer-assets.emergentagent.com/job_farmtech-hub-8/artifacts/v83z9g2d_WhatsApp_Image_2025-10-15_at_09.40.31-removebg-preview.png",
           "sizes": "96x96"
         }
       ]

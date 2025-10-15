@@ -518,16 +518,9 @@ const ProductManagement = ({ token, technologies }) => {
   const [formData, setFormData] = useState({
     name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
     composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-    additives: '', description: '', materials_url: '', proposito: ''
+    additives: '', description: '', materials_url: ''
   });
   const [loading, setLoading] = useState(false);
-  
-  const PROPOSITO_OPTIONS = [
-    'Nitrogênio', 'Fósforo', 'Potássio', 'Cálcio', 'Magnésio', 'Enxofre', 'Manganês', 
-    'Zinco', 'Molibdênio', 'Cobre', 'Boro', 'Níquel', 'Complexo Mn', 'Complexo Zn', 
-    'Complexo Cu', 'Complexo B', 'CoMo', 'CoMoNi', 'CaB', 'Indutor', 'Enchimento de Grãos', 
-    'TS', 'Estruturador', 'Condicionador', 'Desalojante', 'Sanitário', 'Antiestresse'
-  ];
 
   useEffect(() => {
     fetchProducts();
@@ -574,7 +567,7 @@ const ProductManagement = ({ token, technologies }) => {
         setFormData({
           name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
           composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-          additives: '', description: '', materials_url: '', proposito: ''
+          additives: '', description: '', materials_url: ''
         });
       }
     } catch (error) {
@@ -724,23 +717,6 @@ const ProductManagement = ({ token, technologies }) => {
           </p>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 font-semibold mb-2">Propósito (Opcional)</label>
-          <select
-            value={formData.proposito || ''}
-            onChange={(e) => setFormData({...formData, proposito: e.target.value})}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-          >
-            <option value="">Selecione o propósito...</option>
-            {PROPOSITO_OPTIONS.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
-          <p className="text-sm text-gray-500 mt-1">
-            Propósito do produto para sugestões automáticas no comparativo
-          </p>
-        </div>
-
         <div className="flex space-x-2">
           <button
             onClick={handleSave}
@@ -756,7 +732,7 @@ const ProductManagement = ({ token, technologies }) => {
                 setFormData({
                   name: '', logo: '', technology_id: '', density: 0, nature: 'Líquido',
                   composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-                  additives: '', description: '', materials_url: '', proposito: ''
+                  additives: '', description: '', materials_url: ''
                 });
               }}
               className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
@@ -836,22 +812,6 @@ const CompetitorManagement = ({ token }) => {
   const [bulkPasteData, setBulkPasteData] = useState('');
   const [showBulkPaste, setShowBulkPaste] = useState(false);
 
-  // NOVO: Estados para edição individual
-  const [editingCompetitor, setEditingCompetitor] = useState(null);
-  const [formData, setFormData] = useState({
-    company: '', product: '', density: 0, nature: 'Líquido',
-    composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-    additives: '', proposito: ''
-  });
-  const [showIndividualForm, setShowIndividualForm] = useState(false);
-
-  const PROPOSITO_OPTIONS = [
-    'Nitrogênio', 'Fósforo', 'Potássio', 'Cálcio', 'Magnésio', 'Enxofre', 'Manganês', 
-    'Zinco', 'Molibdênio', 'Cobre', 'Boro', 'Níquel', 'Complexo Mn', 'Complexo Zn', 
-    'Complexo Cu', 'Complexo B', 'CoMo', 'CoMoNi', 'CaB', 'Indutor', 'Enchimento de Grãos', 
-    'TS', 'Estruturador', 'Condicionador', 'Desalojante', 'Sanitário', 'Antiestresse'
-  ];
-
   const elements = [
     'N', 'P', 'K', 'Ca', 'Mg', 'S', 'Mo', 'Co', 'Zn', 'B', 'Cu', 'Mn', 'Ni', 'Se', 'Si', 'Fe'
   ];
@@ -871,87 +831,6 @@ const CompetitorManagement = ({ token }) => {
       console.error('Error fetching competitors:', error);
     }
   };
-
-  // CRUD Individual de Concorrentes
-  const handleEditCompetitor = (competitor) => {
-    setEditingCompetitor(competitor);
-    setFormData({
-      company: competitor.company,
-      product: competitor.product,
-      density: competitor.density,
-      nature: competitor.nature,
-      composition: competitor.composition,
-      additives: competitor.additives,
-      proposito: competitor.proposito || ''
-    });
-    setShowIndividualForm(true);
-  };
-
-  const handleSaveIndividualCompetitor = async () => {
-    if (!formData.company || !formData.product) {
-      alert('Empresa e Produto são obrigatórios!');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const url = editingCompetitor 
-        ? `${API_BASE}/api/admin/competitors/${editingCompetitor.id}`
-        : `${API_BASE}/api/admin/competitors`;
-      
-      const method = editingCompetitor ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          logo: ''
-        })
-      });
-      
-      if (response.ok) {
-        fetchCompetitors();
-        setEditingCompetitor(null);
-        setFormData({
-          company: '', product: '', density: 0, nature: 'Líquido',
-          composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-          additives: '', proposito: ''
-        });
-        setShowIndividualForm(false);
-        alert(editingCompetitor ? 'Concorrente atualizado!' : 'Concorrente adicionado!');
-      }
-    } catch (error) {
-      console.error('Error saving competitor:', error);
-      alert('Erro ao salvar concorrente');
-    }
-    setLoading(false);
-  };
-
-  const handleDeleteCompetitor = async (competitorId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este concorrente?')) return;
-    
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE}/api/admin/competitors/${competitorId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      
-      if (response.ok) {
-        fetchCompetitors();
-        alert('Concorrente excluído com sucesso!');
-      }
-    } catch (error) {
-      console.error('Error deleting competitor:', error);
-      alert('Erro ao excluir concorrente');
-    }
-    setLoading(false);
-  };
-
 
   // NOVA FUNÇÃO: Processar dados colados em bloco
   const processBulkPaste = () => {
@@ -978,8 +857,7 @@ const CompetitorManagement = ({ token }) => {
           density: (columns[3] || '0').trim().replace(',', '.'), // Densidade na coluna 3, converter vírgula para ponto
           nature: (columns[2] || 'liquido').trim().toLowerCase(), // Natureza na coluna 2
           composition: {},
-          additives: '',
-          proposito: ''
+          additives: ''
         };
 
         // Debug: mostrar o objeto row criado
@@ -1000,11 +878,6 @@ const CompetitorManagement = ({ token }) => {
         // Aditivos na coluna 20 se existir
         if (columns[20]) {
           row.additives = columns[20].trim();
-        }
-
-        // Propósito na coluna 21 se existir
-        if (columns[21]) {
-          row.proposito = columns[21].trim();
         }
 
         if (row.company && row.product) {
@@ -1035,8 +908,7 @@ const CompetitorManagement = ({ token }) => {
         acc[element] = '';
         return acc;
       }, {}),
-      additives: '',
-      proposito: ''
+      additives: ''
     };
     setEditableRows([...editableRows, newRow]);
   };
@@ -1102,8 +974,7 @@ const CompetitorManagement = ({ token }) => {
             acc[element] = parseFloat(row.composition[element]) || 0;
             return acc;
           }, {}),
-          additives: row.additives.trim(),
-          proposito: row.proposito ? row.proposito.trim() : ''
+          additives: row.additives.trim()
         };
 
         const response = await fetch(`${API_BASE}/api/admin/competitors`, {
@@ -1219,149 +1090,6 @@ const CompetitorManagement = ({ token }) => {
 
   return (
     <div className="space-y-6">
-      {/* NOVO: Formulário Individual de Edição/Adição */}
-      <div className="card">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">✏️ Editar/Adicionar Concorrente Individual</h3>
-          <button
-            onClick={() => {
-              if (showIndividualForm) {
-                setShowIndividualForm(false);
-                setEditingCompetitor(null);
-                setFormData({
-                  company: '', product: '', density: 0, nature: 'Líquido',
-                  composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-                  additives: '', proposito: ''
-                });
-              } else {
-                setShowIndividualForm(true);
-              }
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            {showIndividualForm ? 'Fechar' : '➕ Novo Concorrente'}
-          </button>
-        </div>
-
-        {showIndividualForm && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Empresa</label>
-                <input
-                  type="text"
-                  value={formData.company}
-                  onChange={(e) => setFormData({...formData, company: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Produto</label>
-                <input
-                  type="text"
-                  value={formData.product}
-                  onChange={(e) => setFormData({...formData, product: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Densidade</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.density}
-                  onChange={(e) => setFormData({...formData, density: parseFloat(e.target.value)})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Natureza</label>
-                <select
-                  value={formData.nature}
-                  onChange={(e) => setFormData({...formData, nature: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="Líquido">Líquido</option>
-                  <option value="Sólido">Sólido</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Propósito</label>
-                <select
-                  value={formData.proposito}
-                  onChange={(e) => setFormData({...formData, proposito: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">Selecione...</option>
-                  {PROPOSITO_OPTIONS.map(option => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Composição Química</label>
-              <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                {elements.map(element => (
-                  <div key={element}>
-                    <label className="block text-xs font-semibold">{element}</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={formData.composition[element]}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        composition: { ...formData.composition, [element]: parseFloat(e.target.value) || 0 }
-                      })}
-                      className="w-full px-2 py-1 border rounded text-sm"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Aditivos</label>
-              <textarea
-                value={formData.additives}
-                onChange={(e) => setFormData({...formData, additives: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg"
-                rows="2"
-              />
-            </div>
-
-            <div className="flex space-x-2">
-              <button
-                onClick={handleSaveIndividualCompetitor}
-                disabled={loading}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-              >
-                {loading ? 'Salvando...' : 'Salvar'}
-              </button>
-              {editingCompetitor && (
-                <button
-                  onClick={() => {
-                    setEditingCompetitor(null);
-                    setFormData({
-                      company: '', product: '', density: 0, nature: 'Líquido',
-                      composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
-                      additives: '', proposito: ''
-                    });
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                >
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* NOVO: Colagem em Bloco - MELHOR SOLUÇÃO */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
@@ -1386,7 +1114,7 @@ const CompetitorManagement = ({ token }) => {
                 <li><strong>5.</strong> Revise na tabela e clique "Salvar"</li>
               </ol>
               <p className="text-xs text-purple-600 mt-2">
-                <strong>Formato CORRETO:</strong> Empresa | Produto | Natureza | Densidade | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos | Propósito<br/>
+                <strong>Formato CORRETO:</strong> Empresa | Produto | Natureza | Densidade | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos<br/>
                 <strong>✅ PERFEITO:</strong> Vírgulas decimais (1,45) serão convertidas automaticamente para pontos
               </p>
             </div>
@@ -1485,7 +1213,6 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                       </th>
                     ))}
                     <th className="border border-gray-300 px-2 py-1">Aditivos</th>
-                    <th className="border border-gray-300 px-2 py-1">Propósito</th>
                     <th className="border border-gray-300 px-2 py-1">Ações</th>
                   </tr>
                 </thead>
@@ -1572,17 +1299,6 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                           autoCorrect="off"
                           autoCapitalize="off"
                           translate="no"
-                        />
-                      </td>
-                      <td className="border border-gray-300 px-1 py-1">
-                        <input
-                          type="text"
-                          value={row.proposito || ''}
-                          onChange={(e) => updateEditableRow(row.id, 'proposito', e.target.value)}
-                          className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                          placeholder="Propósito"
-                          spellCheck="false"
-                          autoComplete="off"
                         />
                       </td>
                       <td className="border border-gray-300 px-1 py-1">
@@ -1721,21 +1437,13 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                     </div>
                   </td>
                   <td className="px-3 py-2">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEditCompetitor(competitor)}
-                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDeleteCompetitor(competitor.id)}
-                        disabled={loading}
-                        className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
-                      >
-                        Remover
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => deleteCompetitor(competitor.id)}
+                      disabled={loading}
+                      className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                    >
+                      Remover
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -2390,36 +2098,11 @@ function App() {
   // Cultures states - NOVA FUNCIONALIDADE
   const [cultures, setCultures] = useState([]);
 
-  // Planejamento states
-  const [planejamentos, setPlanejamentos] = useState([]);
-  const [planejamentoForm, setPlanejamentoForm] = useState({
-    cultura: '',
-    colheita_esperada: 0,
-    area_tratada: 0,
-    valor_saca: 0,
-    produtos_selecionados: []
-  });
-  const [calculoResultado, setCalculoResultado] = useState(null);
-  const [produtosSelecionados, setProdutosSelecionados] = useState([]);
-  const [produtoAtual, setProdutoAtual] = useState({ produto_id: '', dose_lha: 0, valor_litro: 0 });
-  const [resumoManejo, setResumoManejo] = useState(null);
-  const [allProducts, setAllProducts] = useState([]); // NOVO: todos os produtos para planejamento
-
-
   // Propósito options - NOVA FUNCIONALIDADE
   const PROPOSITO_OPTIONS = [
     'Nitrogênio',
     'Fósforo', 
     'Potássio',
-    'Cálcio',
-    'Magnésio',
-    'Enxofre',
-    'Manganês',
-    'Zinco',
-    'Molibdênio',
-    'Cobre',
-    'Boro',
-    'Níquel',
     'Complexo Mn',
     'Complexo Zn',
     'Complexo Cu',
@@ -2433,8 +2116,7 @@ function App() {
     'Estruturador',
     'Condicionador',
     'Desalojante',
-    'Sanitário',
-    'Antiestresse'
+    'Sanitário'
   ];
 
   // New comparison states for enhanced features
@@ -2443,8 +2125,6 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [viewMode, setViewMode] = useState('comparison'); // 'comparison' or 'standalone'
-  const [productSearchTerm, setProductSearchTerm] = useState('');
-  const [filteredProducts, setFilteredProducts] = useState([]);
 
 
   // Auth states
@@ -2465,7 +2145,6 @@ function App() {
     fetchHomeContent();
     fetchCompetitorCompanies();
     fetchCultures(); // NOVA FUNCIONALIDADE
-    fetchAllProducts(); // Carregar todos os produtos para planejamento
     checkAuthStatus();
   }, []);
 
@@ -2695,62 +2374,9 @@ function App() {
     }
   };
 
-  // NEW: Filter products for autocomplete and auto-select company
-  const handleProductSearchChange = async (value) => {
-    setProductSearchTerm(value);
-    
-    if (value.trim() === '') {
-      setFilteredProducts([]);
-      return;
-    }
-    
-    // Buscar em todos os produtos de todos os concorrentes
-    try {
-      const response = await fetch(`${API_BASE}/api/competitors`);
-      const allCompetitors = await response.json();
-      
-      const filtered = allCompetitors.filter(competitor =>
-        competitor.product.toLowerCase().includes(value.toLowerCase())
-      );
-      
-      setFilteredProducts(filtered.slice(0, 10)); // Limitar a 10 resultados
-    } catch (error) {
-      console.error('Error searching products:', error);
-    }
-  };
-
-  // NEW: Handle product selection from autocomplete
-  const handleProductSelect = (competitor) => {
-    setProductSearchTerm('');
-    setFilteredProducts([]);
-    
-    // Selecionar a empresa automaticamente
-    handleCompanyChange(competitor.company);
-    
-    // Aguardar um momento e então selecionar o produto
-    setTimeout(() => {
-      setSelectedCompetitor(competitor.id);
-    }, 300);
-  };
-
-  // Carregar todos os produtos para o planejamento
-  const fetchAllProducts = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/products`);
-      if (response.ok) {
-        const data = await response.json();
-        setAllProducts(data);
-      }
-    } catch (error) {
-      console.error('Error fetching all products:', error);
-    }
-  };
-
-
   const loadComparison = async () => {
     if (selectedCompetitor && selectedComparisonProduct) {
       setLoading(true);
-      setSuggestedProducts([]); // Limpar sugestões anteriores
       try {
         const [competitorResponse, microxistoResponse] = await Promise.all([
           fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`),
@@ -2762,23 +2388,8 @@ function App() {
         
         setComparisonData({
           competitor: competitorData,
-          product: microxistoData
+          microxisto: microxistoData
         });
-
-        // Buscar sugestões APÓS a comparação se o concorrente tiver propósito
-        if (competitorData.proposito) {
-          try {
-            const suggestionsResponse = await fetch(
-              `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
-            );
-            if (suggestionsResponse.ok) {
-              const suggestions = await suggestionsResponse.json();
-              setSuggestedProducts(suggestions);
-            }
-          } catch (error) {
-            console.error('Error fetching suggestions:', error);
-          }
-        }
       } catch (error) {
         console.error('Error loading comparison:', error);
       }
@@ -2995,12 +2606,6 @@ function App() {
                   className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'cultures' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
                 >
                   🌾 Culturas
-                </button>
-                <button
-                  onClick={() => setCurrentPage('planejamento')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'planejamento' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  📊 Planejamento
                 </button>
                 <button
                   onClick={() => setCurrentPage('comparison')}
@@ -3263,441 +2868,6 @@ function App() {
           </>
         )}
 
-
-        {currentPage === 'planejamento' && (
-          <>
-            {isLoggedIn ? (
-              <div className="max-w-6xl mx-auto">
-                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">📊 Planejamento de Aplicação</h2>
-                
-                <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">Dados do Planejamento</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Cultura</label>
-                      <input
-                        type="text"
-                        value={planejamentoForm.cultura}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura: e.target.value})}
-                        placeholder="Ex: Soja, Milho, Algodão..."
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sc/ha)</label>
-                      <input
-                        type="number"
-                        value={planejamentoForm.colheita_esperada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: parseFloat(e.target.value) || 0})}
-                        placeholder="Ex: 60"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Área Tratada (hectares)</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={planejamentoForm.area_tratada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, area_tratada: parseFloat(e.target.value) || 0})}
-                        placeholder="Ex: 50"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor da Saca (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={planejamentoForm.valor_saca}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: parseFloat(e.target.value) || 0})}
-                        placeholder="Ex: 120.00"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  {planejamentoForm.cultura && planejamentoForm.colheita_esperada > 0 && planejamentoForm.area_tratada > 0 && (
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                      <p className="text-sm text-green-800">
-                        ✅ Dados básicos preenchidos. Agora selecione os produtos MicroXisto abaixo.
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Seleção de Produtos - aparece sempre */}
-                {planejamentoForm.cultura && planejamentoForm.area_tratada > 0 && (
-                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-4">Selecionar Produtos MicroXisto (até 15)</h3>
-                    
-                    {/* Lista de Produtos Selecionados + Campo para adicionar novo */}
-                    <div className="space-y-3">
-                      {produtosSelecionados.map((item, index) => (
-                        <div key={index} className="bg-gray-50 p-3 rounded-lg border">
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                            <div className="md:col-span-5">
-                              <label className="block text-xs text-gray-600 mb-1">Produto</label>
-                              <div className="font-semibold text-gray-800" translate="no">{item.produto.name}</div>
-                            </div>
-                            
-                            <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-600 mb-1">Dose (L/ha)</label>
-                              <input
-                                type="number"
-                                step="0.1"
-                                value={item.dose_lha}
-                                onChange={(e) => {
-                                  const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].dose_lha = parseFloat(e.target.value) || 0;
-                                  setProdutosSelecionados(novosProdutos);
-                                }}
-                                className="w-full px-2 py-1 border rounded text-sm"
-                              />
-                            </div>
-                            
-                            <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-600 mb-1">Valor/L (R$)</label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.valor_litro}
-                                onChange={(e) => {
-                                  const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].valor_litro = parseFloat(e.target.value) || 0;
-                                  setProdutosSelecionados(novosProdutos);
-                                }}
-                                className="w-full px-2 py-1 border rounded text-sm"
-                              />
-                            </div>
-                            
-                            <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
-                              <div className="text-sm font-semibold text-gray-700">
-                                {(item.dose_lha * planejamentoForm.area_tratada).toFixed(1)} L
-                              </div>
-                            </div>
-                            
-                            <div className="md:col-span-1 flex justify-end">
-                              <button
-                                onClick={() => {
-                                  setProdutosSelecionados(produtosSelecionados.filter((_, i) => i !== index));
-                                }}
-                                className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {/* Campo para adicionar novo produto */}
-                      {produtosSelecionados.length < 15 && (
-                        <div className="bg-blue-50 p-3 rounded-lg border-2 border-blue-200">
-                          <label className="block text-sm text-gray-700 font-semibold mb-2">
-                            ➕ Adicionar Produto ({produtosSelecionados.length}/15)
-                          </label>
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                const produto = allProducts.find(p => p.id === e.target.value);
-                                if (produto) {
-                                  setProdutosSelecionados([...produtosSelecionados, {
-                                    produto_id: produto.id,
-                                    produto: produto,
-                                    dose_lha: 1,
-                                    valor_litro: 0
-                                  }]);
-                                }
-                              }
-                            }}
-                            className="w-full px-3 py-2 border rounded-lg"
-                          >
-                            <option value="">Selecione um produto...</option>
-                            {allProducts
-                              .filter(p => !produtosSelecionados.find(sel => sel.produto_id === p.id))
-                              .map(product => (
-                                <option key={product.id} value={product.id} translate="no">{product.name}</option>
-                              ))
-                            }
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {produtosSelecionados.length > 0 && (
-                      <button
-                        onClick={() => {
-                          // Dados de referência (valores por 1 sc/ha)
-                          const dadosReferencia = {
-                            Soja: {
-                              extracao: { N: 4.8, P: 0.9, K: 2.6, Ca: 1.1, Mg: 0.5, S: 0.8, B: 4.6, Cu: 1.2, Fe: 20.1, Mn: 8.7, Zn: 4.9, Mo: 0.1 },
-                              exportacao: { N: 3.4, P: 0.7, K: 1.1, Ca: 0.2, Mg: 0.1, S: 0.5, B: 1.6, Cu: 0.7, Fe: 4.8, Mn: 1.8, Zn: 2.4, Mo: 0.036 }
-                            },
-                            Milho: {
-                              extracao: { N: 1.3, P: 0.5, K: 1.2, Ca: 0.1, Mg: 0.2, S: 0.2, B: 1.2, Cu: 0.4, Fe: 9.7, Mn: 2.2, Zn: 2.3, Mo: 0.1 },
-                              exportacao: { N: 0.9, P: 0.5, K: 0.4, Ca: 0.02, Mg: 0.06, S: 0.06, B: 0.2, Cu: 0.06, Fe: 1.25, Mn: 0.44, Zn: 1.48, Mo: 0.035 }
-                            }
-                          };
-                          
-                          // Calcular resumo do manejo
-                          let totalNutrientes = {};
-                          let custoTotal = 0;
-                          let resumoProdutos = [];
-                          
-                          produtosSelecionados.forEach(item => {
-                            // Volume total = dose * área
-                            const volumeTotal = item.dose_lha * planejamentoForm.area_tratada;
-                            // Valor total = volume total * valor do litro
-                            const valorTotal = volumeTotal * item.valor_litro;
-                            custoTotal += valorTotal;
-                            
-                            // Acumular nutrientes (g/ha)
-                            Object.keys(item.produto.composition).forEach(nutriente => {
-                              const valorNutriente = item.produto.composition[nutriente];
-                              const aporte = valorNutriente * item.dose_lha; // g/ha
-                              totalNutrientes[nutriente] = (totalNutrientes[nutriente] || 0) + aporte;
-                            });
-                            
-                            resumoProdutos.push({
-                              nome: item.produto.name,
-                              dose_lha: item.dose_lha,
-                              volumeTotal: volumeTotal,
-                              valorTotal: valorTotal
-                            });
-                          });
-                          
-                          const custoPorHectare = planejamentoForm.area_tratada > 0 ? custoTotal / planejamentoForm.area_tratada : 0;
-                          const valorSacasPorHa = planejamentoForm.valor_saca > 0 
-                            ? custoPorHectare / planejamentoForm.valor_saca 
-                            : 0;
-                          
-                          // Calcular extração e exportação baseado na cultura
-                          const culturaNormalizada = planejamentoForm.cultura.toLowerCase();
-                          let extracao = {};
-                          let exportacao = {};
-                          
-                          if (culturaNormalizada.includes('soja')) {
-                            const multiplicador = planejamentoForm.colheita_esperada;
-                            Object.keys(dadosReferencia.Soja.extracao).forEach(nutriente => {
-                              // N, P, K, Ca, Mg, S: Kg/ha -> converter para g/ha (* 1000)
-                              if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
-                                extracao[nutriente] = dadosReferencia.Soja.extracao[nutriente] * multiplicador * 1000;
-                                exportacao[nutriente] = dadosReferencia.Soja.exportacao[nutriente] * multiplicador * 1000;
-                              } else {
-                                // B, Cu, Fe, Mn, Zn, Mo: já em g/ha
-                                extracao[nutriente] = dadosReferencia.Soja.extracao[nutriente] * multiplicador;
-                                exportacao[nutriente] = dadosReferencia.Soja.exportacao[nutriente] * multiplicador;
-                              }
-                            });
-                          } else if (culturaNormalizada.includes('milho')) {
-                            const multiplicador = planejamentoForm.colheita_esperada;
-                            Object.keys(dadosReferencia.Milho.extracao).forEach(nutriente => {
-                              if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
-                                extracao[nutriente] = dadosReferencia.Milho.extracao[nutriente] * multiplicador * 1000;
-                                exportacao[nutriente] = dadosReferencia.Milho.exportacao[nutriente] * multiplicador * 1000;
-                              } else {
-                                extracao[nutriente] = dadosReferencia.Milho.extracao[nutriente] * multiplicador;
-                                exportacao[nutriente] = dadosReferencia.Milho.exportacao[nutriente] * multiplicador;
-                              }
-                            });
-                          }
-                          
-                          setResumoManejo({
-                            produtos: resumoProdutos,
-                            totalNutrientes,
-                            custoTotal,
-                            custoPorHectare,
-                            valorSacasPorHa,
-                            extracao,
-                            exportacao,
-                            cultura: planejamentoForm.cultura
-                          });
-                        }}
-                        className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base"
-                      >
-                        📊 Calcular Resumo do Manejo
-                      </button>
-                    )}
-                  </div>
-                )}
-                
-                {/* Resumo do Manejo */}
-                {resumoManejo && (
-                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                    <h3 className="text-xl font-bold text-green-800 mb-4">📋 Resumo do Manejo</h3>
-                    
-                    {/* Soma Total de Nutrientes */}
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <h4 className="font-semibold text-blue-900 mb-3">Total de Nutrientes Aportados (g/ha)</h4>
-                      <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-                        {Object.entries(resumoManejo.totalNutrientes)
-                          .filter(([, valor]) => valor > 0)
-                          .map(([nutriente, valor]) => (
-                            <div key={nutriente} className="text-center p-2 bg-white rounded border border-blue-300">
-                              <div className="text-xs text-gray-600">{nutriente}</div>
-                              <div className="text-lg font-bold text-blue-800">{valor.toFixed(1)}</div>
-                            </div>
-                          ))
-                        }
-                      </div>
-                      <div className="mt-3 text-sm text-blue-800">
-                        <strong>Total geral:</strong> {Object.values(resumoManejo.totalNutrientes).reduce((a, b) => a + b, 0).toFixed(1)} g/ha
-                      </div>
-                    </div>
-                    
-                    {/* Tabelas de Extração e Exportação */}
-                    {(resumoManejo.extracao && Object.keys(resumoManejo.extracao).length > 0) && (
-                      <div className="mb-6 space-y-4">
-                        {/* Tabela de Extração */}
-                        <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                          <h4 className="font-semibold text-orange-900 mb-3">
-                            🌱 Extração de Nutrientes ({resumoManejo.cultura})
-                          </h4>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs md:text-sm">
-                              <thead className="bg-orange-100">
-                                <tr>
-                                  <th className="px-2 py-2 text-left">Nutriente</th>
-                                  <th className="px-2 py-2 text-center">Unidade</th>
-                                  <th className="px-2 py-2 text-right">Quantidade</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {Object.entries(resumoManejo.extracao)
-                                  .filter(([, valor]) => valor > 0)
-                                  .map(([nutriente, valor]) => {
-                                    const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
-                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
-                                    const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
-                                    
-                                    return (
-                                      <tr key={nutriente} className="border-t border-orange-200">
-                                        <td className="px-2 py-2 font-semibold text-orange-900">{nutriente}</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{unidade}</td>
-                                        <td className="px-2 py-2 text-right font-bold text-orange-800">{valorExibicao}</td>
-                                      </tr>
-                                    );
-                                  })
-                                }
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                        
-                        {/* Tabela de Exportação */}
-                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                          <h4 className="font-semibold text-purple-900 mb-3">
-                            📦 Exportação de Nutrientes ({resumoManejo.cultura})
-                          </h4>
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-xs md:text-sm">
-                              <thead className="bg-purple-100">
-                                <tr>
-                                  <th className="px-2 py-2 text-left">Nutriente</th>
-                                  <th className="px-2 py-2 text-center">Unidade</th>
-                                  <th className="px-2 py-2 text-right">Quantidade</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {Object.entries(resumoManejo.exportacao)
-                                  .filter(([, valor]) => valor > 0)
-                                  .map(([nutriente, valor]) => {
-                                    const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
-                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
-                                    const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
-                                    
-                                    return (
-                                      <tr key={nutriente} className="border-t border-purple-200">
-                                        <td className="px-2 py-2 font-semibold text-purple-900">{nutriente}</td>
-                                        <td className="px-2 py-2 text-center text-gray-600">{unidade}</td>
-                                        <td className="px-2 py-2 text-right font-bold text-purple-800">{valorExibicao}</td>
-                                      </tr>
-                                    );
-                                  })
-                                }
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Tabela de Produtos */}
-                    <div className="overflow-x-auto mb-6">
-                      <table className="w-full text-sm">
-                        <thead className="bg-gray-100">
-                          <tr>
-                            <th className="px-3 py-2 text-left">Produto</th>
-                            <th className="px-3 py-2 text-center">Dose (L/ha)</th>
-                            <th className="px-3 py-2 text-center">Volume Total (L)</th>
-                            <th className="px-3 py-2 text-right">Valor (R$)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {resumoManejo.produtos.map((produto, index) => (
-                            <tr key={index} className="border-t">
-                              <td className="px-3 py-2" translate="no">{produto.nome}</td>
-                              <td className="px-3 py-2 text-center">{produto.dose_lha.toFixed(1)}</td>
-                              <td className="px-3 py-2 text-center">{produto.volumeTotal.toFixed(1)}</td>
-                              <td className="px-3 py-2 text-right">
-                                R$ {produto.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    
-                    {/* Resumo Financeiro */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo Total (Área Completa)</div>
-                        <div className="text-2xl font-bold text-green-800">
-                          R$ {resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo por Hectare</div>
-                        <div className="text-2xl font-bold text-blue-800">
-                          R$ {resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo em Sacas/ha</div>
-                        <div className="text-2xl font-bold text-yellow-800">
-                          {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="max-w-md mx-auto">
-                <div className="bg-white rounded-lg shadow-md p-6 text-center">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">🔒 Acesso Restrito</h3>
-                  <p className="text-gray-600 mb-6">Para acessar o planejamento, você precisa estar logado.</p>
-                  <button 
-                    onClick={() => setCurrentPage('login')}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-                  >
-                    Fazer Login
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
         {currentPage === 'comparison' && (
           <>
             {isLoggedIn ? (
@@ -3715,7 +2885,7 @@ function App() {
                   >
                     <option value="">Selecione...</option>
                     {companies.map(company => (
-                      <option key={company.company} value={company.company} translate="no">{company.company}</option>
+                      <option key={company.company} value={company.company} translate="no" data-translate="no" lang="en">{company.company}</option>
                     ))}
                   </select>
                 </div>
@@ -3724,10 +2894,7 @@ function App() {
                   <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
                   <select
                     value={selectedCompetitor}
-                    onChange={(e) => {
-                      setSelectedCompetitor(e.target.value);
-                      setSuggestedProducts([]); // Limpar sugestões anteriores
-                    }}
+                    onChange={(e) => setSelectedCompetitor(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedCompany}
                   >
@@ -3762,6 +2929,10 @@ function App() {
                     onChange={(e) => setSelectedComparisonProduct(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedComparisonTech}
+                    spellCheck="false"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
                     translate="no"
                   >
                     <option value="">Selecione...</option>
@@ -3772,67 +2943,13 @@ function App() {
                 </div>
               </div>
               
-              {/* Sugestões aparecem após clicar em Sugestão */}
-              {suggestedProducts.length > 0 && (
-                <div className="mb-4 p-4 bg-green-50 rounded-lg border-2 border-green-300">
-                  <p className="text-sm font-bold text-green-900 mb-2">
-                    💡 Produtos MicroXisto recomendados:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestedProducts.map(product => (
-                      <span key={product.id} className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
-                        {product.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={loadComparison}
-                  disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
-                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
-                >
-                  {loading ? 'Carregando...' : 'Comparar Produtos'}
-                </button>
-                
-                {selectedCompetitor && (
-                  <button
-                    onClick={async () => {
-                      setLoading(true);
-                      setSuggestedProducts([]);
-                      try {
-                        const response = await fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`);
-                        const competitorData = await response.json();
-                        
-                        if (competitorData.proposito) {
-                          const suggestionsResponse = await fetch(
-                            `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
-                          );
-                          if (suggestionsResponse.ok) {
-                            const suggestions = await suggestionsResponse.json();
-                            setSuggestedProducts(suggestions);
-                            if (suggestions.length === 0) {
-                              alert('Nenhum produto MicroXisto encontrado com o propósito: ' + competitorData.proposito);
-                            }
-                          }
-                        } else {
-                          alert('Este concorrente não tem propósito definido.');
-                        }
-                      } catch (error) {
-                        console.error('Error fetching suggestions:', error);
-                        alert('Erro ao buscar sugestões.');
-                      }
-                      setLoading(false);
-                    }}
-                    disabled={loading}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
-                  >
-                    {loading ? 'Carregando...' : '💡 Sugestão'}
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={loadComparison}
+                disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                {loading ? 'Carregando...' : 'Comparar Produtos'}
+              </button>
             </div>
             
             {comparisonData && (
@@ -3846,27 +2963,25 @@ function App() {
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>Densidade: {comparisonData.competitor.density} g/mL</p>
                       <p>Natureza: {comparisonData.competitor.nature}</p>
-                      {comparisonData.competitor.proposito && (
-                        <p className="font-bold text-blue-600 mt-2">🎯 Propósito: {comparisonData.competitor.proposito}</p>
-                      )}
                     </div>
-                  </div>                  
+                  </div>
+                  
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-2 mb-2">
-                      <img src={comparisonData.product.logo} alt="MicroXisto" className="h-6 lg:h-8" />
+                      <img src={comparisonData.microxisto.logo} alt="MicroXisto" className="h-6 lg:h-8" />
                       <h4 className="text-lg lg:text-xl font-semibold text-green-800">MicroXisto</h4>
                     </div>
-                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.product.name}</h5>
+                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.microxisto.name}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.product.density} g/mL</p>
-                      <p>Natureza: {comparisonData.product.nature}</p>
+                      <p>Densidade: {comparisonData.microxisto.density} g/mL</p>
+                      <p>Natureza: {comparisonData.microxisto.nature}</p>
                     </div>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   {renderCompositionTable(comparisonData.competitor.composition, `${comparisonData.competitor.company} - ${comparisonData.competitor.product}`)}
-                  {renderCompositionTable(comparisonData.product.composition, `MicroXisto - ${comparisonData.product.name}`)}
+                  {renderCompositionTable(comparisonData.microxisto.composition, `MicroXisto - ${comparisonData.microxisto.name}`)}
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-6">
@@ -3877,13 +2992,13 @@ function App() {
                   
                   <div className="bg-green-50 p-4 rounded-lg">
                     <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
-                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.product.additives}</p>
+                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.microxisto.additives}</p>
                     
                     {/* Descrição do produto MicroXisto */}
                     <div className="mt-4 pt-3 border-t border-green-200">
                       <h6 className="font-semibold text-green-800 mb-2">📝 Descrição</h6>
                       <p className="text-gray-600 text-sm" translate="no">
-                        {comparisonData.product.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
+                        {comparisonData.microxisto.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
                       </p>
                     </div>
                   </div>
