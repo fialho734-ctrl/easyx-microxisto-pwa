@@ -525,7 +525,7 @@ const ProductManagement = ({ token, technologies }) => {
   const PROPOSITO_OPTIONS = [
     'Nitrogênio', 'Fósforo', 'Potássio', 'Complexo Mn', 'Complexo Zn', 'Complexo Cu', 
     'Complexo B', 'CoMo', 'CoMoNi', 'CaB', 'Indutor', 'Enchimento de Grãos', 'TS', 
-    'Estruturador', 'Condicionador', 'Desalojante', 'Sanitário'
+    'Estruturador', 'Condicionador', 'Desalojante', 'Sanitário', 'Antiestresse'
   ];
 
   useEffect(() => {
