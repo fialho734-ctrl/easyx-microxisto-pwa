@@ -3096,22 +3096,6 @@ function App() {
               </button>
             </div>
             
-            {/* Suggested Products Alert - Shown AFTER comparison */}
-            {comparisonData && comparisonData.competitor.proposito && suggestedProducts.length > 0 && (
-              <div className="mb-6 p-4 bg-green-50 rounded-lg border-2 border-green-300">
-                <p className="text-sm font-bold text-green-900 mb-2">
-                  💡 Produtos MicroXisto recomendados com o mesmo propósito ({comparisonData.competitor.proposito}):
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {suggestedProducts.map(product => (
-                    <span key={product.id} className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
-                      {product.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
             {comparisonData && (
               <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
                 <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">
