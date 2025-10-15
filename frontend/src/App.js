@@ -1219,6 +1219,149 @@ const CompetitorManagement = ({ token }) => {
 
   return (
     <div className="space-y-6">
+      {/* NOVO: Formulário Individual de Edição/Adição */}
+      <div className="card">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-gray-800">✏️ Editar/Adicionar Concorrente Individual</h3>
+          <button
+            onClick={() => {
+              if (showIndividualForm) {
+                setShowIndividualForm(false);
+                setEditingCompetitor(null);
+                setFormData({
+                  company: '', product: '', density: 0, nature: 'Líquido',
+                  composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
+                  additives: '', proposito: ''
+                });
+              } else {
+                setShowIndividualForm(true);
+              }
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {showIndividualForm ? 'Fechar' : '➕ Novo Concorrente'}
+          </button>
+        </div>
+
+        {showIndividualForm && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Empresa</label>
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => setFormData({...formData, company: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Produto</label>
+                <input
+                  type="text"
+                  value={formData.product}
+                  onChange={(e) => setFormData({...formData, product: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Densidade</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.density}
+                  onChange={(e) => setFormData({...formData, density: parseFloat(e.target.value)})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Natureza</label>
+                <select
+                  value={formData.nature}
+                  onChange={(e) => setFormData({...formData, nature: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="Líquido">Líquido</option>
+                  <option value="Sólido">Sólido</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">Propósito</label>
+                <select
+                  value={formData.proposito}
+                  onChange={(e) => setFormData({...formData, proposito: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="">Selecione...</option>
+                  {PROPOSITO_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Composição Química</label>
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                {elements.map(element => (
+                  <div key={element}>
+                    <label className="block text-xs font-semibold">{element}</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.composition[element]}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        composition: { ...formData.composition, [element]: parseFloat(e.target.value) || 0 }
+                      })}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Aditivos</label>
+              <textarea
+                value={formData.additives}
+                onChange={(e) => setFormData({...formData, additives: e.target.value})}
+                className="w-full px-3 py-2 border rounded-lg"
+                rows="2"
+              />
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                onClick={handleSaveIndividualCompetitor}
+                disabled={loading}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {loading ? 'Salvando...' : 'Salvar'}
+              </button>
+              {editingCompetitor && (
+                <button
+                  onClick={() => {
+                    setEditingCompetitor(null);
+                    setFormData({
+                      company: '', product: '', density: 0, nature: 'Líquido',
+                      composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
+                      additives: '', proposito: ''
+                    });
+                  }}
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* NOVO: Colagem em Bloco - MELHOR SOLUÇÃO */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
@@ -1243,7 +1386,7 @@ const CompetitorManagement = ({ token }) => {
                 <li><strong>5.</strong> Revise na tabela e clique "Salvar"</li>
               </ol>
               <p className="text-xs text-purple-600 mt-2">
-                <strong>Formato CORRETO:</strong> Empresa | Produto | Natureza | Densidade | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos<br/>
+                <strong>Formato CORRETO:</strong> Empresa | Produto | Natureza | Densidade | N | P | K | Ca | Mg | S | Mo | Co | Zn | B | Cu | Mn | Ni | Se | Si | Fe | Aditivos | Propósito<br/>
                 <strong>✅ PERFEITO:</strong> Vírgulas decimais (1,45) serão convertidas automaticamente para pontos
               </p>
             </div>
