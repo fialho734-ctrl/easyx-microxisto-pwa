@@ -2985,80 +2985,56 @@ function App() {
             
             <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
-                <div className="relative">
+                <div>
                   <label className="block text-gray-700 font-semibold mb-2 text-sm">Empresa Concorrente</label>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    onFocus={() => setSearchTerm('')}
-                    placeholder="Digite para buscar..."
+                  <select
+                    value={selectedCompany}
+                    onChange={(e) => handleCompanyChange(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
-                  />
-                  {searchTerm && filteredCompanies.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 max-h-48 overflow-y-auto border rounded-lg bg-white shadow-lg">
-                      {filteredCompanies.slice(0, 10).map((company, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setSearchTerm('');
-                            handleCompanyChange(company.company);
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-green-50 border-b last:border-b-0 text-sm"
-                        >
-                          {company.company}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {selectedCompany && !searchTerm && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      Selecionado: <strong>{selectedCompany}</strong>
-                    </div>
-                  )}
+                  >
+                    <option value="">Selecione...</option>
+                    {companies.map(company => (
+                      <option key={company.company} value={company.company} translate="no">{company.company}</option>
+                    ))}
+                  </select>
                 </div>
                 
-                <div className="relative">
+                <div>
                   <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
-                  <input
-                    type="text"
-                    value={productSearchTerm}
-                    onChange={(e) => handleProductSearchChange(e.target.value)}
-                    onFocus={() => setProductSearchTerm('')}
-                    placeholder="Digite para buscar..."
+                  <select
+                    value={selectedCompetitor}
+                    onChange={async (e) => {
+                      setSelectedCompetitor(e.target.value);
+                      setSuggestedProducts([]);
+                      
+                      // Buscar sugestões quando selecionar concorrente
+                      if (e.target.value) {
+                        try {
+                          const response = await fetch(`${API_BASE}/api/competitors/${e.target.value}`);
+                          const competitorData = await response.json();
+                          
+                          if (competitorData.proposito) {
+                            const suggestionsResponse = await fetch(
+                              `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
+                            );
+                            if (suggestionsResponse.ok) {
+                              const suggestions = await suggestionsResponse.json();
+                              setSuggestedProducts(suggestions);
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Error fetching suggestions:', error);
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
-                  />
-                  {productSearchTerm && filteredProducts.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 max-h-48 overflow-y-auto border rounded-lg bg-white shadow-lg">
-                      {filteredProducts.map((competitor, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleProductSelect(competitor)}
-                          className="w-full text-left px-3 py-2 hover:bg-green-50 border-b last:border-b-0 text-sm"
-                        >
-                          <div className="font-semibold">{competitor.product}</div>
-                          <div className="text-xs text-gray-500">{competitor.company}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {!productSearchTerm && selectedCompany && (
-                    <select
-                      value={selectedCompetitor}
-                      onChange={(e) => setSelectedCompetitor(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm mt-2"
-                    >
-                      <option value="">Ou selecione da lista...</option>
-                      {competitorProducts.map(product => (
-                        <option key={product.id} value={product.id} translate="no">{product.product}</option>
-                      ))}
-                    </select>
-                  )}
-                  {selectedCompetitor && !productSearchTerm && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      Selecionado: <strong>{competitorProducts.find(p => p.id === selectedCompetitor)?.product}</strong>
-                    </div>
-                  )}
+                    disabled={!selectedCompany}
+                  >
+                    <option value="">Selecione...</option>
+                    {competitorProducts.map(product => (
+                      <option key={product.id} value={product.id} translate="no">{product.product}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div>
@@ -3095,50 +3071,29 @@ function App() {
                 </div>
               </div>
               
-              <div className="flex gap-3">
-                <button
-                  onClick={loadComparison}
-                  disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
-                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {loading ? 'Carregando...' : 'Comparar Produtos'}
-                </button>
-                
-                {selectedCompetitor && (
-                  <button
-                    onClick={async () => {
-                      setLoading(true);
-                      try {
-                        const response = await fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`);
-                        const competitorData = await response.json();
-                        
-                        setComparisonData({
-                          competitor: competitorData,
-                          product: null
-                        });
-
-                        // Buscar sugestões se tiver propósito
-                        if (competitorData.proposito) {
-                          const suggestionsResponse = await fetch(
-                            `${API_BASE}/api/products/by-proposito/${encodeURIComponent(competitorData.proposito)}`
-                          );
-                          if (suggestionsResponse.ok) {
-                            const suggestions = await suggestionsResponse.json();
-                            setSuggestedProducts(suggestions);
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Error loading competitor:', error);
-                      }
-                      setLoading(false);
-                    }}
-                    disabled={loading}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {loading ? 'Carregando...' : 'Ver Concorrente'}
-                  </button>
-                )}
-              </div>
+              {/* Suggested Products - Shown when competitor is selected */}
+              {suggestedProducts.length > 0 && (
+                <div className="mb-4 p-4 bg-green-50 rounded-lg border-2 border-green-300">
+                  <p className="text-sm font-bold text-green-900 mb-2">
+                    💡 Produtos MicroXisto recomendados:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestedProducts.map(product => (
+                      <span key={product.id} className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
+                        {product.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <button
+                onClick={loadComparison}
+                disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+              >
+                {loading ? 'Carregando...' : 'Comparar Produtos'}
+              </button>
             </div>
             
             {/* Suggested Products Alert - Shown AFTER comparison */}
