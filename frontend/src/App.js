@@ -2400,6 +2400,9 @@ function App() {
     produtos_selecionados: []
   });
   const [calculoResultado, setCalculoResultado] = useState(null);
+  const [produtosSelecionados, setProdutosSelecionados] = useState([]);
+  const [produtoAtual, setProdutoAtual] = useState({ produto_id: '', dose_lha: 0, valor_litro: 0 });
+  const [resumoManejo, setResumoManejo] = useState(null);
 
 
   // Propósito options - NOVA FUNCIONALIDADE
