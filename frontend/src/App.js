@@ -937,7 +937,8 @@ const CompetitorManagement = ({ token }) => {
         acc[element] = '';
         return acc;
       }, {}),
-      additives: ''
+      additives: '',
+      proposito: ''
     };
     setEditableRows([...editableRows, newRow]);
   };
