@@ -2335,6 +2335,44 @@ function App() {
     setCurrentPage('home');
   };
 
+
+  // NEW: Fetch suggested products based on proposito
+  const fetchSuggestedProducts = async (proposito) => {
+    if (!proposito) {
+      setSuggestedProducts([]);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/products/by-proposito/${encodeURIComponent(proposito)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestedProducts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching suggested products:', error);
+    }
+  };
+
+  // NEW: Handle proposito selection
+  const handlePropositoChange = (proposito) => {
+    setSelectedProposito(proposito);
+    fetchSuggestedProducts(proposito);
+  };
+
+  // NEW: Filter companies for autocomplete
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    if (value.trim() === '') {
+      setFilteredCompanies(companies);
+    } else {
+      const filtered = companies.filter(company =>
+        company.company.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredCompanies(filtered);
+    }
+  };
+
   const loadComparison = async () => {
     if (selectedCompetitor && selectedComparisonProduct) {
       setLoading(true);
