@@ -2949,25 +2949,44 @@ function App() {
             
             <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6 lg:mb-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
-                <div>
+                <div className="relative">
                   <label className="block text-gray-700 font-semibold mb-2 text-sm">Empresa Concorrente</label>
-                  <select
-                    value={selectedCompany}
-                    onChange={(e) => handleCompanyChange(e.target.value)}
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onFocus={() => setSearchTerm('')}
+                    placeholder="Digite para buscar..."
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
-                  >
-                    <option value="">Selecione...</option>
-                    {companies.map(company => (
-                      <option key={company.company} value={company.company} translate="no" data-translate="no" lang="en">{company.company}</option>
-                    ))}
-                  </select>
+                  />
+                  {searchTerm && filteredCompanies.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 max-h-48 overflow-y-auto border rounded-lg bg-white shadow-lg">
+                      {filteredCompanies.slice(0, 10).map((company, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSearchTerm('');
+                            handleCompanyChange(company.company);
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-green-50 border-b last:border-b-0 text-sm"
+                        >
+                          {company.company}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {selectedCompany && !searchTerm && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      Selecionado: <strong>{selectedCompany}</strong>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
                   <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto Concorrente</label>
                   <select
                     value={selectedCompetitor}
-                    onChange={(e) => handleCompetitorSelection(e.target.value)}
+                    onChange={(e) => setSelectedCompetitor(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedCompany}
                   >
@@ -3002,10 +3021,6 @@ function App() {
                     onChange={(e) => setSelectedComparisonProduct(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-sm"
                     disabled={!selectedComparisonTech}
-                    spellCheck="false"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
                     translate="no"
                   >
                     <option value="">Selecione...</option>
@@ -3016,22 +3031,6 @@ function App() {
                 </div>
               </div>
               
-              {/* Suggested Products Alert - NEW */}
-              {suggestedProducts.length > 0 && (
-                <div className="mb-6 p-4 bg-green-50 rounded-lg border-2 border-green-300">
-                  <p className="text-sm font-bold text-green-900 mb-2">
-                    💡 Produtos MicroXisto recomendados com o mesmo propósito:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestedProducts.map(product => (
-                      <span key={product.id} className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
-                        {product.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
               <button
                 onClick={loadComparison}
                 disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
@@ -3040,6 +3039,22 @@ function App() {
                 {loading ? 'Carregando...' : 'Comparar Produtos'}
               </button>
             </div>
+            
+            {/* Suggested Products Alert - Shown AFTER comparison */}
+            {comparisonData && comparisonData.competitor.proposito && suggestedProducts.length > 0 && (
+              <div className="mb-6 p-4 bg-green-50 rounded-lg border-2 border-green-300">
+                <p className="text-sm font-bold text-green-900 mb-2">
+                  💡 Produtos MicroXisto recomendados com o mesmo propósito ({comparisonData.competitor.proposito}):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedProducts.map(product => (
+                    <span key={product.id} className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
+                      {product.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             
             {comparisonData && (
               <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
