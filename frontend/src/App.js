@@ -523,9 +523,10 @@ const ProductManagement = ({ token, technologies }) => {
   const [loading, setLoading] = useState(false);
   
   const PROPOSITO_OPTIONS = [
-    'Nitrogênio', 'Fósforo', 'Potássio', 'Complexo Mn', 'Complexo Zn', 'Complexo Cu', 
-    'Complexo B', 'CoMo', 'CoMoNi', 'CaB', 'Indutor', 'Enchimento de Grãos', 'TS', 
-    'Estruturador', 'Condicionador', 'Desalojante', 'Sanitário', 'Antiestresse'
+    'Nitrogênio', 'Fósforo', 'Potássio', 'Cálcio', 'Magnésio', 'Enxofre', 'Manganês', 
+    'Zinco', 'Molibdênio', 'Cobre', 'Boro', 'Níquel', 'Complexo Mn', 'Complexo Zn', 
+    'Complexo Cu', 'Complexo B', 'CoMo', 'CoMoNi', 'CaB', 'Indutor', 'Enchimento de Grãos', 
+    'TS', 'Estruturador', 'Condicionador', 'Desalojante', 'Sanitário', 'Antiestresse'
   ];
 
   useEffect(() => {
