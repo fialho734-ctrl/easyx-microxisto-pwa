@@ -32,6 +32,21 @@ class Technology(BaseModel):
     logo: str
     description: str
 
+class Culture(BaseModel):
+    id: Optional[str] = None
+    name: str
+    image: str  # URL da figurinha/ícone
+    link: str   # Link para pasta de arquivos
+
+class Planejamento(BaseModel):
+    id: Optional[str] = None
+    cultura: str
+    colheita_esperada: float  # em sacas
+    area_tratada: float  # em hectares
+    valor_saca: float  # em reais
+    produtos_selecionados: List[str] = []  # IDs dos produtos
+    created_at: Optional[str] = None
+
 class ProductComposition(BaseModel):
     N: float = 0
     P: float = 0
@@ -60,7 +75,8 @@ class Product(BaseModel):
     composition: ProductComposition
     additives: str
     description: str
-    materials_url: Optional[str] = ""  # NOVO CAMPO
+    materials_url: Optional[str] = ""
+    proposito: Optional[str] = ""  # NOVO CAMPO para sugestões
 
 class Competitor(BaseModel):
     id: Optional[str] = None
@@ -71,6 +87,7 @@ class Competitor(BaseModel):
     nature: str
     composition: ProductComposition
     additives: str
+    proposito: Optional[str] = ""  # NOVO CAMPO
 
 class User(BaseModel):
     id: Optional[str] = None
@@ -110,7 +127,8 @@ class ProductUpdate(BaseModel):
     composition: ProductComposition
     additives: str
     description: str
-    materials_url: Optional[str] = ""  # NOVO CAMPO
+    materials_url: Optional[str] = ""
+    proposito: Optional[str] = ""  # NOVO CAMPO
 
 class CompetitorUpdate(BaseModel):
     company: str
@@ -120,6 +138,7 @@ class CompetitorUpdate(BaseModel):
     nature: str
     composition: ProductComposition
     additives: str
+    proposito: Optional[str] = ""  # NOVO CAMPO
 
 # Lifespan manager
 @asynccontextmanager
@@ -322,6 +341,34 @@ async def initialize_default_data():
             "text": "Bem-vindo ao sistema MicroXisto! Explore nossas tecnologias avançadas em nutrição vegetal.",
             "pdf_url": None
         })
+    
+    # Initialize cultures - NOVA FUNCIONALIDADE
+    cultures_exist = await db.cultures.count_documents({})
+    if cultures_exist == 0:
+        cultures = [
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Soja",
+                "image": "https://i.imgur.com/soybean-icon.png",  # Você pode substituir por URLs reais
+                "link": "https://drive.google.com/drive/folders/soja-microxisto",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Milho", 
+                "image": "https://i.imgur.com/corn-icon.png",
+                "link": "https://drive.google.com/drive/folders/milho-microxisto",
+                "created_at": datetime.utcnow()
+            },
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Algodão",
+                "image": "https://i.imgur.com/cotton-icon.png",
+                "link": "https://drive.google.com/drive/folders/algodao-microxisto",
+                "created_at": datetime.utcnow()
+            }
+        ]
+        await db.cultures.insert_many(cultures)
 
 # Routes
 @app.post("/api/auth/register")
@@ -370,6 +417,171 @@ async def get_products_by_technology(tech_id: str):
     products = await db.products.find({"technology_id": tech_id}, {"_id": 0}).to_list(None)
     return products
 
+
+# ==========================================
+# CULTURES APIs - NOVA FUNCIONALIDADE  
+# ==========================================
+
+@app.get("/api/cultures")
+async def get_cultures():
+    """Get all cultures for users"""
+    cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+    return cultures
+
+@app.post("/api/admin/cultures")
+async def create_culture(culture: Culture, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Create new culture (admin only)"""
+    try:
+        # Verify admin token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Create culture with unique ID
+        culture_data = culture.dict()
+        culture_data["id"] = str(uuid.uuid4())
+        culture_data["created_at"] = datetime.utcnow()
+        
+        await db.cultures.insert_one(culture_data)
+        return {"message": "Culture created successfully", "culture": culture_data}
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.put("/api/admin/cultures/{culture_id}")
+async def update_culture(culture_id: str, culture: Culture, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Update culture (admin only)"""
+    try:
+        # Verify admin token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Update culture
+        culture_data = culture.dict()
+        culture_data["updated_at"] = datetime.utcnow()
+        
+        result = await db.cultures.update_one(
+            {"id": culture_id}, 
+            {"$set": culture_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Culture not found")
+        
+        return {"message": "Culture updated successfully"}
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/admin/cultures/{culture_id}")
+async def delete_culture(culture_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete culture (admin only)"""
+    try:
+        # Verify admin token  
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        # Delete culture
+        result = await db.cultures.delete_one({"id": culture_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Culture not found")
+        
+        return {"message": "Culture deleted successfully"}
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+# Planejamento endpoints
+@app.get("/api/planejamentos")
+async def get_planejamentos(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get all planejamentos for logged user"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        planejamentos = await db.planejamentos.find({"user_email": user_email}, {"_id": 0}).to_list(None)
+        return planejamentos
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.post("/api/planejamentos")
+async def create_planejamento(planejamento: Planejamento, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Create new planejamento"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        planejamento_data = planejamento.dict()
+        planejamento_data["id"] = str(uuid.uuid4())
+        planejamento_data["user_email"] = user_email
+        planejamento_data["created_at"] = datetime.utcnow().isoformat()
+        
+        await db.planejamentos.insert_one(planejamento_data)
+        
+        return planejamento_data
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/planejamentos/{planejamento_id}")
+async def get_planejamento(planejamento_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get specific planejamento"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        planejamento = await db.planejamentos.find_one({"id": planejamento_id, "user_email": user_email}, {"_id": 0})
+        if not planejamento:
+            raise HTTPException(status_code=404, detail="Planejamento not found")
+        
+        return planejamento
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/planejamentos/{planejamento_id}")
+async def delete_planejamento(planejamento_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete planejamento"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        result = await db.planejamentos.delete_one({"id": planejamento_id, "user_email": user_email})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Planejamento not found")
+        
+        return {"message": "Planejamento deleted successfully"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/admin/cultures")
+async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get all cultures for admin management"""
+    try:
+        # Verify admin token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+        return cultures
+    
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ==========================================
+# END CULTURES APIs
+# ==========================================
+
+@app.get("/api/products")
+async def get_all_products():
+    """Get all products (for planejamento)"""
+    products = await db.products.find({}, {"_id": 0}).to_list(None)
+    return products
+
 @app.get("/api/products/{product_id}")
 async def get_product(product_id: str):
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
@@ -397,6 +609,13 @@ async def get_competitor(competitor_id: str):
     if not competitor:
         raise HTTPException(status_code=404, detail="Competitor not found")
     return competitor
+
+
+@app.get("/api/products/by-proposito/{proposito}")
+async def get_products_by_proposito(proposito: str):
+    """Get MicroXisto products that match a specific purpose"""
+    products = await db.products.find({"proposito": proposito}, {"_id": 0}).to_list(None)
+    return products
 
 @app.get("/api/home")
 async def get_home_content():
