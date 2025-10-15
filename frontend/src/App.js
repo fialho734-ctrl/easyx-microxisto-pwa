@@ -3052,6 +3052,9 @@ function App() {
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>Densidade: {comparisonData.competitor.density} g/mL</p>
                       <p>Natureza: {comparisonData.competitor.nature}</p>
+                      {comparisonData.competitor.proposito && (
+                        <p className="font-bold text-blue-600 mt-2">🎯 Propósito: {comparisonData.competitor.proposito}</p>
+                      )}
                     </div>
                   </div>
                   
