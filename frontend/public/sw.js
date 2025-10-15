@@ -4,9 +4,9 @@ const APP_VERSION = '2.1.0'; // Versão com tabelas de nutrientes e auto-update
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v6...');
+  console.log('🚀 SW: Installing v7 (App v' + APP_VERSION + ')...');
   
-  // Pular waiting imediatamente
+  // Pular waiting imediatamente para atualizar mais rápido
   self.skipWaiting();
   
   event.waitUntil(
@@ -25,6 +25,15 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('✅ SW: Install complete');
+        // Notificar todos os clientes sobre nova versão
+        self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'NEW_VERSION_AVAILABLE',
+              version: APP_VERSION
+            });
+          });
+        });
       })
       .catch(error => {
         console.error('❌ SW: Install failed:', error);
