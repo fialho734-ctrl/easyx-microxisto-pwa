@@ -2465,6 +2465,7 @@ function App() {
     fetchHomeContent();
     fetchCompetitorCompanies();
     fetchCultures(); // NOVA FUNCIONALIDADE
+    fetchAllProducts(); // Carregar todos os produtos para planejamento
     checkAuthStatus();
   }, []);
 
