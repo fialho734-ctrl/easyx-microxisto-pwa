@@ -493,6 +493,69 @@ async def delete_culture(culture_id: str, credentials: HTTPAuthorizationCredenti
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+
+# Planejamento endpoints
+@app.get("/api/planejamentos")
+async def get_planejamentos(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get all planejamentos for logged user"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        planejamentos = await db.planejamentos.find({"user_email": user_email}, {"_id": 0}).to_list(None)
+        return planejamentos
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.post("/api/planejamentos")
+async def create_planejamento(planejamento: Planejamento, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Create new planejamento"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        planejamento_data = planejamento.dict()
+        planejamento_data["id"] = str(uuid.uuid4())
+        planejamento_data["user_email"] = user_email
+        planejamento_data["created_at"] = datetime.utcnow().isoformat()
+        
+        await db.planejamentos.insert_one(planejamento_data)
+        
+        return planejamento_data
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/planejamentos/{planejamento_id}")
+async def get_planejamento(planejamento_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get specific planejamento"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        planejamento = await db.planejamentos.find_one({"id": planejamento_id, "user_email": user_email}, {"_id": 0})
+        if not planejamento:
+            raise HTTPException(status_code=404, detail="Planejamento not found")
+        
+        return planejamento
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/planejamentos/{planejamento_id}")
+async def delete_planejamento(planejamento_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete planejamento"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_email = payload.get("email")
+        
+        result = await db.planejamentos.delete_one({"id": planejamento_id, "user_email": user_email})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Planejamento not found")
+        
+        return {"message": "Planejamento deleted successfully"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 @app.get("/api/admin/cultures")
 async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get all cultures for admin management"""
