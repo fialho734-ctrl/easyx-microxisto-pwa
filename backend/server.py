@@ -531,6 +531,13 @@ async def get_competitor(competitor_id: str):
         raise HTTPException(status_code=404, detail="Competitor not found")
     return competitor
 
+
+@app.get("/api/products/by-proposito/{proposito}")
+async def get_products_by_proposito(proposito: str):
+    """Get MicroXisto products that match a specific purpose"""
+    products = await db.products.find({"proposito": proposito}, {"_id": 0}).to_list(None)
+    return products
+
 @app.get("/api/home")
 async def get_home_content():
     content = await db.home_content.find_one({}, {"_id": 0})
