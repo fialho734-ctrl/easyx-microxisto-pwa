@@ -3270,12 +3270,12 @@ function App() {
                     </div>
                     
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sacas)</label>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sc/ha)</label>
                       <input
                         type="number"
                         value={planejamentoForm.colheita_esperada}
                         onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: parseFloat(e.target.value) || 0})}
-                        placeholder="Ex: 3000"
+                        placeholder="Ex: 60"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       />
                     </div>
@@ -3305,238 +3305,163 @@ function App() {
                     </div>
                   </div>
                   
-                  <button
-                    onClick={() => {
-                      if (!planejamentoForm.cultura || planejamentoForm.colheita_esperada === 0) {
-                        alert('Preencha pelo menos a Cultura e a Colheita Esperada');
-                        return;
-                      }
-                      
-                      // Cálculos simples
-                      const receita_bruta = planejamentoForm.colheita_esperada * planejamentoForm.valor_saca;
-                      const produtividade = planejamentoForm.area_tratada > 0 ? planejamentoForm.colheita_esperada / planejamentoForm.area_tratada : 0;
-                      
-                      setCalculoResultado({
-                        receita_bruta,
-                        produtividade,
-                        area: planejamentoForm.area_tratada,
-                        sacas: planejamentoForm.colheita_esperada
-                      });
-                    }}
-                    className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base"
-                  >
-                    📊 Calcular
-                  </button>
+                  {planejamentoForm.cultura && planejamentoForm.colheita_esperada > 0 && planejamentoForm.area_tratada > 0 && (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <p className="text-sm text-green-800">
+                        ✅ Dados básicos preenchidos. Agora selecione os produtos MicroXisto abaixo.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
-                {/* Resultados Básicos */}
-                {calculoResultado && (
-                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
-                    <h3 className="text-xl font-bold text-green-800 mb-4">Resultados Básicos</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 mb-1">Receita Bruta Estimada</div>
-                        <div className="text-2xl font-bold text-green-800">
-                          R$ {calculoResultado.receita_bruta.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                        </div>
-                      </div>
-                      
-                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 mb-1">Produtividade</div>
-                        <div className="text-2xl font-bold text-blue-800">
-                          {calculoResultado.produtividade.toFixed(1)} sc/ha
-                        </div>
-                      </div>
-                      
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="text-sm text-gray-600 mb-1">Área Total</div>
-                        <div className="text-2xl font-bold text-yellow-800">
-                          {calculoResultado.area.toFixed(1)} ha
-                        </div>
-                      </div>
-                      
-                      <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                        <div className="text-sm text-gray-600 mb-1">Total de Sacas</div>
-                        <div className="text-2xl font-bold text-purple-800">
-                          {calculoResultado.sacas.toLocaleString('pt-BR')} sc
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Seleção de Produtos */}
-                {calculoResultado && (
+                {/* Seleção de Produtos - aparece sempre */}
+                {planejamentoForm.cultura && planejamentoForm.area_tratada > 0 && (
                   <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
                     <h3 className="text-xl font-bold text-gray-800 mb-4">Selecionar Produtos MicroXisto (até 15)</h3>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                      <div className="md:col-span-2">
-                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto</label>
-                        <select
-                          value={produtoAtual.produto_id}
-                          onChange={(e) => setProdutoAtual({...produtoAtual, produto_id: e.target.value})}
-                          className="w-full px-3 py-2 border rounded-lg"
-                          disabled={produtosSelecionados.length >= 15}
-                        >
-                          <option value="">Selecione um produto...</option>
-                          {products.map(product => (
-                            <option key={product.id} value={product.id} translate="no">{product.name}</option>
-                          ))}
-                        </select>
-                      </div>
+                    {/* Lista de Produtos Selecionados + Campo para adicionar novo */}
+                    <div className="space-y-3">
+                      {produtosSelecionados.map((item, index) => (
+                        <div key={index} className="bg-gray-50 p-3 rounded-lg border">
+                          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                            <div className="md:col-span-5">
+                              <label className="block text-xs text-gray-600 mb-1">Produto</label>
+                              <div className="font-semibold text-gray-800" translate="no">{item.produto.name}</div>
+                            </div>
+                            
+                            <div className="md:col-span-2">
+                              <label className="block text-xs text-gray-600 mb-1">Dose (L/ha)</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={item.dose_lha}
+                                onChange={(e) => {
+                                  const novosProdutos = [...produtosSelecionados];
+                                  novosProdutos[index].dose_lha = parseFloat(e.target.value) || 0;
+                                  setProdutosSelecionados(novosProdutos);
+                                }}
+                                className="w-full px-2 py-1 border rounded text-sm"
+                              />
+                            </div>
+                            
+                            <div className="md:col-span-2">
+                              <label className="block text-xs text-gray-600 mb-1">Valor/L (R$)</label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.valor_litro}
+                                onChange={(e) => {
+                                  const novosProdutos = [...produtosSelecionados];
+                                  novosProdutos[index].valor_litro = parseFloat(e.target.value) || 0;
+                                  setProdutosSelecionados(novosProdutos);
+                                }}
+                                className="w-full px-2 py-1 border rounded text-sm"
+                              />
+                            </div>
+                            
+                            <div className="md:col-span-2">
+                              <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
+                              <div className="text-sm font-semibold text-gray-700">
+                                {(item.dose_lha * planejamentoForm.area_tratada).toFixed(1)} L
+                              </div>
+                            </div>
+                            
+                            <div className="md:col-span-1 flex justify-end">
+                              <button
+                                onClick={() => {
+                                  setProdutosSelecionados(produtosSelecionados.filter((_, i) => i !== index));
+                                }}
+                                className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                       
-                      <div>
-                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Dose (L/ha)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={produtoAtual.dose_lha}
-                          onChange={(e) => setProdutoAtual({...produtoAtual, dose_lha: parseFloat(e.target.value) || 0})}
-                          className="w-full px-3 py-2 border rounded-lg"
-                          placeholder="1.0"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor/L (R$)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={produtoAtual.valor_litro}
-                          onChange={(e) => setProdutoAtual({...produtoAtual, valor_litro: parseFloat(e.target.value) || 0})}
-                          className="w-full px-3 py-2 border rounded-lg"
-                          placeholder="50.00"
-                        />
-                      </div>
+                      {/* Campo para adicionar novo produto */}
+                      {produtosSelecionados.length < 15 && (
+                        <div className="bg-blue-50 p-3 rounded-lg border-2 border-blue-200">
+                          <label className="block text-sm text-gray-700 font-semibold mb-2">
+                            ➕ Adicionar Produto ({produtosSelecionados.length}/15)
+                          </label>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                const produto = products.find(p => p.id === e.target.value);
+                                if (produto) {
+                                  setProdutosSelecionados([...produtosSelecionados, {
+                                    produto_id: produto.id,
+                                    produto: produto,
+                                    dose_lha: 1,
+                                    valor_litro: 0
+                                  }]);
+                                }
+                              }
+                            }}
+                            className="w-full px-3 py-2 border rounded-lg"
+                          >
+                            <option value="">Selecione um produto...</option>
+                            {products
+                              .filter(p => !produtosSelecionados.find(sel => sel.produto_id === p.id))
+                              .map(product => (
+                                <option key={product.id} value={product.id} translate="no">{product.name}</option>
+                              ))
+                            }
+                          </select>
+                        </div>
+                      )}
                     </div>
                     
-                    <button
-                      onClick={() => {
-                        if (!produtoAtual.produto_id || produtoAtual.dose_lha === 0) {
-                          alert('Selecione um produto e informe a dose');
-                          return;
-                        }
-                        
-                        if (produtosSelecionados.length >= 15) {
-                          alert('Máximo de 15 produtos atingido');
-                          return;
-                        }
-                        
-                        const produto = products.find(p => p.id === produtoAtual.produto_id);
-                        if (!produto) return;
-                        
-                        setProdutosSelecionados([...produtosSelecionados, {
-                          ...produtoAtual,
-                          produto: produto
-                        }]);
-                        
-                        setProdutoAtual({ produto_id: '', dose_lha: 0, valor_litro: 0 });
-                      }}
-                      disabled={produtosSelecionados.length >= 15}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      ➕ Adicionar Produto
-                    </button>
-                    
-                    {/* Lista de Produtos Selecionados */}
                     {produtosSelecionados.length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="font-semibold text-gray-800 mb-3">Produtos Selecionados ({produtosSelecionados.length}/15)</h4>
-                        <div className="space-y-2">
-                          {produtosSelecionados.map((item, index) => {
-                            // Calcular nutrientes aportados
-                            const nutrientesAportados = {};
+                      <button
+                        onClick={() => {
+                          // Calcular resumo do manejo
+                          let totalNutrientes = {};
+                          let custoTotal = 0;
+                          let resumoProdutos = [];
+                          
+                          produtosSelecionados.forEach(item => {
+                            // Volume total = dose * área
+                            const volumeTotal = item.dose_lha * planejamentoForm.area_tratada;
+                            // Valor total = volume total * valor do litro
+                            const valorTotal = volumeTotal * item.valor_litro;
+                            custoTotal += valorTotal;
+                            
+                            // Acumular nutrientes (g/ha)
                             Object.keys(item.produto.composition).forEach(nutriente => {
                               const valorNutriente = item.produto.composition[nutriente];
-                              // Nutriente em g/L * dose em L/ha = g/ha
-                              nutrientesAportados[nutriente] = (valorNutriente * item.dose_lha).toFixed(2);
+                              const aporte = valorNutriente * item.dose_lha; // g/ha
+                              totalNutrientes[nutriente] = (totalNutrientes[nutriente] || 0) + aporte;
                             });
                             
-                            return (
-                              <div key={index} className="bg-gray-50 p-3 rounded-lg border">
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <div className="font-semibold text-gray-800" translate="no">{item.produto.name}</div>
-                                    <div className="text-sm text-gray-600 mt-1">
-                                      Dose: {item.dose_lha} L/ha | Valor: R$ {item.valor_litro.toFixed(2)}/L
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-2">
-                                      <strong>Nutrientes aportados (g/ha):</strong>
-                                      <div className="grid grid-cols-4 md:grid-cols-8 gap-1 mt-1">
-                                        {Object.entries(nutrientesAportados)
-                                          .filter(([, valor]) => parseFloat(valor) > 0)
-                                          .map(([nutriente, valor]) => (
-                                            <span key={nutriente} className="text-xs">
-                                              {nutriente}: <strong>{valor}</strong>
-                                            </span>
-                                          ))
-                                        }
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      setProdutosSelecionados(produtosSelecionados.filter((_, i) => i !== index));
-                                    }}
-                                    className="ml-2 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                                  >
-                                    🗑️
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        
-                        <button
-                          onClick={() => {
-                            // Calcular resumo do manejo
-                            let totalNutrientes = {};
-                            let custoTotal = 0;
-                            let resumoProdutos = [];
-                            
-                            produtosSelecionados.forEach(item => {
-                              // Volume total = dose * área
-                              const volumeTotal = item.dose_lha * planejamentoForm.area_tratada;
-                              // Valor total = volume total * valor do litro
-                              const valorTotal = volumeTotal * item.valor_litro;
-                              custoTotal += valorTotal;
-                              
-                              // Acumular nutrientes
-                              Object.keys(item.produto.composition).forEach(nutriente => {
-                                const valorNutriente = item.produto.composition[nutriente];
-                                const aporte = valorNutriente * item.dose_lha;
-                                totalNutrientes[nutriente] = (totalNutrientes[nutriente] || 0) + aporte;
-                              });
-                              
-                              resumoProdutos.push({
-                                nome: item.produto.name,
-                                dose_lha: item.dose_lha,
-                                volumeTotal: volumeTotal,
-                                valorTotal: valorTotal
-                              });
+                            resumoProdutos.push({
+                              nome: item.produto.name,
+                              dose_lha: item.dose_lha,
+                              volumeTotal: volumeTotal,
+                              valorTotal: valorTotal
                             });
-                            
-                            const custoPorHectare = custoTotal / planejamentoForm.area_tratada;
-                            const valorSacasPorHa = planejamentoForm.valor_saca > 0 
-                              ? custoPorHectare / planejamentoForm.valor_saca 
-                              : 0;
-                            
-                            setResumoManejo({
-                              produtos: resumoProdutos,
-                              totalNutrientes,
-                              custoTotal,
-                              custoPorHectare,
-                              valorSacasPorHa
-                            });
-                          }}
-                          className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold"
-                        >
-                          📊 Gerar Resumo do Manejo
-                        </button>
-                      </div>
+                          });
+                          
+                          const custoPorHectare = planejamentoForm.area_tratada > 0 ? custoTotal / planejamentoForm.area_tratada : 0;
+                          const valorSacasPorHa = planejamentoForm.valor_saca > 0 
+                            ? custoPorHectare / planejamentoForm.valor_saca 
+                            : 0;
+                          
+                          setResumoManejo({
+                            produtos: resumoProdutos,
+                            totalNutrientes,
+                            custoTotal,
+                            custoPorHectare,
+                            valorSacasPorHa
+                          });
+                        }}
+                        className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base"
+                      >
+                        📊 Calcular Resumo do Manejo
+                      </button>
                     )}
                   </div>
                 )}
