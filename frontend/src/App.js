@@ -3329,10 +3329,10 @@ function App() {
                   </button>
                 </div>
                 
-                {/* Resultados */}
+                {/* Resultados Básicos */}
                 {calculoResultado && (
-                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                    <h3 className="text-xl font-bold text-green-800 mb-4">Resultados do Planejamento</h3>
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
+                    <h3 className="text-xl font-bold text-green-800 mb-4">Resultados Básicos</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -3363,14 +3363,256 @@ function App() {
                         </div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Seleção de Produtos */}
+                {calculoResultado && (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">Selecionar Produtos MicroXisto (até 15)</h3>
                     
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                      <h4 className="font-semibold text-gray-800 mb-2">💡 Próximos Passos:</h4>
-                      <ul className="text-sm text-gray-700 space-y-1">
-                        <li>• Consulte a seção <strong>Comparativo</strong> para escolher os melhores produtos</li>
-                        <li>• Use a função <strong>Sugestão</strong> para encontrar produtos MicroXisto adequados</li>
-                        <li>• Entre em contato com nossa equipe para um orçamento detalhado</li>
-                      </ul>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Produto</label>
+                        <select
+                          value={produtoAtual.produto_id}
+                          onChange={(e) => setProdutoAtual({...produtoAtual, produto_id: e.target.value})}
+                          className="w-full px-3 py-2 border rounded-lg"
+                          disabled={produtosSelecionados.length >= 15}
+                        >
+                          <option value="">Selecione um produto...</option>
+                          {products.map(product => (
+                            <option key={product.id} value={product.id} translate="no">{product.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Dose (L/ha)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={produtoAtual.dose_lha}
+                          onChange={(e) => setProdutoAtual({...produtoAtual, dose_lha: parseFloat(e.target.value) || 0})}
+                          className="w-full px-3 py-2 border rounded-lg"
+                          placeholder="1.0"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor/L (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={produtoAtual.valor_litro}
+                          onChange={(e) => setProdutoAtual({...produtoAtual, valor_litro: parseFloat(e.target.value) || 0})}
+                          className="w-full px-3 py-2 border rounded-lg"
+                          placeholder="50.00"
+                        />
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        if (!produtoAtual.produto_id || produtoAtual.dose_lha === 0) {
+                          alert('Selecione um produto e informe a dose');
+                          return;
+                        }
+                        
+                        if (produtosSelecionados.length >= 15) {
+                          alert('Máximo de 15 produtos atingido');
+                          return;
+                        }
+                        
+                        const produto = products.find(p => p.id === produtoAtual.produto_id);
+                        if (!produto) return;
+                        
+                        setProdutosSelecionados([...produtosSelecionados, {
+                          ...produtoAtual,
+                          produto: produto
+                        }]);
+                        
+                        setProdutoAtual({ produto_id: '', dose_lha: 0, valor_litro: 0 });
+                      }}
+                      disabled={produtosSelecionados.length >= 15}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      ➕ Adicionar Produto
+                    </button>
+                    
+                    {/* Lista de Produtos Selecionados */}
+                    {produtosSelecionados.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="font-semibold text-gray-800 mb-3">Produtos Selecionados ({produtosSelecionados.length}/15)</h4>
+                        <div className="space-y-2">
+                          {produtosSelecionados.map((item, index) => {
+                            // Calcular nutrientes aportados
+                            const nutrientesAportados = {};
+                            Object.keys(item.produto.composition).forEach(nutriente => {
+                              const valorNutriente = item.produto.composition[nutriente];
+                              // Nutriente em g/L * dose em L/ha = g/ha
+                              nutrientesAportados[nutriente] = (valorNutriente * item.dose_lha).toFixed(2);
+                            });
+                            
+                            return (
+                              <div key={index} className="bg-gray-50 p-3 rounded-lg border">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-gray-800" translate="no">{item.produto.name}</div>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                      Dose: {item.dose_lha} L/ha | Valor: R$ {item.valor_litro.toFixed(2)}/L
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-2">
+                                      <strong>Nutrientes aportados (g/ha):</strong>
+                                      <div className="grid grid-cols-4 md:grid-cols-8 gap-1 mt-1">
+                                        {Object.entries(nutrientesAportados)
+                                          .filter(([, valor]) => parseFloat(valor) > 0)
+                                          .map(([nutriente, valor]) => (
+                                            <span key={nutriente} className="text-xs">
+                                              {nutriente}: <strong>{valor}</strong>
+                                            </span>
+                                          ))
+                                        }
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setProdutosSelecionados(produtosSelecionados.filter((_, i) => i !== index));
+                                    }}
+                                    className="ml-2 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        <button
+                          onClick={() => {
+                            // Calcular resumo do manejo
+                            let totalNutrientes = {};
+                            let custoTotal = 0;
+                            let resumoProdutos = [];
+                            
+                            produtosSelecionados.forEach(item => {
+                              // Volume total = dose * área
+                              const volumeTotal = item.dose_lha * planejamentoForm.area_tratada;
+                              // Valor total = volume total * valor do litro
+                              const valorTotal = volumeTotal * item.valor_litro;
+                              custoTotal += valorTotal;
+                              
+                              // Acumular nutrientes
+                              Object.keys(item.produto.composition).forEach(nutriente => {
+                                const valorNutriente = item.produto.composition[nutriente];
+                                const aporte = valorNutriente * item.dose_lha;
+                                totalNutrientes[nutriente] = (totalNutrientes[nutriente] || 0) + aporte;
+                              });
+                              
+                              resumoProdutos.push({
+                                nome: item.produto.name,
+                                dose_lha: item.dose_lha,
+                                volumeTotal: volumeTotal,
+                                valorTotal: valorTotal
+                              });
+                            });
+                            
+                            const custoPorHectare = custoTotal / planejamentoForm.area_tratada;
+                            const valorSacasPorHa = planejamentoForm.valor_saca > 0 
+                              ? custoPorHectare / planejamentoForm.valor_saca 
+                              : 0;
+                            
+                            setResumoManejo({
+                              produtos: resumoProdutos,
+                              totalNutrientes,
+                              custoTotal,
+                              custoPorHectare,
+                              valorSacasPorHa
+                            });
+                          }}
+                          className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold"
+                        >
+                          📊 Gerar Resumo do Manejo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Resumo do Manejo */}
+                {resumoManejo && (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                    <h3 className="text-xl font-bold text-green-800 mb-4">📋 Resumo do Manejo</h3>
+                    
+                    {/* Soma Total de Nutrientes */}
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-blue-900 mb-3">Total de Nutrientes Aportados (g/ha)</h4>
+                      <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
+                        {Object.entries(resumoManejo.totalNutrientes)
+                          .filter(([, valor]) => valor > 0)
+                          .map(([nutriente, valor]) => (
+                            <div key={nutriente} className="text-center p-2 bg-white rounded border border-blue-300">
+                              <div className="text-xs text-gray-600">{nutriente}</div>
+                              <div className="text-lg font-bold text-blue-800">{valor.toFixed(1)}</div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                      <div className="mt-3 text-sm text-blue-800">
+                        <strong>Total geral:</strong> {Object.values(resumoManejo.totalNutrientes).reduce((a, b) => a + b, 0).toFixed(1)} g/ha
+                      </div>
+                    </div>
+                    
+                    {/* Tabela de Produtos */}
+                    <div className="overflow-x-auto mb-6">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Produto</th>
+                            <th className="px-3 py-2 text-center">Dose (L/ha)</th>
+                            <th className="px-3 py-2 text-center">Volume Total (L)</th>
+                            <th className="px-3 py-2 text-right">Valor (R$)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {resumoManejo.produtos.map((produto, index) => (
+                            <tr key={index} className="border-t">
+                              <td className="px-3 py-2" translate="no">{produto.nome}</td>
+                              <td className="px-3 py-2 text-center">{produto.dose_lha.toFixed(1)}</td>
+                              <td className="px-3 py-2 text-center">{produto.volumeTotal.toFixed(1)}</td>
+                              <td className="px-3 py-2 text-right">
+                                R$ {produto.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {/* Resumo Financeiro */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="text-sm text-gray-600 mb-1">Custo Total (Área Completa)</div>
+                        <div className="text-2xl font-bold text-green-800">
+                          R$ {resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="text-sm text-gray-600 mb-1">Custo por Hectare</div>
+                        <div className="text-2xl font-bold text-blue-800">
+                          R$ {resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                        <div className="text-sm text-gray-600 mb-1">Custo em Sacas/ha</div>
+                        <div className="text-2xl font-bold text-yellow-800">
+                          {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
