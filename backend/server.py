@@ -38,6 +38,15 @@ class Culture(BaseModel):
     image: str  # URL da figurinha/ícone
     link: str   # Link para pasta de arquivos
 
+class Planejamento(BaseModel):
+    id: Optional[str] = None
+    cultura: str
+    colheita_esperada: float  # em sacas
+    area_tratada: float  # em hectares
+    valor_saca: float  # em reais
+    produtos_selecionados: List[str] = []  # IDs dos produtos
+    created_at: Optional[str] = None
+
 class ProductComposition(BaseModel):
     N: float = 0
     P: float = 0
