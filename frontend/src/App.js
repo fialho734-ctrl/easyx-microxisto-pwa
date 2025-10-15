@@ -3420,7 +3420,7 @@ function App() {
                             className="w-full px-3 py-2 border rounded-lg"
                           >
                             <option value="">Selecione um produto...</option>
-                            {products
+                            {allProducts
                               .filter(p => !produtosSelecionados.find(sel => sel.produto_id === p.id))
                               .map(product => (
                                 <option key={product.id} value={product.id} translate="no">{product.name}</option>
