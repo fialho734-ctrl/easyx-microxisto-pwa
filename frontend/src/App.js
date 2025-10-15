@@ -872,6 +872,87 @@ const CompetitorManagement = ({ token }) => {
     }
   };
 
+  // CRUD Individual de Concorrentes
+  const handleEditCompetitor = (competitor) => {
+    setEditingCompetitor(competitor);
+    setFormData({
+      company: competitor.company,
+      product: competitor.product,
+      density: competitor.density,
+      nature: competitor.nature,
+      composition: competitor.composition,
+      additives: competitor.additives,
+      proposito: competitor.proposito || ''
+    });
+    setShowIndividualForm(true);
+  };
+
+  const handleSaveIndividualCompetitor = async () => {
+    if (!formData.company || !formData.product) {
+      alert('Empresa e Produto são obrigatórios!');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const url = editingCompetitor 
+        ? `${API_BASE}/api/admin/competitors/${editingCompetitor.id}`
+        : `${API_BASE}/api/admin/competitors`;
+      
+      const method = editingCompetitor ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          logo: ''
+        })
+      });
+      
+      if (response.ok) {
+        fetchCompetitors();
+        setEditingCompetitor(null);
+        setFormData({
+          company: '', product: '', density: 0, nature: 'Líquido',
+          composition: { N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0, Mo: 0, Co: 0, Zn: 0, B: 0, Cu: 0, Mn: 0, Ni: 0, Se: 0, Si: 0, Fe: 0 },
+          additives: '', proposito: ''
+        });
+        setShowIndividualForm(false);
+        alert(editingCompetitor ? 'Concorrente atualizado!' : 'Concorrente adicionado!');
+      }
+    } catch (error) {
+      console.error('Error saving competitor:', error);
+      alert('Erro ao salvar concorrente');
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteCompetitor = async (competitorId) => {
+    if (!window.confirm('Tem certeza que deseja excluir este concorrente?')) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/competitors/${competitorId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        fetchCompetitors();
+        alert('Concorrente excluído com sucesso!');
+      }
+    } catch (error) {
+      console.error('Error deleting competitor:', error);
+      alert('Erro ao excluir concorrente');
+    }
+    setLoading(false);
+  };
+
+
   // NOVA FUNÇÃO: Processar dados colados em bloco
   const processBulkPaste = () => {
     if (!bulkPasteData.trim()) {
