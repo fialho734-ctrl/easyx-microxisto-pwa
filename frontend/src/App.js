@@ -3887,13 +3887,39 @@ function App() {
               {suggestedProducts.length > 0 && (
                 <div className="mb-4 p-4 bg-green-50 rounded-lg border-2 border-green-300">
                   <p className="text-sm font-bold text-green-900 mb-2">
-                    💡 Produtos MicroXisto recomendados:
+                    💡 Produtos MicroXisto recomendados (clique para comparar):
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {suggestedProducts.map(product => (
-                      <span key={product.id} className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
+                      <button
+                        key={product.id}
+                        onClick={async () => {
+                          // Preencher automaticamente o produto MicroXisto
+                          setSelectedComparisonProduct(product.id);
+                          
+                          // Aguardar um pouco para garantir que o estado foi atualizado
+                          setTimeout(async () => {
+                            // Executar comparação automaticamente
+                            if (selectedCompetitor && product.id) {
+                              setLoading(true);
+                              try {
+                                const response = await fetch(`${API_BASE}/api/compare?competitor_id=${selectedCompetitor}&product_id=${product.id}`);
+                                const data = await response.json();
+                                setComparisonData(data);
+                                // Limpar sugestões após selecionar
+                                setSuggestedProducts([]);
+                              } catch (error) {
+                                console.error('Error loading comparison:', error);
+                                alert('Erro ao carregar comparação.');
+                              }
+                              setLoading(false);
+                            }
+                          }, 100);
+                        }}
+                        className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 transition cursor-pointer"
+                      >
                         {product.name}
-                      </span>
+                      </button>
                     ))}
                   </div>
                 </div>
