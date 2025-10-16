@@ -1,6 +1,6 @@
 // Service Worker SIMPLES E FUNCIONAL para funcionar OFFLINE
-const CACHE_NAME = 'easyx-offline-v8';
-const APP_VERSION = '2.2.0'; // Versão com comparação rápida + domínio customizado
+const CACHE_NAME = 'easyx-offline-v9';
+const APP_VERSION = '2.3.0'; // Versão sem zeros nos campos + comparação rápida
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
