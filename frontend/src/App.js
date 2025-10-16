@@ -3517,8 +3517,8 @@ function App() {
                                   setProdutosSelecionados([...produtosSelecionados, {
                                     produto_id: produto.id,
                                     produto: produto,
-                                    dose_lha: 1,
-                                    valor_litro: 0
+                                    dose_lha: '',
+                                    valor_litro: ''
                                   }]);
                                 }
                               }
