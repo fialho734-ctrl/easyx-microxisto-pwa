@@ -3896,11 +3896,21 @@ function App() {
                         onClick={async () => {
                           setLoading(true);
                           try {
-                            // Fazer comparação automaticamente
-                            const response = await fetch(`${API_BASE}/api/compare?competitor_id=${selectedCompetitor}&product_id=${product.id}`);
-                            if (response.ok) {
-                              const data = await response.json();
-                              setComparisonData(data);
+                            // Fazer comparação da mesma forma que o botão "Comparar Produtos"
+                            const [competitorResponse, microxistoResponse] = await Promise.all([
+                              fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`),
+                              fetch(`${API_BASE}/api/products/${product.id}`)
+                            ]);
+                            
+                            if (competitorResponse.ok && microxistoResponse.ok) {
+                              const competitorData = await competitorResponse.json();
+                              const microxistoData = await microxistoResponse.json();
+                              
+                              setComparisonData({
+                                competitor: competitorData,
+                                product: microxistoData
+                              });
+                              
                               // Atualizar o produto selecionado
                               setSelectedComparisonProduct(product.id);
                               // Limpar sugestões após selecionar
