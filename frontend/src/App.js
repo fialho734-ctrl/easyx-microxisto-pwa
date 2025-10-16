@@ -3457,9 +3457,10 @@ function App() {
                                 value={item.dose_lha}
                                 onChange={(e) => {
                                   const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].dose_lha = parseFloat(e.target.value) || 0;
+                                  novosProdutos[index].dose_lha = e.target.value;
                                   setProdutosSelecionados(novosProdutos);
                                 }}
+                                placeholder="Ex: 2.5"
                                 className="w-full px-2 py-1 border rounded text-sm"
                               />
                             </div>
@@ -3472,9 +3473,10 @@ function App() {
                                 value={item.valor_litro}
                                 onChange={(e) => {
                                   const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].valor_litro = parseFloat(e.target.value) || 0;
+                                  novosProdutos[index].valor_litro = e.target.value;
                                   setProdutosSelecionados(novosProdutos);
                                 }}
+                                placeholder="Ex: 50.00"
                                 className="w-full px-2 py-1 border rounded text-sm"
                               />
                             </div>
@@ -3482,7 +3484,7 @@ function App() {
                             <div className="md:col-span-2">
                               <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
                               <div className="text-sm font-semibold text-gray-700">
-                                {(item.dose_lha * planejamentoForm.area_tratada).toFixed(1)} L
+                                {((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1)} L
                               </div>
                             </div>
                             
