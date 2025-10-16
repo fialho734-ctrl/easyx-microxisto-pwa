@@ -2495,9 +2495,9 @@ function App() {
   const [planejamentos, setPlanejamentos] = useState([]);
   const [planejamentoForm, setPlanejamentoForm] = useState({
     cultura: '',
-    colheita_esperada: 0,
-    area_tratada: 0,
-    valor_saca: 0,
+    colheita_esperada: '',
+    area_tratada: '',
+    valor_saca: '',
     produtos_selecionados: []
   });
   const [calculoResultado, setCalculoResultado] = useState(null);
