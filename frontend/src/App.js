@@ -3563,22 +3563,26 @@ function App() {
                           const colheitaNumero = parseFloat(planejamentoForm.colheita_esperada) || 0;
                           
                           produtosSelecionados.forEach(item => {
+                            // Converter valores para número
+                            const dose = parseFloat(item.dose_lha) || 0;
+                            const valorLitro = parseFloat(item.valor_litro) || 0;
+                            
                             // Volume total = dose * área
-                            const volumeTotal = item.dose_lha * areaNumero;
+                            const volumeTotal = dose * areaNumero;
                             // Valor total = volume total * valor do litro
-                            const valorTotal = volumeTotal * item.valor_litro;
+                            const valorTotal = volumeTotal * valorLitro;
                             custoTotal += valorTotal;
                             
                             // Acumular nutrientes (g/ha)
                             Object.keys(item.produto.composition).forEach(nutriente => {
                               const valorNutriente = item.produto.composition[nutriente];
-                              const aporte = valorNutriente * item.dose_lha; // g/ha
+                              const aporte = valorNutriente * dose; // g/ha
                               totalNutrientes[nutriente] = (totalNutrientes[nutriente] || 0) + aporte;
                             });
                             
                             resumoProdutos.push({
                               nome: item.produto.name,
-                              dose_lha: item.dose_lha,
+                              dose_lha: dose,
                               volumeTotal: volumeTotal,
                               valorTotal: valorTotal
                             });
