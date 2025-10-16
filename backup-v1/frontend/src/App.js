@@ -2495,9 +2495,9 @@ function App() {
   const [planejamentos, setPlanejamentos] = useState([]);
   const [planejamentoForm, setPlanejamentoForm] = useState({
     cultura: '',
-    colheita_esperada: 0,
-    area_tratada: 0,
-    valor_saca: 0,
+    colheita_esperada: '',
+    area_tratada: '',
+    valor_saca: '',
     produtos_selecionados: []
   });
   const [calculoResultado, setCalculoResultado] = useState(null);
@@ -3394,7 +3394,7 @@ function App() {
                       <input
                         type="number"
                         value={planejamentoForm.colheita_esperada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: e.target.value})}
                         placeholder="Ex: 60"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       />
@@ -3406,7 +3406,7 @@ function App() {
                         type="number"
                         step="0.1"
                         value={planejamentoForm.area_tratada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, area_tratada: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, area_tratada: e.target.value})}
                         placeholder="Ex: 50"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       />
@@ -3418,7 +3418,7 @@ function App() {
                         type="number"
                         step="0.01"
                         value={planejamentoForm.valor_saca}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: e.target.value})}
                         placeholder="Ex: 120.00"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       />
@@ -3457,9 +3457,10 @@ function App() {
                                 value={item.dose_lha}
                                 onChange={(e) => {
                                   const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].dose_lha = parseFloat(e.target.value) || 0;
+                                  novosProdutos[index].dose_lha = e.target.value;
                                   setProdutosSelecionados(novosProdutos);
                                 }}
+                                placeholder="Ex: 2.5"
                                 className="w-full px-2 py-1 border rounded text-sm"
                               />
                             </div>
@@ -3472,9 +3473,10 @@ function App() {
                                 value={item.valor_litro}
                                 onChange={(e) => {
                                   const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].valor_litro = parseFloat(e.target.value) || 0;
+                                  novosProdutos[index].valor_litro = e.target.value;
                                   setProdutosSelecionados(novosProdutos);
                                 }}
+                                placeholder="Ex: 50.00"
                                 className="w-full px-2 py-1 border rounded text-sm"
                               />
                             </div>
@@ -3482,7 +3484,7 @@ function App() {
                             <div className="md:col-span-2">
                               <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
                               <div className="text-sm font-semibold text-gray-700">
-                                {(item.dose_lha * planejamentoForm.area_tratada).toFixed(1)} L
+                                {((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1)} L
                               </div>
                             </div>
                             
@@ -3515,8 +3517,8 @@ function App() {
                                   setProdutosSelecionados([...produtosSelecionados, {
                                     produto_id: produto.id,
                                     produto: produto,
-                                    dose_lha: 1,
-                                    valor_litro: 0
+                                    dose_lha: '',
+                                    valor_litro: ''
                                   }]);
                                 }
                               }
@@ -3555,31 +3557,40 @@ function App() {
                           let custoTotal = 0;
                           let resumoProdutos = [];
                           
+                          // Converter valores para número
+                          const areaNumero = parseFloat(planejamentoForm.area_tratada) || 0;
+                          const valorSacaNumero = parseFloat(planejamentoForm.valor_saca) || 0;
+                          const colheitaNumero = parseFloat(planejamentoForm.colheita_esperada) || 0;
+                          
                           produtosSelecionados.forEach(item => {
+                            // Converter valores para número
+                            const dose = parseFloat(item.dose_lha) || 0;
+                            const valorLitro = parseFloat(item.valor_litro) || 0;
+                            
                             // Volume total = dose * área
-                            const volumeTotal = item.dose_lha * planejamentoForm.area_tratada;
+                            const volumeTotal = dose * areaNumero;
                             // Valor total = volume total * valor do litro
-                            const valorTotal = volumeTotal * item.valor_litro;
+                            const valorTotal = volumeTotal * valorLitro;
                             custoTotal += valorTotal;
                             
                             // Acumular nutrientes (g/ha)
                             Object.keys(item.produto.composition).forEach(nutriente => {
                               const valorNutriente = item.produto.composition[nutriente];
-                              const aporte = valorNutriente * item.dose_lha; // g/ha
+                              const aporte = valorNutriente * dose; // g/ha
                               totalNutrientes[nutriente] = (totalNutrientes[nutriente] || 0) + aporte;
                             });
                             
                             resumoProdutos.push({
                               nome: item.produto.name,
-                              dose_lha: item.dose_lha,
+                              dose_lha: dose,
                               volumeTotal: volumeTotal,
                               valorTotal: valorTotal
                             });
                           });
                           
-                          const custoPorHectare = planejamentoForm.area_tratada > 0 ? custoTotal / planejamentoForm.area_tratada : 0;
-                          const valorSacasPorHa = planejamentoForm.valor_saca > 0 
-                            ? custoPorHectare / planejamentoForm.valor_saca 
+                          const custoPorHectare = areaNumero > 0 ? custoTotal / areaNumero : 0;
+                          const valorSacasPorHa = valorSacaNumero > 0 
+                            ? custoPorHectare / valorSacaNumero 
                             : 0;
                           
                           // Calcular extração e exportação baseado na cultura
@@ -3588,7 +3599,7 @@ function App() {
                           let exportacao = {};
                           
                           if (culturaNormalizada.includes('soja')) {
-                            const multiplicador = planejamentoForm.colheita_esperada;
+                            const multiplicador = colheitaNumero;
                             Object.keys(dadosReferencia.Soja.extracao).forEach(nutriente => {
                               // N, P, K, Ca, Mg, S: Kg/ha -> converter para g/ha (* 1000)
                               if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
@@ -3601,7 +3612,7 @@ function App() {
                               }
                             });
                           } else if (culturaNormalizada.includes('milho')) {
-                            const multiplicador = planejamentoForm.colheita_esperada;
+                            const multiplicador = colheitaNumero;
                             Object.keys(dadosReferencia.Milho.extracao).forEach(nutriente => {
                               if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
                                 extracao[nutriente] = dadosReferencia.Milho.extracao[nutriente] * multiplicador * 1000;
