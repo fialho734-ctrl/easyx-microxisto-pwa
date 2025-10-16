@@ -3394,7 +3394,7 @@ function App() {
                       <input
                         type="number"
                         value={planejamentoForm.colheita_esperada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: e.target.value})}
                         placeholder="Ex: 60"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       />
@@ -3406,7 +3406,7 @@ function App() {
                         type="number"
                         step="0.1"
                         value={planejamentoForm.area_tratada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, area_tratada: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, area_tratada: e.target.value})}
                         placeholder="Ex: 50"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       />
@@ -3418,7 +3418,7 @@ function App() {
                         type="number"
                         step="0.01"
                         value={planejamentoForm.valor_saca}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: parseFloat(e.target.value) || 0})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: e.target.value})}
                         placeholder="Ex: 120.00"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       />
