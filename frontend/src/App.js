@@ -3886,7 +3886,7 @@ function App() {
               {/* Sugestões aparecem após clicar em Sugestão */}
               {suggestedProducts.length > 0 && (
                 <div className="mb-4 p-4 bg-green-50 rounded-lg border-2 border-green-300">
-                  <p className="text-sm font-bold text-green-900 mb-2">
+                  <p className="text-sm font-bold text-green-900 mb-3">
                     💡 Produtos MicroXisto recomendados (clique para comparar):
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -3894,31 +3894,30 @@ function App() {
                       <button
                         key={product.id}
                         onClick={async () => {
-                          // Preencher automaticamente o produto MicroXisto
-                          setSelectedComparisonProduct(product.id);
-                          
-                          // Aguardar um pouco para garantir que o estado foi atualizado
-                          setTimeout(async () => {
-                            // Executar comparação automaticamente
-                            if (selectedCompetitor && product.id) {
-                              setLoading(true);
-                              try {
-                                const response = await fetch(`${API_BASE}/api/compare?competitor_id=${selectedCompetitor}&product_id=${product.id}`);
-                                const data = await response.json();
-                                setComparisonData(data);
-                                // Limpar sugestões após selecionar
-                                setSuggestedProducts([]);
-                              } catch (error) {
-                                console.error('Error loading comparison:', error);
-                                alert('Erro ao carregar comparação.');
-                              }
-                              setLoading(false);
+                          setLoading(true);
+                          try {
+                            // Fazer comparação automaticamente
+                            const response = await fetch(`${API_BASE}/api/compare?competitor_id=${selectedCompetitor}&product_id=${product.id}`);
+                            if (response.ok) {
+                              const data = await response.json();
+                              setComparisonData(data);
+                              // Atualizar o produto selecionado
+                              setSelectedComparisonProduct(product.id);
+                              // Limpar sugestões após selecionar
+                              setSuggestedProducts([]);
+                            } else {
+                              alert('Erro ao carregar comparação.');
                             }
-                          }, 100);
+                          } catch (error) {
+                            console.error('Error loading comparison:', error);
+                            alert('Erro ao carregar comparação.');
+                          }
+                          setLoading(false);
                         }}
-                        className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 transition cursor-pointer"
+                        disabled={loading}
+                        className="px-4 py-2 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {product.name}
+                        {product.name} 👉
                       </button>
                     ))}
                   </div>
