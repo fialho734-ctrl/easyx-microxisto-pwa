@@ -3555,9 +3555,14 @@ function App() {
                           let custoTotal = 0;
                           let resumoProdutos = [];
                           
+                          // Converter valores para número
+                          const areaNumero = parseFloat(planejamentoForm.area_tratada) || 0;
+                          const valorSacaNumero = parseFloat(planejamentoForm.valor_saca) || 0;
+                          const colheitaNumero = parseFloat(planejamentoForm.colheita_esperada) || 0;
+                          
                           produtosSelecionados.forEach(item => {
                             // Volume total = dose * área
-                            const volumeTotal = item.dose_lha * planejamentoForm.area_tratada;
+                            const volumeTotal = item.dose_lha * areaNumero;
                             // Valor total = volume total * valor do litro
                             const valorTotal = volumeTotal * item.valor_litro;
                             custoTotal += valorTotal;
@@ -3577,9 +3582,9 @@ function App() {
                             });
                           });
                           
-                          const custoPorHectare = planejamentoForm.area_tratada > 0 ? custoTotal / planejamentoForm.area_tratada : 0;
-                          const valorSacasPorHa = planejamentoForm.valor_saca > 0 
-                            ? custoPorHectare / planejamentoForm.valor_saca 
+                          const custoPorHectare = areaNumero > 0 ? custoTotal / areaNumero : 0;
+                          const valorSacasPorHa = valorSacaNumero > 0 
+                            ? custoPorHectare / valorSacaNumero 
                             : 0;
                           
                           // Calcular extração e exportação baseado na cultura
@@ -3588,7 +3593,7 @@ function App() {
                           let exportacao = {};
                           
                           if (culturaNormalizada.includes('soja')) {
-                            const multiplicador = planejamentoForm.colheita_esperada;
+                            const multiplicador = colheitaNumero;
                             Object.keys(dadosReferencia.Soja.extracao).forEach(nutriente => {
                               // N, P, K, Ca, Mg, S: Kg/ha -> converter para g/ha (* 1000)
                               if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
@@ -3601,7 +3606,7 @@ function App() {
                               }
                             });
                           } else if (culturaNormalizada.includes('milho')) {
-                            const multiplicador = planejamentoForm.colheita_esperada;
+                            const multiplicador = colheitaNumero;
                             Object.keys(dadosReferencia.Milho.extracao).forEach(nutriente => {
                               if (['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente)) {
                                 extracao[nutriente] = dadosReferencia.Milho.extracao[nutriente] * multiplicador * 1000;
