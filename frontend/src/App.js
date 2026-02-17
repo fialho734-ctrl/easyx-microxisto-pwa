@@ -2849,21 +2849,25 @@ function App() {
 
 
   const loadComparison = async () => {
-    if (selectedCompetitor && selectedComparisonProduct) {
+    // Permitir comparação apenas com concorrente (sem produto MicroXisto)
+    if (selectedCompetitor) {
       setLoading(true);
       setSuggestedProducts([]); // Limpar sugestões anteriores
       try {
-        const [competitorResponse, microxistoResponse] = await Promise.all([
-          fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`),
-          fetch(`${API_BASE}/api/products/${selectedComparisonProduct}`)
-        ]);
-        
+        const competitorResponse = await fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`);
         const competitorData = await competitorResponse.json();
-        const microxistoData = await microxistoResponse.json();
+        
+        let microxistoData = null;
+        
+        // Buscar produto MicroXisto apenas se selecionado
+        if (selectedComparisonProduct) {
+          const microxistoResponse = await fetch(`${API_BASE}/api/products/${selectedComparisonProduct}`);
+          microxistoData = await microxistoResponse.json();
+        }
         
         setComparisonData({
           competitor: competitorData,
-          product: microxistoData
+          product: microxistoData // Pode ser null
         });
 
         // Buscar sugestões APÓS a comparação se o concorrente tiver propósito
