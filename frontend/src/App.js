@@ -3170,7 +3170,7 @@ function App() {
                     rel="noopener noreferrer"
                     className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
                   >
-                    Baixar PDF Informativo
+                    Baixar Portfólio
                   </a>
                 )}
               </div>
