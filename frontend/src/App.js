@@ -4123,43 +4123,6 @@ function App() {
                               yFin += 16;
                               doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 50, yFin);
                               
-                              // Nutrient table if available
-                              if (resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
-                                let yNut = yFin + 30;
-                                doc.setTextColor(10, 79, 46);
-                                doc.setFontSize(13);
-                                doc.setFont('helvetica', 'bold');
-                                doc.text('Nutrientes Aportados (g/ha)', pw / 2, yNut, { align: 'center' });
-                                
-                                const nutrientData = Object.entries(resumoManejo.totalNutrientes)
-                                  .filter(([, v]) => v > 0)
-                                  .map(([k, v]) => [k, v.toFixed(1)]);
-                                
-                                if (nutrientData.length > 0) {
-                                  doc.autoTable({
-                                    startY: yNut + 8,
-                                    head: [['Nutriente', 'Quantidade (g/ha)']],
-                                    body: nutrientData,
-                                    theme: 'grid',
-                                    headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold' },
-                                    bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
-                                    columnStyles: { 0: { cellWidth: 100 } },
-                                    margin: { left: 30, right: 30 },
-                                    alternateRowStyles: { fillColor: [240, 255, 240] }
-                                  });
-                                }
-                              }
-                              
-                              // Footer on page 2
-                              doc.setFillColor(10, 79, 46);
-                              doc.rect(0, ph - 25, pw, 25, 'F');
-                              doc.setTextColor(118, 212, 94);
-                              doc.setFontSize(8);
-                              doc.text('MicroXisto - Tecnologia em Nutrição Vegetal', pw / 2, ph - 14, { align: 'center' });
-                              doc.setTextColor(255, 255, 255);
-                              doc.setFontSize(7);
-                              doc.text('@microxisto | www.microxisto.com.br', pw / 2, ph - 6, { align: 'center' });
-                              
                               doc.save(`plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`);
                             });
                           });
