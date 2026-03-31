@@ -1,10 +1,10 @@
 // Service Worker SIMPLES E FUNCIONAL para funcionar OFFLINE
-const CACHE_NAME = 'easyx-offline-v9';
-const APP_VERSION = '2.3.0'; // Versão sem zeros nos campos + comparação rápida
+const CACHE_NAME = 'easyx-offline-v10';
+const APP_VERSION = '3.0.0'; // Estágio, PDF, Estudo de Mercado, Dashboard, Manutenção
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v7 (App v' + APP_VERSION + ')...');
+  console.log('🚀 SW: Installing v10 (App v' + APP_VERSION + ')...');
   
   // Pular waiting imediatamente para atualizar mais rápido
   self.skipWaiting();
