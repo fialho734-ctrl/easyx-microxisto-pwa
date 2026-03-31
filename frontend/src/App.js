@@ -3696,6 +3696,21 @@ function App() {
                               </button>
                             </div>
                           </div>
+                          {/* Campo de Observação */}
+                          <div className="mt-2">
+                            <input
+                              type="text"
+                              value={item.observacao || ''}
+                              onChange={(e) => {
+                                const novosProdutos = [...produtosSelecionados];
+                                novosProdutos[index].observacao = e.target.value;
+                                setProdutosSelecionados(novosProdutos);
+                              }}
+                              placeholder="Observação (opcional)"
+                              className="w-full px-3 py-2 border rounded text-sm bg-white"
+                              data-testid={`observacao-input-${index}`}
+                            />
+                          </div>
                         </div>
                       ))}
                       
@@ -3716,7 +3731,8 @@ function App() {
                                     produto: produto,
                                     dose_lha: '',
                                     valor_litro: '',
-                                    estagio: ''
+                                    estagio: '',
+                                    observacao: ''
                                   }]);
                                 }
                               }
@@ -3782,7 +3798,8 @@ function App() {
                               estagio: item.estagio || '-',
                               dose_lha: dose,
                               volumeTotal: volumeTotal,
-                              valorTotal: valorTotal
+                              valorTotal: valorTotal,
+                              observacao: item.observacao || ''
                             });
                           });
                           
@@ -4058,30 +4075,33 @@ function App() {
                                 p.estagio || '-',
                                 p.dose_lha.toFixed(1),
                                 p.volumeTotal.toFixed(1),
-                                `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
+                                `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`,
+                                p.observacao || ''
                               ]);
                               
                               if (typeof autoTable === 'function') {
                                 autoTable(doc, {
                                   startY: y,
-                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
+                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
                                   body: tableData,
                                   theme: 'grid',
                                   headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
                                   bodyStyles: { fontSize: 9, textColor: [50, 50, 50], cellPadding: 4 },
                                   alternateRowStyles: { fillColor: [240, 255, 240] },
-                                  margin: { left: 40, right: 40 }
+                                  margin: { left: 40, right: 40 },
+                                  columnStyles: { 5: { cellWidth: 80 } }
                                 });
                               } else {
                                 doc.autoTable({
                                   startY: y,
-                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
+                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
                                   body: tableData,
                                   theme: 'grid',
                                   headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
                                   bodyStyles: { fontSize: 9, textColor: [50, 50, 50], cellPadding: 4 },
                                   alternateRowStyles: { fillColor: [240, 255, 240] },
-                                  margin: { left: 40, right: 40 }
+                                  margin: { left: 40, right: 40 },
+                                  columnStyles: { 5: { cellWidth: 80 } }
                                 });
                               }
                               
