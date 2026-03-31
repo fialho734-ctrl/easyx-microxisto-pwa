@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { PDF_ASSETS } from './pdfAssets';
+import { PDF_ASSETS, EUROSTILE_FONT } from './pdfAssets';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -2525,6 +2525,10 @@ function App() {
 
   const VENDA_OPTIONS = ['Venda direta', 'Distribuição', 'Cooperativa'];
 
+  // Dashboard data
+  const [dashboardData, setDashboardData] = useState(null);
+  const [userActivity, setUserActivity] = useState([]);
+
 
   // Propósito options - NOVA FUNCIONALIDADE
   const PROPOSITO_OPTIONS = [
@@ -2596,6 +2600,20 @@ function App() {
       fetchMarketStudies();
     }
   }, [isLoggedIn, token]);
+
+  // Fetch dashboard when on estudo-mercado page
+  useEffect(() => {
+    if (isLoggedIn && token && currentPage === 'estudo-mercado') {
+      fetchDashboard();
+    }
+  }, [currentPage, isLoggedIn, token]);
+
+  // Fetch user activity when on admin page
+  useEffect(() => {
+    if (isAdmin && token && currentPage === 'admin') {
+      fetchUserActivity();
+    }
+  }, [currentPage, isAdmin, token]);
 
   const checkMaintenanceMode = async () => {
     try {
@@ -2704,6 +2722,34 @@ function App() {
       }
     } catch (error) {
       console.error('Error toggling maintenance:', error);
+    }
+  };
+
+  const fetchDashboard = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/market-studies/dashboard`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDashboardData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard:', error);
+    }
+  };
+
+  const fetchUserActivity = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/user-activity`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserActivity(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user activity:', error);
     }
   };
 
@@ -2836,6 +2882,11 @@ function App() {
         setIsLoggedIn(true);
         setIsAdmin(data.is_admin);
         setCurrentPage('home');
+        // Track user activity
+        fetch(`${API_BASE}/api/track-activity`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${data.access_token}` }
+        }).catch(() => {});
       } else {
         alert(data.detail || 'Credenciais inválidas');
       }
@@ -4039,8 +4090,12 @@ function App() {
                                 doc.addImage(PDF_ASSETS.topDecoration, 'PNG', 210, 0, 330, 273);
                               } catch(e) {}
                               
-                              // Title - cor #002F17
-                              doc.setFont('helvetica', 'bold');
+                              // Register EurostileEF Black font
+                              doc.addFileToVFS('EurostileEF-Black.otf', EUROSTILE_FONT);
+                              doc.addFont('EurostileEF-Black.otf', 'EurostileEF', 'normal');
+                              
+                              // Title - cor #002F17 com EurostileEF Black
+                              doc.setFont('EurostileEF', 'normal');
                               doc.setFontSize(20);
                               doc.setTextColor(0, 47, 23); // #002F17
                               doc.text('Plano de manejo MicroXisto', 145, 52);
@@ -4437,6 +4492,66 @@ function App() {
               <div className="max-w-6xl mx-auto" data-testid="market-study-page">
                 <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Estudo de Mercado</h2>
                 
+                {/* Dashboard */}
+                {dashboardData && (dashboardData.national.length > 0 || dashboardData.by_state.length > 0) && (
+                  <div className="mb-6 space-y-4">
+                    {/* National Averages */}
+                    {dashboardData.national.length > 0 && (
+                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                        <h3 className="text-lg font-bold text-green-800 mb-4">Média Nacional por Empresa</h3>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead className="bg-green-50">
+                              <tr>
+                                <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
+                                <th className="px-3 py-2 text-center font-semibold text-green-800">Preço Médio (R$)</th>
+                                <th className="px-3 py-2 text-center font-semibold text-green-800">Dose Média</th>
+                                <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
+                                <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
+                                <th className="px-3 py-2 text-center font-semibold text-green-800">Estados</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {dashboardData.national.map((item, i) => (
+                                <tr key={i} className="border-t hover:bg-gray-50">
+                                  <td className="px-3 py-2 font-semibold">{item.empresa}</td>
+                                  <td className="px-3 py-2 text-center">R$ {item.avg_valor.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center">{item.avg_dose.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center">{item.count}</td>
+                                  <td className="px-3 py-2 text-center text-xs">{item.estados.join(', ')}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* By State */}
+                    {dashboardData.by_state.length > 0 && (
+                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                        <h3 className="text-lg font-bold text-green-800 mb-4">Média por Região (Estado)</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {dashboardData.by_state.map((item, i) => (
+                            <div key={i} className="bg-green-50 p-3 rounded-lg border border-green-200">
+                              <div className="text-lg font-bold text-green-800">{item.estado}</div>
+                              <div className="text-sm text-gray-600 mt-1">R$/ha médio:</div>
+                              <div className="text-xl font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Preço médio: R$ {item.avg_valor.toFixed(2)}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {item.count} registro{item.count > 1 ? 's' : ''} | {item.empresas.length} empresa{item.empresas.length > 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 {/* Form */}
                 <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">
@@ -4699,6 +4814,13 @@ function App() {
                 >
                   📊 Estudo Mercado
                 </button>
+                <button
+                  onClick={() => setAdminTab('user-activity')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'user-activity' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  data-testid="admin-user-activity-tab"
+                >
+                  📈 Uso da Plataforma
+                </button>
               </div>
             </div>
 
@@ -4786,6 +4908,40 @@ function App() {
                 >
                   📥 Baixar Excel
                 </button>
+              </div>
+            )}
+            
+            {adminTab === 'user-activity' && (
+              <div className="card bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">📈 Uso da Plataforma por Usuário</h3>
+                {userActivity.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-3 text-left font-semibold">Usuário</th>
+                          <th className="px-4 py-3 text-center font-semibold">Total de Acessos</th>
+                          <th className="px-4 py-3 text-center font-semibold">Dias Ativos</th>
+                          <th className="px-4 py-3 text-center font-semibold">Último Acesso</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userActivity.map((user, i) => (
+                          <tr key={i} className="border-t hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium">{user.email}</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-bold">{user.total_accesses}</span>
+                            </td>
+                            <td className="px-4 py-3 text-center">{user.days_active}</td>
+                            <td className="px-4 py-3 text-center">{user.last_access}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-8">Nenhum dado de atividade registrado ainda.</p>
+                )}
               </div>
             )}
           </div>

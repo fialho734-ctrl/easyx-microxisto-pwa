@@ -986,6 +986,88 @@ async def get_all_competitors_public():
     competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
     return competitors
 
+# ==========================================
+# USER ACTIVITY TRACKING
+# ==========================================
+
+@app.post("/api/track-activity")
+async def track_activity(current_user: dict = Depends(get_current_user)):
+    """Track user login/activity"""
+    await db.user_activity.update_one(
+        {"user_id": current_user["id"], "date": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
+        {"$inc": {"count": 1}, "$set": {"user_email": current_user.get("email", ""), "user_id": current_user["id"]}},
+        upsert=True
+    )
+    return {"status": "ok"}
+
+@app.get("/api/admin/user-activity")
+async def get_user_activity(admin_user: dict = Depends(get_admin_user)):
+    """Get user activity stats (admin only)"""
+    pipeline = [
+        {"$group": {
+            "_id": "$user_email",
+            "total_accesses": {"$sum": "$count"},
+            "days_active": {"$sum": 1},
+            "last_access": {"$max": "$date"}
+        }},
+        {"$sort": {"total_accesses": -1}}
+    ]
+    stats = await db.user_activity.aggregate(pipeline).to_list(None)
+    return [{"email": s["_id"], "total_accesses": s["total_accesses"], "days_active": s["days_active"], "last_access": s["last_access"]} for s in stats]
+
+# ==========================================
+# MARKET STUDY DASHBOARD
+# ==========================================
+
+@app.get("/api/market-studies/dashboard")
+async def get_market_dashboard(current_user: dict = Depends(get_current_user)):
+    """Get market study dashboard data - averages by region and national"""
+    # By state
+    pipeline_state = [
+        {"$group": {
+            "_id": {"estado": "$estado", "empresa": "$empresa"},
+            "avg_valor": {"$avg": "$valor"},
+            "avg_dose": {"$avg": "$dose_ha"},
+            "avg_rs_ha": {"$avg": "$rs_ha"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.estado": 1}}
+    ]
+    by_state = await db.market_studies.aggregate(pipeline_state).to_list(None)
+    
+    # National averages by empresa
+    pipeline_national = [
+        {"$group": {
+            "_id": "$empresa",
+            "avg_valor": {"$avg": "$valor"},
+            "avg_dose": {"$avg": "$dose_ha"},
+            "avg_rs_ha": {"$avg": "$rs_ha"},
+            "count": {"$sum": 1},
+            "estados": {"$addToSet": "$estado"}
+        }},
+        {"$sort": {"avg_rs_ha": -1}}
+    ]
+    national = await db.market_studies.aggregate(pipeline_national).to_list(None)
+    
+    # By state summary
+    pipeline_state_summary = [
+        {"$group": {
+            "_id": "$estado",
+            "avg_rs_ha": {"$avg": "$rs_ha"},
+            "avg_valor": {"$avg": "$valor"},
+            "count": {"$sum": 1},
+            "empresas": {"$addToSet": "$empresa"}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    state_summary = await db.market_studies.aggregate(pipeline_state_summary).to_list(None)
+    
+    return {
+        "by_company_state": [{"estado": s["_id"]["estado"], "empresa": s["_id"]["empresa"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"]} for s in by_state],
+        "national": [{"empresa": s["_id"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"], "estados": s["estados"]} for s in national],
+        "by_state": [{"estado": s["_id"], "avg_rs_ha": round(s["avg_rs_ha"], 2), "avg_valor": round(s["avg_valor"], 2), "count": s["count"], "empresas": s["empresas"]} for s in state_summary]
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)

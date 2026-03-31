@@ -37,20 +37,25 @@ Build and expand a Progressive Web App (PWA) for MicroXisto, a company focused o
 
 ### Phase 3 - PDF Recommendation (Completed 2026-03-31)
 - "Gerar Recomendacao (PDF)" button in Planejamento
-- Styled PDF with MicroXisto branding (#004F27, #9BE178)
-- Includes planning data, products with stages, nutrient summary, financial overview
+- Single-page PDF with MicroXisto branding template
+- Uses EurostileEF Black font for title, color #002F17
+- Includes products table with Estagio and Obs. columns
+- Financial summary (custo total, por hectare, sacas/ha)
+- Footer with "Por que eu escolho MICROXISTO" branding (transparent logo)
+- Observation field per product in planning form
 
 ### Phase 4 - Estudo de Mercado Tab (Completed 2026-03-31)
 - New "Estudo de Mercado" tab with full CRUD
 - Fields: Empresa, Produto, Dose/ha, Valor, Venda type, Estado
 - R$/ha auto-calculated
 - User-specific data isolation
+- Dashboard with national averages by company and regional averages by state
 - Admin Excel export
 
-### Maintenance Mode (Completed 2026-03-31)
-- Toggle in Admin panel to activate/deactivate
-- Non-admin users see "Em Atualizacao" screen
-- Admin retains full access during maintenance
+### Admin Tools (Completed 2026-03-31)
+- Maintenance Mode toggle
+- User Activity tracking (total accesses, days active, last access)
+- Market Study Excel export
 
 ## Key API Endpoints
 - POST /api/auth/login, /api/auth/register
