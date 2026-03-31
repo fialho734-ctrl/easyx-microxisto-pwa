@@ -1,17 +1,19 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import uuid
 import bcrypt
 import csv
 import io
 from contextlib import asynccontextmanager
+import openpyxl
 
 # Database setup
 MONGO_URL = os.environ.get('MONGO_URL', "mongodb://localhost:27017")
@@ -139,6 +141,23 @@ class CompetitorUpdate(BaseModel):
     composition: ProductComposition
     additives: str
     proposito: Optional[str] = ""  # NOVO CAMPO
+
+# Estudo de Mercado models
+class MarketStudyCreate(BaseModel):
+    empresa: str
+    produto: str
+    dose_ha: float
+    valor: float
+    venda: str  # "Venda direta", "Distribuição", "Cooperativa"
+    estado: str  # Brazilian states + PY
+
+class MarketStudyUpdate(BaseModel):
+    empresa: Optional[str] = None
+    produto: Optional[str] = None
+    dose_ha: Optional[float] = None
+    valor: Optional[float] = None
+    venda: Optional[str] = None
+    estado: Optional[str] = None
 
 # Lifespan manager
 @asynccontextmanager
@@ -824,6 +843,148 @@ async def create_competitor(competitor: Competitor, admin_user: dict = Depends(g
     competitor.id = str(uuid.uuid4())
     await db.competitors.insert_one(competitor.dict())
     return competitor
+
+# ==========================================
+# MAINTENANCE MODE APIs
+# ==========================================
+
+@app.get("/api/maintenance-status")
+async def get_maintenance_status():
+    """Check if maintenance mode is active"""
+    status = await db.settings.find_one({"key": "maintenance_mode"}, {"_id": 0})
+    if status:
+        return {"active": status.get("active", False), "message": status.get("message", "Em atualização")}
+    return {"active": False, "message": ""}
+
+@app.post("/api/admin/maintenance")
+async def toggle_maintenance(admin_user: dict = Depends(get_admin_user)):
+    """Toggle maintenance mode"""
+    current = await db.settings.find_one({"key": "maintenance_mode"})
+    new_status = not (current.get("active", False) if current else False)
+    
+    await db.settings.update_one(
+        {"key": "maintenance_mode"},
+        {"$set": {"key": "maintenance_mode", "active": new_status, "message": "Em atualização"}},
+        upsert=True
+    )
+    return {"active": new_status, "message": "Modo manutenção ativado" if new_status else "Modo manutenção desativado"}
+
+# ==========================================
+# ESTUDO DE MERCADO APIs
+# ==========================================
+
+BRAZILIAN_STATES = [
+    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+    "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+    "RS", "RO", "RR", "SC", "SP", "SE", "TO", "PY"
+]
+
+@app.get("/api/market-studies")
+async def get_market_studies(current_user: dict = Depends(get_current_user)):
+    """Get market studies for the current user"""
+    studies = await db.market_studies.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).to_list(None)
+    return studies
+
+@app.post("/api/market-studies")
+async def create_market_study(study: MarketStudyCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new market study entry"""
+    rs_ha = study.dose_ha * study.valor if study.dose_ha and study.valor else 0
+    
+    study_data = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "user_email": current_user.get("email", ""),
+        "empresa": study.empresa,
+        "produto": study.produto,
+        "dose_ha": study.dose_ha,
+        "valor": study.valor,
+        "venda": study.venda,
+        "estado": study.estado,
+        "rs_ha": rs_ha,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.market_studies.insert_one(study_data)
+    study_data.pop("_id", None)
+    return study_data
+
+@app.put("/api/market-studies/{study_id}")
+async def update_market_study(study_id: str, study: MarketStudyUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a market study entry"""
+    existing = await db.market_studies.find_one({"id": study_id, "user_id": current_user["id"]})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Estudo não encontrado")
+    
+    update_data = {k: v for k, v in study.dict().items() if v is not None}
+    
+    # Recalculate rs_ha
+    dose = update_data.get("dose_ha", existing.get("dose_ha", 0))
+    valor = update_data.get("valor", existing.get("valor", 0))
+    update_data["rs_ha"] = dose * valor
+    
+    await db.market_studies.update_one(
+        {"id": study_id, "user_id": current_user["id"]},
+        {"$set": update_data}
+    )
+    return {"message": "Estudo atualizado com sucesso"}
+
+@app.delete("/api/market-studies/{study_id}")
+async def delete_market_study(study_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a market study entry"""
+    result = await db.market_studies.delete_one({"id": study_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Estudo não encontrado")
+    return {"message": "Estudo removido com sucesso"}
+
+@app.get("/api/admin/market-studies/export")
+async def export_market_studies_excel(admin_user: dict = Depends(get_admin_user)):
+    """Export all market studies to Excel (admin only)"""
+    studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Estudo de Mercado"
+    
+    # Headers
+    headers = ["Usuário", "Empresa", "Produto", "Dose/ha", "Valor", "R$/ha", "Venda", "Estado", "Data"]
+    ws.append(headers)
+    
+    # Style headers
+    for col in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col)
+        cell.font = openpyxl.styles.Font(bold=True)
+    
+    # Data rows
+    for s in studies:
+        ws.append([
+            s.get("user_email", ""),
+            s.get("empresa", ""),
+            s.get("produto", ""),
+            s.get("dose_ha", 0),
+            s.get("valor", 0),
+            s.get("rs_ha", 0),
+            s.get("venda", ""),
+            s.get("estado", ""),
+            s.get("created_at", "")
+        ])
+    
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=estudo_mercado.xlsx"}
+    )
+
+@app.get("/api/competitors")
+async def get_all_competitors_public():
+    """Get all competitors (public, for search)"""
+    competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
+    return competitors
 
 if __name__ == "__main__":
     import uvicorn

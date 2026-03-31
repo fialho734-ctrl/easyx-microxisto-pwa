@@ -2504,7 +2504,25 @@ function App() {
   const [produtosSelecionados, setProdutosSelecionados] = useState([]);
   const [produtoAtual, setProdutoAtual] = useState({ produto_id: '', dose_lha: 0, valor_litro: 0 });
   const [resumoManejo, setResumoManejo] = useState(null);
-  const [allProducts, setAllProducts] = useState([]); // NOVO: todos os produtos para planejamento
+  const [allProducts, setAllProducts] = useState([]);
+
+  // Maintenance mode
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceChecked, setMaintenanceChecked] = useState(false);
+
+  // Estudo de Mercado states
+  const [marketStudies, setMarketStudies] = useState([]);
+  const [marketForm, setMarketForm] = useState({
+    empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: ''
+  });
+  const [editingStudy, setEditingStudy] = useState(null);
+
+  // Estágio options
+  const ESTAGIO_OPTIONS = ['TS', 'Sulco', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'R1', 'R2', 'R3', 'R4', 'R5', 'R5.1', 'R5.2', 'R5.3', 'R5.4', 'R6'];
+
+  const ESTADOS_BRASIL = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','PY'];
+
+  const VENDA_OPTIONS = ['Venda direta', 'Distribuição', 'Cooperativa'];
 
 
   // Propósito options - NOVA FUNCIONALIDADE
@@ -2562,13 +2580,131 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   useEffect(() => {
+    checkMaintenanceMode();
     fetchTechnologies();
     fetchHomeContent();
     fetchCompetitorCompanies();
-    fetchCultures(); // NOVA FUNCIONALIDADE
-    fetchAllProducts(); // Carregar todos os produtos para planejamento
+    fetchCultures();
+    fetchAllProducts();
     checkAuthStatus();
   }, []);
+
+  // Fetch market studies when logged in
+  useEffect(() => {
+    if (isLoggedIn && token) {
+      fetchMarketStudies();
+    }
+  }, [isLoggedIn, token]);
+
+  const checkMaintenanceMode = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/maintenance-status`);
+      if (response.ok) {
+        const data = await response.json();
+        setMaintenanceMode(data.active);
+      }
+    } catch (error) {
+      console.error('Error checking maintenance:', error);
+    }
+    setMaintenanceChecked(true);
+  };
+
+  const fetchMarketStudies = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/market-studies`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMarketStudies(data);
+      }
+    } catch (error) {
+      console.error('Error fetching market studies:', error);
+    }
+  };
+
+  const handleCreateMarketStudy = async () => {
+    if (!marketForm.empresa || !marketForm.produto || !marketForm.dose_ha || !marketForm.valor || !marketForm.venda || !marketForm.estado) {
+      alert('Preencha todos os campos');
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE}/api/market-studies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          empresa: marketForm.empresa,
+          produto: marketForm.produto,
+          dose_ha: parseFloat(marketForm.dose_ha),
+          valor: parseFloat(marketForm.valor),
+          venda: marketForm.venda,
+          estado: marketForm.estado
+        })
+      });
+      if (response.ok) {
+        setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '' });
+        fetchMarketStudies();
+      }
+    } catch (error) {
+      console.error('Error creating market study:', error);
+    }
+  };
+
+  const handleUpdateMarketStudy = async () => {
+    if (!editingStudy) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/market-studies/${editingStudy.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          empresa: marketForm.empresa,
+          produto: marketForm.produto,
+          dose_ha: parseFloat(marketForm.dose_ha),
+          valor: parseFloat(marketForm.valor),
+          venda: marketForm.venda,
+          estado: marketForm.estado
+        })
+      });
+      if (response.ok) {
+        setEditingStudy(null);
+        setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '' });
+        fetchMarketStudies();
+      }
+    } catch (error) {
+      console.error('Error updating market study:', error);
+    }
+  };
+
+  const handleDeleteMarketStudy = async (id) => {
+    if (!window.confirm('Tem certeza que deseja remover este registro?')) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/market-studies/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        fetchMarketStudies();
+      }
+    } catch (error) {
+      console.error('Error deleting market study:', error);
+    }
+  };
+
+  const toggleMaintenanceMode = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/maintenance`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMaintenanceMode(data.active);
+        alert(data.message);
+      }
+    } catch (error) {
+      console.error('Error toggling maintenance:', error);
+    }
+  };
 
   const checkAuthStatus = () => {
     const storedToken = localStorage.getItem('token');
@@ -2895,6 +3031,35 @@ function App() {
   const selectedComparisonTechData = technologies.find(t => t.id === selectedComparisonTech);
 
   // Registration form
+  // Maintenance mode screen (non-admin users see this)
+  if (maintenanceChecked && maintenanceMode && !isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center" data-testid="maintenance-screen">
+        <div className="bg-white p-8 lg:p-12 rounded-2xl shadow-2xl w-full max-w-lg text-center mx-4">
+          <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6 object-contain" />
+          <div className="text-6xl mb-6">🔧</div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4">Em Atualização</h1>
+          <p className="text-gray-600 text-base lg:text-lg mb-6">
+            Estamos trabalhando em melhorias para você. O sistema estará disponível em breve.
+          </p>
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+            <p className="text-sm text-green-800">
+              Em caso de urgência, entre em contato com o administrador.
+            </p>
+          </div>
+          {!isLoggedIn && (
+            <button
+              onClick={() => setCurrentPage('login')}
+              className="mt-6 text-green-600 hover:text-green-800 text-sm underline"
+            >
+              Login Administrativo
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (currentPage === 'register') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
@@ -3111,8 +3276,16 @@ function App() {
                 <button
                   onClick={() => setCurrentPage('comparison')}
                   className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'comparison' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
+                  data-testid="nav-comparison"
                 >
                   Comparativo
+                </button>
+                <button
+                  onClick={() => setCurrentPage('estudo-mercado')}
+                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'estudo-mercado' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
+                  data-testid="nav-market-study"
+                >
+                  Estudo de Mercado
                 </button>
                 {isLoggedIn && (
                   <button
@@ -3448,9 +3621,28 @@ function App() {
                       {produtosSelecionados.map((item, index) => (
                         <div key={index} className="bg-gray-50 p-3 rounded-lg border">
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                            <div className="md:col-span-5">
+                            <div className="md:col-span-3">
                               <label className="block text-xs text-gray-600 mb-1">Produto</label>
                               <div className="font-semibold text-gray-800" translate="no">{item.produto.name}</div>
+                            </div>
+                            
+                            <div className="md:col-span-2">
+                              <label className="block text-xs text-gray-600 mb-1">Estágio</label>
+                              <select
+                                value={item.estagio || ''}
+                                onChange={(e) => {
+                                  const novosProdutos = [...produtosSelecionados];
+                                  novosProdutos[index].estagio = e.target.value;
+                                  setProdutosSelecionados(novosProdutos);
+                                }}
+                                className="w-full px-2 py-1 border rounded text-sm"
+                                data-testid={`estagio-select-${index}`}
+                              >
+                                <option value="">Selecione...</option>
+                                {ESTAGIO_OPTIONS.map(opt => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
                             </div>
                             
                             <div className="md:col-span-2">
@@ -3522,17 +3714,17 @@ function App() {
                                     produto_id: produto.id,
                                     produto: produto,
                                     dose_lha: '',
-                                    valor_litro: ''
+                                    valor_litro: '',
+                                    estagio: ''
                                   }]);
                                 }
                               }
                             }}
                             className="w-full px-3 py-2 border rounded-lg"
+                            data-testid="add-product-select"
                           >
                             <option value="">Selecione um produto...</option>
-                            {allProducts
-                              .filter(p => !produtosSelecionados.find(sel => sel.produto_id === p.id))
-                              .map(product => (
+                            {allProducts.map(product => (
                                 <option key={product.id} value={product.id} translate="no">{product.name}</option>
                               ))
                             }
@@ -3586,6 +3778,7 @@ function App() {
                             
                             resumoProdutos.push({
                               nome: item.produto.name,
+                              estagio: item.estagio || '-',
                               dose_lha: dose,
                               volumeTotal: volumeTotal,
                               valorTotal: valorTotal
@@ -3761,6 +3954,7 @@ function App() {
                         <thead className="bg-gray-100">
                           <tr>
                             <th className="px-3 py-2 text-left">Produto</th>
+                            <th className="px-3 py-2 text-center">Estágio</th>
                             <th className="px-3 py-2 text-center">Dose (L/ha)</th>
                             <th className="px-3 py-2 text-center">Volume Total (L)</th>
                             <th className="px-3 py-2 text-right">Valor (R$)</th>
@@ -3770,6 +3964,7 @@ function App() {
                           {resumoManejo.produtos.map((produto, index) => (
                             <tr key={index} className="border-t">
                               <td className="px-3 py-2" translate="no">{produto.nome}</td>
+                              <td className="px-3 py-2 text-center">{produto.estagio}</td>
                               <td className="px-3 py-2 text-center">{produto.dose_lha.toFixed(1)}</td>
                               <td className="px-3 py-2 text-center">{produto.volumeTotal.toFixed(1)}</td>
                               <td className="px-3 py-2 text-right">
@@ -3803,6 +3998,139 @@ function App() {
                           {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Botão Gerar Recomendação PDF */}
+                    <div className="mt-6">
+                      <button
+                        onClick={() => {
+                          import('jspdf').then(({ default: jsPDF }) => {
+                            import('jspdf-autotable').then(() => {
+                              const doc = new jsPDF();
+                              const pageWidth = doc.internal.pageSize.getWidth();
+                              
+                              // Header with brand colors
+                              doc.setFillColor(0, 79, 39); // #004F27
+                              doc.rect(0, 0, pageWidth, 35, 'F');
+                              
+                              doc.setTextColor(155, 225, 120); // #9BE178
+                              doc.setFontSize(22);
+                              doc.setFont('helvetica', 'bold');
+                              doc.text('MICROXISTO', pageWidth / 2, 15, { align: 'center' });
+                              doc.setFontSize(12);
+                              doc.setTextColor(255, 255, 255);
+                              doc.text('Recomendação de Manejo', pageWidth / 2, 25, { align: 'center' });
+                              
+                              // Date
+                              doc.setFontSize(9);
+                              doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 15, 32, { align: 'right' });
+                              
+                              // Planning details
+                              let yPos = 45;
+                              doc.setTextColor(0, 79, 39);
+                              doc.setFontSize(14);
+                              doc.setFont('helvetica', 'bold');
+                              doc.text('Dados do Planejamento', 14, yPos);
+                              
+                              yPos += 8;
+                              doc.setFontSize(10);
+                              doc.setFont('helvetica', 'normal');
+                              doc.setTextColor(60, 60, 60);
+                              doc.text(`Cultura: ${planejamentoForm.cultura}`, 14, yPos);
+                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 100, yPos);
+                              yPos += 6;
+                              doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, 14, yPos);
+                              doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca || 0).toFixed(2)}`, 100, yPos);
+                              
+                              // Products table
+                              yPos += 12;
+                              doc.setTextColor(0, 79, 39);
+                              doc.setFontSize(14);
+                              doc.setFont('helvetica', 'bold');
+                              doc.text('Produtos Recomendados', 14, yPos);
+                              
+                              yPos += 4;
+                              const tableData = resumoManejo.produtos.map(p => [
+                                p.nome,
+                                p.estagio || '-',
+                                p.dose_lha.toFixed(1),
+                                p.volumeTotal.toFixed(1),
+                                `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
+                              ]);
+                              
+                              doc.autoTable({
+                                startY: yPos,
+                                head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume Total (L)', 'Valor (R$)']],
+                                body: tableData,
+                                theme: 'grid',
+                                headStyles: { fillColor: [0, 79, 39], textColor: [255, 255, 255], fontSize: 9 },
+                                bodyStyles: { fontSize: 9 },
+                                alternateRowStyles: { fillColor: [240, 255, 240] }
+                              });
+                              
+                              // Financial summary
+                              yPos = doc.lastAutoTable.finalY + 10;
+                              doc.setTextColor(0, 79, 39);
+                              doc.setFontSize(14);
+                              doc.setFont('helvetica', 'bold');
+                              doc.text('Resumo Financeiro', 14, yPos);
+                              
+                              yPos += 8;
+                              doc.setFontSize(11);
+                              doc.setTextColor(60, 60, 60);
+                              doc.setFont('helvetica', 'normal');
+                              doc.text(`Custo Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 14, yPos);
+                              yPos += 6;
+                              doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 14, yPos);
+                              yPos += 6;
+                              doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 14, yPos);
+                              
+                              // Nutrient summary if available
+                              if (resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
+                                yPos += 12;
+                                doc.setTextColor(0, 79, 39);
+                                doc.setFontSize(14);
+                                doc.setFont('helvetica', 'bold');
+                                doc.text('Nutrientes Aportados (g/ha)', 14, yPos);
+                                
+                                const nutrientData = Object.entries(resumoManejo.totalNutrientes)
+                                  .filter(([, v]) => v > 0)
+                                  .map(([k, v]) => [k, v.toFixed(1)]);
+                                
+                                if (nutrientData.length > 0) {
+                                  yPos += 4;
+                                  doc.autoTable({
+                                    startY: yPos,
+                                    head: [['Nutriente', 'Quantidade (g/ha)']],
+                                    body: nutrientData,
+                                    theme: 'grid',
+                                    headStyles: { fillColor: [0, 79, 39], textColor: [255, 255, 255], fontSize: 9 },
+                                    bodyStyles: { fontSize: 9 },
+                                    columnStyles: { 0: { cellWidth: 40 } }
+                                  });
+                                }
+                              }
+                              
+                              // Footer
+                              const pageHeight = doc.internal.pageSize.getHeight();
+                              doc.setFillColor(0, 79, 39);
+                              doc.rect(0, pageHeight - 20, pageWidth, 20, 'F');
+                              doc.setTextColor(155, 225, 120);
+                              doc.setFontSize(8);
+                              doc.text('MicroXisto - Tecnologia em Nutrição Vegetal', pageWidth / 2, pageHeight - 12, { align: 'center' });
+                              doc.setTextColor(255, 255, 255);
+                              doc.setFontSize(7);
+                              doc.text('@microxisto | www.microxisto.com.br', pageWidth / 2, pageHeight - 6, { align: 'center' });
+                              
+                              doc.save(`recomendacao_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`);
+                            });
+                          });
+                        }}
+                        className="w-full bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-800 font-semibold text-base"
+                        data-testid="generate-pdf-btn"
+                      >
+                        📄 Gerar Recomendação (PDF)
+                      </button>
                     </div>
                   </div>
                 )}
@@ -3952,10 +4280,11 @@ function App() {
               <div className="flex gap-3">
                 <button
                   onClick={loadComparison}
-                  disabled={!selectedCompetitor || !selectedComparisonProduct || loading}
+                  disabled={!selectedCompetitor || loading}
                   className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
+                  data-testid="compare-products-btn"
                 >
-                  {loading ? 'Carregando...' : 'Comparar Produtos'}
+                  {loading ? 'Carregando...' : selectedComparisonProduct ? 'Comparar Produtos' : 'Ver Concorrente'}
                 </button>
                 
                 {selectedCompetitor && (
@@ -4076,6 +4405,212 @@ function App() {
           </>
         )}
 
+        {/* ESTUDO DE MERCADO */}
+        {currentPage === 'estudo-mercado' && (
+          <>
+            {isLoggedIn ? (
+              <div className="max-w-6xl mx-auto" data-testid="market-study-page">
+                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Estudo de Mercado</h2>
+                
+                {/* Form */}
+                <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    {editingStudy ? 'Editar Registro' : 'Novo Registro'}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Empresa</label>
+                      <input
+                        type="text"
+                        value={marketForm.empresa}
+                        onChange={(e) => setMarketForm({...marketForm, empresa: e.target.value})}
+                        placeholder="Nome da empresa"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-empresa-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Produto</label>
+                      <input
+                        type="text"
+                        value={marketForm.produto}
+                        onChange={(e) => setMarketForm({...marketForm, produto: e.target.value})}
+                        placeholder="Nome do produto"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-produto-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Dose/ha</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={marketForm.dose_ha}
+                        onChange={(e) => setMarketForm({...marketForm, dose_ha: e.target.value})}
+                        placeholder="Ex: 2.5"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-dose-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Valor (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={marketForm.valor}
+                        onChange={(e) => setMarketForm({...marketForm, valor: e.target.value})}
+                        placeholder="Ex: 150.00"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-valor-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Tipo de Venda</label>
+                      <select
+                        value={marketForm.venda}
+                        onChange={(e) => setMarketForm({...marketForm, venda: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-venda-select"
+                      >
+                        <option value="">Selecione...</option>
+                        {VENDA_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Estado</label>
+                      <select
+                        value={marketForm.estado}
+                        onChange={(e) => setMarketForm({...marketForm, estado: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-estado-select"
+                      >
+                        <option value="">Selecione...</option>
+                        {ESTADOS_BRASIL.map(uf => (
+                          <option key={uf} value={uf}>{uf}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  {/* Calculated R$/ha preview */}
+                  {marketForm.dose_ha && marketForm.valor && (
+                    <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                      <span className="text-sm text-green-800 font-semibold">
+                        R$/ha calculado: R$ {(parseFloat(marketForm.dose_ha) * parseFloat(marketForm.valor)).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={editingStudy ? handleUpdateMarketStudy : handleCreateMarketStudy}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                      data-testid="market-save-btn"
+                    >
+                      {editingStudy ? 'Atualizar' : 'Adicionar'}
+                    </button>
+                    {editingStudy && (
+                      <button
+                        onClick={() => {
+                          setEditingStudy(null);
+                          setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '' });
+                        }}
+                        className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Table */}
+                {marketStudies.length > 0 ? (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Meus Registros ({marketStudies.length})</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-3 py-2 text-left">Empresa</th>
+                            <th className="px-3 py-2 text-left">Produto</th>
+                            <th className="px-3 py-2 text-center">Dose/ha</th>
+                            <th className="px-3 py-2 text-center">Valor</th>
+                            <th className="px-3 py-2 text-center">R$/ha</th>
+                            <th className="px-3 py-2 text-center">Venda</th>
+                            <th className="px-3 py-2 text-center">Estado</th>
+                            <th className="px-3 py-2 text-center">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {marketStudies.map(study => (
+                            <tr key={study.id} className="border-t hover:bg-gray-50">
+                              <td className="px-3 py-2">{study.empresa}</td>
+                              <td className="px-3 py-2">{study.produto}</td>
+                              <td className="px-3 py-2 text-center">{study.dose_ha}</td>
+                              <td className="px-3 py-2 text-center">R$ {parseFloat(study.valor).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center font-bold text-green-700">R$ {parseFloat(study.rs_ha).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{study.venda}</td>
+                              <td className="px-3 py-2 text-center">{study.estado}</td>
+                              <td className="px-3 py-2 text-center">
+                                <div className="flex gap-1 justify-center">
+                                  <button
+                                    onClick={() => {
+                                      setEditingStudy(study);
+                                      setMarketForm({
+                                        empresa: study.empresa,
+                                        produto: study.produto,
+                                        dose_ha: study.dose_ha.toString(),
+                                        valor: study.valor.toString(),
+                                        venda: study.venda,
+                                        estado: study.estado
+                                      });
+                                    }}
+                                    className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                    data-testid={`market-edit-${study.id}`}
+                                  >
+                                    Editar
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteMarketStudy(study.id)}
+                                    className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                    data-testid={`market-delete-${study.id}`}
+                                  >
+                                    Excluir
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                    <div className="text-5xl mb-4">📊</div>
+                    <p className="text-gray-600">Nenhum registro ainda. Adicione seu primeiro estudo de mercado acima.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="max-w-md mx-auto">
+                <div className="bg-white rounded-lg shadow-md p-6 text-center">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">🔒 Acesso Restrito</h3>
+                  <p className="text-gray-600 mb-6">Para acessar o estudo de mercado, você precisa estar logado.</p>
+                  <button 
+                    onClick={() => setCurrentPage('login')}
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                  >
+                    Fazer Login
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
         {currentPage === 'admin' && isAdmin && (
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-green-800 mb-8 text-center">Painel Administrativo</h2>
@@ -4125,6 +4660,20 @@ function App() {
                 >
                   🌾 Culturas
                 </button>
+                <button
+                  onClick={() => setAdminTab('maintenance')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'maintenance' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                  data-testid="admin-maintenance-tab"
+                >
+                  🔧 Manutenção
+                </button>
+                <button
+                  onClick={() => setAdminTab('market-export')}
+                  className={`px-4 py-2 rounded-lg ${adminTab === 'market-export' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  data-testid="admin-market-export-tab"
+                >
+                  📊 Estudo Mercado
+                </button>
               </div>
             </div>
 
@@ -4155,6 +4704,64 @@ function App() {
             
             {adminTab === 'cultures' && (
               <CultureManagement token={token} cultures={cultures} fetchCultures={fetchCultures} />
+            )}
+            
+            {adminTab === 'maintenance' && (
+              <div className="card bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">🔧 Modo Manutenção</h3>
+                <p className="text-gray-600 mb-4">
+                  Quando ativado, usuários normais verão uma tela de "Em atualização". 
+                  Administradores continuam com acesso normal.
+                </p>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={`px-4 py-2 rounded-lg font-semibold ${maintenanceMode ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                    Status: {maintenanceMode ? 'ATIVO' : 'DESATIVADO'}
+                  </div>
+                </div>
+                <button
+                  onClick={toggleMaintenanceMode}
+                  className={`px-6 py-3 rounded-lg font-semibold text-white ${maintenanceMode ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+                  data-testid="toggle-maintenance-btn"
+                >
+                  {maintenanceMode ? 'Desativar Manutenção' : 'Ativar Manutenção'}
+                </button>
+              </div>
+            )}
+            
+            {adminTab === 'market-export' && (
+              <div className="card bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Exportar Estudo de Mercado</h3>
+                <p className="text-gray-600 mb-4">
+                  Exporte todos os dados de estudo de mercado de todos os usuários em formato Excel.
+                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                      });
+                      if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'estudo_mercado.xlsx';
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                      } else {
+                        alert('Erro ao exportar dados');
+                      }
+                    } catch (error) {
+                      console.error('Error exporting:', error);
+                      alert('Erro ao exportar');
+                    }
+                  }}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                  data-testid="export-market-btn"
+                >
+                  📥 Baixar Excel
+                </button>
+              </div>
             )}
           </div>
         )}
