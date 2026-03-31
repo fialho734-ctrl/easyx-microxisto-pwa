@@ -2528,6 +2528,8 @@ function App() {
   // Dashboard data
   const [dashboardData, setDashboardData] = useState(null);
   const [userActivity, setUserActivity] = useState([]);
+  const [dashboardFilters, setDashboardFilters] = useState({ estado: '', empresa: '', data_inicio: '', data_fim: '' });
+  const [filterOptions, setFilterOptions] = useState({ empresas: [], estados: [] });
 
 
   // Propósito options - NOVA FUNCIONALIDADE
@@ -2727,12 +2729,30 @@ function App() {
 
   const fetchDashboard = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/market-studies/dashboard`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setDashboardData(data);
+      if (isAdmin) {
+        // Admin gets filtered dashboard
+        const params = new URLSearchParams();
+        if (dashboardFilters.estado) params.append('estado', dashboardFilters.estado);
+        if (dashboardFilters.empresa) params.append('empresa', dashboardFilters.empresa);
+        if (dashboardFilters.data_inicio) params.append('data_inicio', dashboardFilters.data_inicio);
+        if (dashboardFilters.data_fim) params.append('data_fim', dashboardFilters.data_fim);
+        const url = `${API_BASE}/api/admin/market-studies/dashboard-filtered${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData({ national: data.products, by_state: data.by_state });
+          setFilterOptions(data.filter_options);
+        }
+      } else {
+        const response = await fetch(`${API_BASE}/api/market-studies/dashboard`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard:', error);
@@ -4090,9 +4110,9 @@ function App() {
                                 doc.addImage(PDF_ASSETS.topDecoration, 'PNG', 210, 0, 330, 273);
                               } catch(e) {}
                               
-                              // Register EurostileEF Black font
-                              doc.addFileToVFS('EurostileEF-Black.otf', EUROSTILE_FONT);
-                              doc.addFont('EurostileEF-Black.otf', 'EurostileEF', 'normal');
+                              // Register EurostileEF Black font (TTF)
+                              doc.addFileToVFS('EurostileEF-Black.ttf', EUROSTILE_FONT);
+                              doc.addFont('EurostileEF-Black.ttf', 'EurostileEF', 'normal');
                               
                               // Title - cor #002F17 com EurostileEF Black
                               doc.setFont('EurostileEF', 'normal');
@@ -4495,31 +4515,107 @@ function App() {
                 {/* Dashboard */}
                 {dashboardData && (dashboardData.national.length > 0 || dashboardData.by_state.length > 0) && (
                   <div className="mb-6 space-y-4">
-                    {/* National Averages */}
+                    
+                    {/* Admin Filters */}
+                    {isAdmin && (
+                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                        <h3 className="text-lg font-bold text-green-800 mb-3">Filtros (Admin)</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Estado</label>
+                            <select
+                              value={dashboardFilters.estado}
+                              onChange={(e) => setDashboardFilters({...dashboardFilters, estado: e.target.value})}
+                              className="w-full px-2 py-1.5 border rounded text-sm"
+                              data-testid="filter-estado"
+                            >
+                              <option value="">Todos</option>
+                              {filterOptions.estados.map(uf => (
+                                <option key={uf} value={uf}>{uf}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Empresa</label>
+                            <select
+                              value={dashboardFilters.empresa}
+                              onChange={(e) => setDashboardFilters({...dashboardFilters, empresa: e.target.value})}
+                              className="w-full px-2 py-1.5 border rounded text-sm"
+                              data-testid="filter-empresa"
+                            >
+                              <option value="">Todas</option>
+                              {filterOptions.empresas.map(emp => (
+                                <option key={emp} value={emp}>{emp}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Data Início</label>
+                            <input
+                              type="date"
+                              value={dashboardFilters.data_inicio}
+                              onChange={(e) => setDashboardFilters({...dashboardFilters, data_inicio: e.target.value})}
+                              className="w-full px-2 py-1.5 border rounded text-sm"
+                              data-testid="filter-data-inicio"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Data Fim</label>
+                            <input
+                              type="date"
+                              value={dashboardFilters.data_fim}
+                              onChange={(e) => setDashboardFilters({...dashboardFilters, data_fim: e.target.value})}
+                              className="w-full px-2 py-1.5 border rounded text-sm"
+                              data-testid="filter-data-fim"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={fetchDashboard}
+                            className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 font-semibold"
+                            data-testid="apply-filters-btn"
+                          >
+                            Aplicar Filtros
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDashboardFilters({ estado: '', empresa: '', data_inicio: '', data_fim: '' });
+                              setTimeout(fetchDashboard, 100);
+                            }}
+                            className="px-4 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
+                          >
+                            Limpar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Product Averages */}
                     {dashboardData.national.length > 0 && (
                       <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-4">Média Nacional por Empresa</h3>
+                        <h3 className="text-lg font-bold text-green-800 mb-4">Preço Médio por Produto</h3>
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead className="bg-green-50">
                               <tr>
                                 <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
+                                <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">Preço Médio (R$)</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">Dose Média</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Estados</th>
                               </tr>
                             </thead>
                             <tbody>
                               {dashboardData.national.map((item, i) => (
                                 <tr key={i} className="border-t hover:bg-gray-50">
-                                  <td className="px-3 py-2 font-semibold">{item.empresa}</td>
+                                  <td className="px-3 py-2">{item.empresa}</td>
+                                  <td className="px-3 py-2 font-semibold">{item.produto}</td>
                                   <td className="px-3 py-2 text-center">R$ {item.avg_valor.toFixed(2)}</td>
                                   <td className="px-3 py-2 text-center">{item.avg_dose.toFixed(2)}</td>
                                   <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
                                   <td className="px-3 py-2 text-center">{item.count}</td>
-                                  <td className="px-3 py-2 text-center text-xs">{item.estados.join(', ')}</td>
                                 </tr>
                               ))}
                             </tbody>

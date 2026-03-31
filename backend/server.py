@@ -1022,23 +1022,10 @@ async def get_user_activity(admin_user: dict = Depends(get_admin_user)):
 @app.get("/api/market-studies/dashboard")
 async def get_market_dashboard(current_user: dict = Depends(get_current_user)):
     """Get market study dashboard data - averages by region and national"""
-    # By state
-    pipeline_state = [
-        {"$group": {
-            "_id": {"estado": "$estado", "empresa": "$empresa"},
-            "avg_valor": {"$avg": "$valor"},
-            "avg_dose": {"$avg": "$dose_ha"},
-            "avg_rs_ha": {"$avg": "$rs_ha"},
-            "count": {"$sum": 1}
-        }},
-        {"$sort": {"_id.estado": 1}}
-    ]
-    by_state = await db.market_studies.aggregate(pipeline_state).to_list(None)
-    
-    # National averages by empresa
+    # National averages by produto
     pipeline_national = [
         {"$group": {
-            "_id": "$empresa",
+            "_id": {"empresa": "$empresa", "produto": "$produto"},
             "avg_valor": {"$avg": "$valor"},
             "avg_dose": {"$avg": "$dose_ha"},
             "avg_rs_ha": {"$avg": "$rs_ha"},
@@ -1063,9 +1050,69 @@ async def get_market_dashboard(current_user: dict = Depends(get_current_user)):
     state_summary = await db.market_studies.aggregate(pipeline_state_summary).to_list(None)
     
     return {
-        "by_company_state": [{"estado": s["_id"]["estado"], "empresa": s["_id"]["empresa"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"]} for s in by_state],
-        "national": [{"empresa": s["_id"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"], "estados": s["estados"]} for s in national],
+        "national": [{"empresa": s["_id"]["empresa"], "produto": s["_id"]["produto"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"], "estados": s["estados"]} for s in national],
         "by_state": [{"estado": s["_id"], "avg_rs_ha": round(s["avg_rs_ha"], 2), "avg_valor": round(s["avg_valor"], 2), "count": s["count"], "empresas": s["empresas"]} for s in state_summary]
+    }
+
+@app.get("/api/admin/market-studies/dashboard-filtered")
+async def get_market_dashboard_filtered(
+    estado: Optional[str] = None,
+    empresa: Optional[str] = None,
+    data_inicio: Optional[str] = None,
+    data_fim: Optional[str] = None,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Get filtered market study dashboard (admin only)"""
+    match_filter = {}
+    if estado:
+        match_filter["estado"] = estado
+    if empresa:
+        match_filter["empresa"] = empresa
+    if data_inicio or data_fim:
+        date_filter = {}
+        if data_inicio:
+            date_filter["$gte"] = data_inicio
+        if data_fim:
+            date_filter["$lte"] = data_fim + "T23:59:59"
+        match_filter["created_at"] = date_filter
+    
+    pipeline_base = [{"$match": match_filter}] if match_filter else []
+    
+    # By produto
+    pipeline_product = pipeline_base + [
+        {"$group": {
+            "_id": {"empresa": "$empresa", "produto": "$produto"},
+            "avg_valor": {"$avg": "$valor"},
+            "avg_dose": {"$avg": "$dose_ha"},
+            "avg_rs_ha": {"$avg": "$rs_ha"},
+            "count": {"$sum": 1},
+            "estados": {"$addToSet": "$estado"}
+        }},
+        {"$sort": {"avg_rs_ha": -1}}
+    ]
+    products = await db.market_studies.aggregate(pipeline_product).to_list(None)
+    
+    # By state
+    pipeline_state = pipeline_base + [
+        {"$group": {
+            "_id": "$estado",
+            "avg_rs_ha": {"$avg": "$rs_ha"},
+            "avg_valor": {"$avg": "$valor"},
+            "count": {"$sum": 1},
+            "empresas": {"$addToSet": "$empresa"}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    states = await db.market_studies.aggregate(pipeline_state).to_list(None)
+    
+    # Get distinct values for filters
+    all_empresas = await db.market_studies.distinct("empresa")
+    all_estados = await db.market_studies.distinct("estado")
+    
+    return {
+        "products": [{"empresa": s["_id"]["empresa"], "produto": s["_id"]["produto"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"], "estados": s["estados"]} for s in products],
+        "by_state": [{"estado": s["_id"], "avg_rs_ha": round(s["avg_rs_ha"], 2), "avg_valor": round(s["avg_valor"], 2), "count": s["count"], "empresas": s["empresas"]} for s in states],
+        "filter_options": {"empresas": sorted(all_empresas), "estados": sorted(all_estados)}
     }
 
 if __name__ == "__main__":
