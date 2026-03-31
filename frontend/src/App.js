@@ -4008,15 +4008,16 @@ function App() {
                       <button
                         onClick={() => {
                               const doc = new jsPDF({ unit: 'pt', format: [540, 780] });
-                              const pw = 540; // page width
-                              const ph = 780; // page height
+                              const pw = 540;
+                              const ph = 780;
+                              const footerH = 58;
                               
-                              // ===== PAGE 1: COVER PAGE (matching template) =====
+                              // ===== SINGLE PAGE PDF =====
                               
                               // Top-right green leaf decoration
                               try {
                                 doc.addImage(PDF_ASSETS.topDecoration, 'PNG', 210, 0, 330, 273);
-                              } catch(e) { console.log('Could not add top decoration'); }
+                              } catch(e) {}
                               
                               // Title
                               doc.setFont('helvetica', 'bold');
@@ -4024,40 +4025,81 @@ function App() {
                               doc.setTextColor(0, 0, 0);
                               doc.text('Plano de manejo MicroXisto', 145, 52);
                               
-                              // Center info on cover page
-                              let cy = 320;
-                              doc.setFontSize(14);
-                              doc.setTextColor(10, 79, 46);
-                              doc.text('Dados do Planejamento', pw / 2, cy, { align: 'center' });
-                              
-                              cy += 30;
-                              doc.setFont('helvetica', 'normal');
+                              // Planning info
+                              let y = 90;
                               doc.setFontSize(12);
-                              doc.setTextColor(60, 60, 60);
-                              doc.text(`Cultura: ${planejamentoForm.cultura}`, pw / 2, cy, { align: 'center' });
-                              cy += 20;
-                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, pw / 2, cy, { align: 'center' });
-                              cy += 20;
-                              doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, pw / 2, cy, { align: 'center' });
-                              cy += 20;
-                              if (planejamentoForm.valor_saca) {
-                                doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, pw / 2, cy, { align: 'center' });
-                              }
-                              cy += 30;
-                              doc.setFontSize(10);
-                              doc.setTextColor(120, 120, 120);
-                              doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pw / 2, cy, { align: 'center' });
+                              doc.setFont('helvetica', 'bold');
+                              doc.setTextColor(10, 79, 46);
+                              doc.text('Dados do Planejamento', 40, y);
                               
-                              // Bottom branding block
+                              y += 18;
+                              doc.setFont('helvetica', 'normal');
+                              doc.setFontSize(10);
+                              doc.setTextColor(60, 60, 60);
+                              doc.text(`Cultura: ${planejamentoForm.cultura}`, 40, y);
+                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 200, y);
+                              y += 14;
+                              doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, 40, y);
+                              if (planejamentoForm.valor_saca) {
+                                doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, 200, y);
+                              }
+                              y += 10;
+                              doc.setFontSize(8);
+                              doc.setTextColor(140, 140, 140);
+                              doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 40, y);
+                              
+                              // Products table
+                              y += 15;
+                              const tableData = resumoManejo.produtos.map(p => [
+                                p.nome,
+                                p.estagio || '-',
+                                p.dose_lha.toFixed(1),
+                                p.volumeTotal.toFixed(1),
+                                `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
+                              ]);
+                              
+                              autoTable(doc, {
+                                startY: y,
+                                head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
+                                body: tableData,
+                                theme: 'grid',
+                                headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
+                                bodyStyles: { fontSize: 9, textColor: [50, 50, 50], cellPadding: 4 },
+                                alternateRowStyles: { fillColor: [240, 255, 240] },
+                                margin: { left: 40, right: 40 }
+                              });
+                              
+                              // Financial summary
+                              let yFin = doc.lastAutoTable.finalY + 18;
+                              doc.setFillColor(245, 250, 245);
+                              doc.roundedRect(40, yFin - 8, pw - 80, 70, 4, 4, 'F');
+                              doc.setDrawColor(10, 79, 46);
+                              doc.roundedRect(40, yFin - 8, pw - 80, 70, 4, 4, 'S');
+                              
+                              doc.setTextColor(10, 79, 46);
+                              doc.setFontSize(11);
+                              doc.setFont('helvetica', 'bold');
+                              doc.text('Resumo Financeiro', pw / 2, yFin + 6, { align: 'center' });
+                              
+                              yFin += 20;
+                              doc.setFontSize(10);
+                              doc.setFont('helvetica', 'normal');
+                              doc.setTextColor(50, 50, 50);
+                              doc.text(`Custo Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
+                              yFin += 14;
+                              doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
+                              yFin += 14;
+                              doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
+                              
+                              // Bottom branding block image
                               try {
-                                doc.addImage(PDF_ASSETS.bottomBranding, 'PNG', 41, 722, 145, 53);
-                              } catch(e) { console.log('Could not add bottom branding'); }
+                                doc.addImage(PDF_ASSETS.bottomBranding, 'PNG', 41, ph - footerH - 55, 145, 53);
+                              } catch(e) {}
                               
                               // Dark green footer bar
                               doc.setFillColor(10, 79, 46);
-                              doc.rect(0, ph - 58, pw, 58, 'F');
+                              doc.rect(0, ph - footerH, pw, footerH, 'F');
                               
-                              // Footer branding text
                               doc.setTextColor(255, 255, 255);
                               doc.setFontSize(9);
                               doc.setFont('helvetica', 'normal');
@@ -4070,58 +4112,6 @@ function App() {
                               doc.setFontSize(16);
                               doc.setFont('helvetica', 'bold');
                               doc.text('MICROXISTO', 50, ph - 12);
-                              
-                              // ===== PAGE 2: PRODUCTS TABLE =====
-                              doc.addPage([540, 780]);
-                              
-                              // Light header bar
-                              doc.setFillColor(10, 79, 46);
-                              doc.rect(0, 0, pw, 40, 'F');
-                              doc.setTextColor(255, 255, 255);
-                              doc.setFontSize(14);
-                              doc.setFont('helvetica', 'bold');
-                              doc.text('Produtos Recomendados', pw / 2, 26, { align: 'center' });
-                              
-                              const tableData = resumoManejo.produtos.map(p => [
-                                p.nome,
-                                p.estagio || '-',
-                                p.dose_lha.toFixed(1),
-                                p.volumeTotal.toFixed(1),
-                                `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
-                              ]);
-                              
-                              autoTable(doc, {
-                                startY: 55,
-                                head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
-                                body: tableData,
-                                theme: 'grid',
-                                headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 10, font: 'helvetica', fontStyle: 'bold' },
-                                bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
-                                alternateRowStyles: { fillColor: [240, 255, 240] },
-                                margin: { left: 30, right: 30 }
-                              });
-                              
-                              // Financial summary section
-                              let yFin = doc.lastAutoTable.finalY + 25;
-                              doc.setFillColor(245, 250, 245);
-                              doc.roundedRect(30, yFin - 10, pw - 60, 80, 5, 5, 'F');
-                              doc.setDrawColor(10, 79, 46);
-                              doc.roundedRect(30, yFin - 10, pw - 60, 80, 5, 5, 'S');
-                              
-                              doc.setTextColor(10, 79, 46);
-                              doc.setFontSize(13);
-                              doc.setFont('helvetica', 'bold');
-                              doc.text('Resumo Financeiro', pw / 2, yFin + 5, { align: 'center' });
-                              
-                              yFin += 22;
-                              doc.setFontSize(11);
-                              doc.setFont('helvetica', 'normal');
-                              doc.setTextColor(50, 50, 50);
-                              doc.text(`Custo Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 50, yFin);
-                              yFin += 16;
-                              doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 50, yFin);
-                              yFin += 16;
-                              doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 50, yFin);
                               
                               doc.save(`plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`);
                         }}
