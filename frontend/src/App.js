@@ -3108,7 +3108,7 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center" data-testid="maintenance-screen">
         <div className="bg-white p-8 lg:p-12 rounded-2xl shadow-2xl w-full max-w-lg text-center mx-4">
-          <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6 object-contain" />
+          <img src="/logo_easyX.png" alt="EasyX" className="h-24 lg:h-28 mx-auto mb-6 object-contain" />
           <div className="text-6xl mb-6">🔧</div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-4">Em Atualização</h1>
           <p className="text-gray-600 text-base lg:text-lg mb-6">
@@ -3137,7 +3137,7 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
         <div className="bg-white p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md">
           <div className="text-center mb-6">
-            <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-12 lg:h-16 mx-auto mb-4 object-contain" />
+            <img src="/logo_easyX.png" alt="EasyX" className="h-20 lg:h-24 mx-auto mb-4 object-contain" />
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Cadastro</h2>
             <p className="text-gray-600 text-sm mt-2">Apenas emails @microxisto.com.br</p>
           </div>
@@ -3246,7 +3246,7 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
         <div className="bg-white p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md">
           <div className="text-center mb-6">
-            <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-12 lg:h-16 mx-auto mb-4 object-contain" />
+            <img src="/logo_easyX.png" alt="EasyX" className="h-20 lg:h-24 mx-auto mb-4 object-contain" />
             <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Login</h2>
           </div>
           
@@ -3315,7 +3315,7 @@ function App() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             {/* Logo e Título */}
             <div className="flex items-center justify-center lg:justify-start mb-4 lg:mb-0 pt-2">
-              <img src="https://i.imgur.com/lwNbD0G.png" alt="MicroXisto" className="h-6 lg:h-8" />
+              <img src="/logo_easyX.png" alt="EasyX" className="h-10 lg:h-12" />
             </div>
             
             {/* Navigation */}
@@ -3409,7 +3409,7 @@ function App() {
         {currentPage === 'home' && (
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-lg shadow-md p-6 lg:p-8 text-center">
-              <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6 object-contain" />
+              <img src="/logo_easyX.png" alt="EasyX" className="h-24 lg:h-28 mx-auto mb-6 object-contain" />
               <div className="prose max-w-none">
                 <p className="text-base lg:text-lg text-gray-700 mb-6">{homeContent.text}</p>
                 {homeContent.pdf_url && (
@@ -4202,13 +4202,11 @@ function App() {
                               yFin += 14;
                               doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
                               
-                              // Dark green footer bar with branding
-                              doc.setFillColor(0, 47, 23); // #002F17
-                              doc.rect(0, ph - footerH, pw, footerH, 'F');
-                              
-                              // Branding image inside footer
+                              // Logo MicroXisto centralizada no rodapé
                               try {
-                                doc.addImage(PDF_ASSETS.bottomBranding, 'PNG', 30, ph - footerH + 5, 160, 48);
+                                const logoW = 180;
+                                const logoH = 48;
+                                doc.addImage(PDF_ASSETS.logoMicroXisto, 'PNG', (pw - logoW) / 2, ph - logoH - 20, logoW, logoH);
                               } catch(e) {}
                               
                               const pdfBlob = doc.output('blob');
