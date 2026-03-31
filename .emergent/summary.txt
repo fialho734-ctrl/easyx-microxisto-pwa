@@ -1,88 +1,124 @@
-<analysis>
-The previous AI engineer successfully brought the MicroXisto PWA from concept to a stable application, including core features, PWA implementation, authentication, and an admin panel. This trajectory details the engineer's work on newly requested features: Culturas, an app icon update, significant improvements to the Comparativo page, and a complex Planejamento module. The engineer completed the Culturas feature (backend CRUD, frontend display, admin management) and updated the app icon. The Comparativo page underwent several iterations, focusing on dynamic suggestions, autocomplete, and adapting to the user's evolving UI preferences for displaying comparisons and suggestions. The Planejamento module was developed iteratively, starting with basic calculations, then expanding to incorporate MicroXisto product selection, dose/value inputs, and complex nutrient/cost summaries. Debugging efforts included resolving a JSX parsing error after a large file replacement and fixing backend routing for product data. The trajectory concluded with the engineer beginning to implement nutrient extraction/exportation tables in the Planejamento section, based on the user's latest request.
-</analysis>
+<analysis>### Handover Summary
 
-<product_requirements>
-The user requires a multi-platform, responsive PWA for Microxisto product consultation and comparison, with an intuitive visual administration panel, offline access, and readiness for app store publication.
+**original_problem_statement**: The user wants to expand the existing MicroXisto PWA with several new features. Previously, they requested Nutrient Extraction/Exportation tables, dropdown updates, and a Service Worker update mechanism. The most recent and pending requests include:
+1. Putting the main production application into Maintenance Mode (Em atualização) while new features are being built.
+2. Modifying the Comparativo section so a user can compare a competitor product without selecting a Microxisto product.
+3. Changing a button text from Baixar PDF to Baixar Portfólio.
+4. Adding an Estágio (Stage) dropdown to the Planejamento module.
+5. Creating a Gerar recomendação PDF generation feature for the Planning section.
+6. Creating a brand new tab called Estudo de Mercado (Market Study) with CRUD capabilities, user-specific data isolation, and admin Excel export.
 
-**Implemented features include:**
--   **Home Page**: Displays Microxisto logo (EasyX), editable text, PDF upload. Uses Black, White, Dark Green (#006134), Light Green (#83b942) color scheme and responsive design.
--   **Technology Section**: Dropdown for 5 Microxisto technologies (AquaX, MicroX, NanoX, BioX, FemtoX), dynamic logo display, and editable descriptions. Admin can CRUD products linked to technologies, including name, logo URL, density, nature (liquid/solid), 16 chemical elements, additives, descriptions, and a materials_url field. Works offline after login and caching.
--   **Competitor Comparison**: Four-field cascading search displays a side-by-side comparison table. Admin can visually CRUD competitor data or use a block-paste editable table. Bolding of non-zero chemical values implemented. MicroXisto product description added below additives. Works offline after login and caching. This section was iteratively refined to include autocomplete on competitor search, display of MicroXisto product suggestions based on competitor's propósito, and individual competitor editing. The UI for comparison was adjusted multiple times between a simplified 4-select dropdown and autocomplete-enabled inputs based on user feedback.
--   **Access Control**: Admin panel (web-only access for  with ) for full CRUD of content and user management (registration via @microxisto.com.br, admin approval/rejection). Final users access via mobile app with offline functionality and data synchronization, requiring login for Technologies and Comparison sections.
--   **PWA Functionality**: Offline capabilities with Service Worker, Web App Manifest, and an offline status indicator. Install buttons for Android/Desktop (automatic) and iOS (manual with instructions). The app icon was updated.
--   **Tutorials**: Dedicated Tutoriais tab in admin panel with step-by-step guides, and user/admin markdown manuals (, , ).
--   **Versioning**: Git-based versioning with  (stable),  (for features), and a physical  folder.
--   **Culturas Section**: New menu for users to access folders of downloadable files related to specific cultures (Soybean, Corn, Cotton initially). Admin panel to manage cultures (name, page link, icon link) was implemented for CRUD operations.
--   **Planejamento Feature**: A new section allowing users to input basic crop data (culture, expected harvest, treated area, sack value). This was expanded to include selecting up to 15 MicroXisto products, inputting dose (L/ha) and value (R$/L) for each, calculating individual and total nutrients aported, and a comprehensive resumo do manejo detailing product list, volume, value, and sacks/ha cost.
+**User's preferred language**: Portuguese (pt-BR)
+*(INSTRUCT: Next agent MUST respond in Portuguese)*
 
-</product_requirements>
+**what currently exists?**: A full-stack Progressive Web App (React/FastAPI/MongoDB) for MicroXisto. It features user authentication, a Technology showcase, Competitor Comparisons, Planning calculations (doses, values, extraction/exportation of nutrients), offline capabilities via Service Worker with an auto-update notification, and an admin panel. A custom domain has been successfully mapped.
 
-<key_technical_concepts>
+**Last working item**:
+- **Last item agent was working**: Implementing Phase 1 of the new requirements (Button text change and allowing Competitor comparison without MicroXisto product) and preparing to put the site into Maintenance Mode as explicitly requested by the user in the final message.
+- **Status**: IN PROGRESS
+- **Agent Testing Done**: N (Code edits were just made; testing and maintenance screen were not yet executed).
+- **Which testing method agent to use?**: Frontend testing agent / Screenshot tool (to verify the maintenance screen UI).
+- **User Testing Done**: N
 
--   **Full-Stack Development**: React (Frontend), FastAPI (Backend), MongoDB (Database).
--   **PWA**: Progressive Web App architecture, Service Workers for caching, Web App Manifest for mobile installation.
--   **Authentication**: JWT for secure admin access,  state management.
--   **UI/UX**: Tailwind CSS for responsive design, component-based architecture in React, autocomplete patterns.
--   **Data Management**: CRUD operations, API integration, CSV parsing, block paste for bulk data.
--   **Deployment**: Kubernetes container environment, Supervisor, Vercel/Emergent.
--   **Versioning**: Git for source control, local backup strategy.
-</key_technical_concepts>
+**All Pending/In progress Issue list**:
+- **Issue 1: Maintenance Mode Implementation (P0)**
+   - **Attempted fixes**: Agent agreed to do it but the turn ended before generating the code. 
+   - **Next debug checklist**: Modify  or backend routing to display a clean Em atualização (Under Maintenance) screen for regular users, while allowing a test environment/path for the user to validate the homologation changes.
+   - **Why fix this issue and what will be achieved with the fix?**: User explicitly requested the live app to be taken down temporarily while the new features (Estágio, PDF, Estudo de Mercado) are developed and homologated.
+   - **Status**: NOT STARTED
+   - **Is recurring issue?**: N
+   - **Should Test frontend/backend/both after fix?**: Frontend
+   - **Blocked on other issue**: None
 
-<code_architecture>
+**In progress Task List**:
+- **Task 1: FASE 1 - Ajustes Simples (Comparativo & Button Text)**
+   - **Where to resume**: Review the edits made to  in  around line 2851 and the button text change around line 3170.
+   - **What will be achieved with this?**: Fulfills the user's requirement to allow competitor searches without selecting a MicroXisto product and changes the Portfolio button text.
+   - **Status**: TESTING PENDING
+   - **Should Test frontend/backend/both after fix?**: Frontend
+   - **Blocked on something**: None
+
+**Upcoming and Future Tasks**:
+- **Task: FASE 2 - Campo Estágio no Planejamento (P0)**: In , add a required dropdown Estágio (Options: TS, Sulco, V1, V2, V3, V4, V5, V6, V7, V8, R1, R2, R3, R4, R5, R5.1, R5.2, R5.3, R5.4, R6) when adding a product. Ensure the same product can be added multiple times if stages differ. Display this in the management summary.
+- **Task: FASE 3 - PDF Recomendação (P1)**: Add a Gerar recomendação button in Planejamento. Generate a styled PDF with the summary, financials, and specific branding (logos, footers, social media links). *Note: The user offered to provide a model/template for this. Ask the user to provide the model if not already provided in the next messages.*
+- **Task: FASE 4 - Nova Aba Estudo de Mercado (P1)**: Create a full full-stack CRUD feature. Fields: Empresa (select/text), Produto (select/text), Dose/ha (manual), Valor (manual), Venda (select: Venda direta, Distribuição, Cooperativa), Estado (select: Brazilian states + PY), R$/ha (calculated). Users see their own inputs; Admin can export all users' data to Excel. Needs frontend UI and FastAPI/MongoDB backend endpoints.
+- **Task: Remove Maintenance Mode (P2)**: Once the user homologates/approves all changes, remove the maintenance block.
+
+**Completed work in this session**:
+- Nutrient Extração and Exportação tables in Planejamento (DONE)
+- Dropdown for Cultura (Soja/Milho) (DONE)
+- PWA Auto-update banner via Service Worker versioning (DONE)
+- Custom domain mapping and DNS configuration guidance (DONE)
+- Clickable product suggestions in the Comparativo section (DONE)
+- Removed leading 0s in Planejamento numeric inputs for better mobile UX (DONE)
+
+**Earlier issues found/mentioned but not fixed**:
+- None. (The massive CDN caching loop encountered during deployment was successfully resolved by migrating the user to a custom domain).
+
+**Known issue recurrence from previous fork**:
+- Issue recurrence in previous fork: None
+- Recurrence count: 0
+- Status: RESOLVED
+
+**Code Architecture**:
 
 
--   ****: Core FastAPI backend.
-    -   **Summary**: Defines API endpoints, handles MongoDB interactions.
-    -   **Changes**:
-        -   Fixed  BaseModel (removed duplicate fields).
-        -   Added  BaseModel.
-        -   Added  (GET),  (POST, PUT, DELETE) endpoints.
-        -   Added  field to , , ,  models.
-        -   Added  endpoint.
-        -   Added  (POST, GET, PUT, DELETE) endpoints.
-        -   Added  endpoint (for all products), carefully reordered to avoid conflict with .
--   ****: Main React component.
-    -   **Summary**: Handles UI, routing, state, API calls, renders all application pages and components.
-    -   **Changes**:
-        -   Integrated  component (admin panel), including logic for showing user vs. admin view.
-        -   Added  constants and related states (, , , , , , , ).
-        -   Added functions: , , , , ,  (later removed due to user feedback).
-        -   Modified : Added  field to  and , added  column to table UI (header and data cell), fixed bulk paste to include , added individual competitor edit/delete functionality (states, handlers, UI form, edit/delete buttons).
-        -   Modified : Added  field to , , and UI form.
-        -   Rewrote the Comparativo section multiple times based on user feedback:
-            -   Initial version with macro Propósito field and autocomplete.
-            -   Revised to remove macro field, keep 4 original fields with autocomplete for company/product, and show suggestions after compare.
-            -   Further revised to revert to 4 simple select dropdowns (no autocomplete), and add dedicated Sugestão button that appears when a competitor product is selected.
-            -   Added logic to display competitor's purpose and suggested MicroXisto products in comparison.
-        -   Implemented Planejamento feature:
-            -   Added 📊 Planejamento button to main navigation.
-            -   Added planning-related states (, , , , ).
-            -   Implemented the full planning UI with input fields, product selection (up to 15), dose/value inputs, and calculations for nutrients aported, total cost, and sacks/ha cost.
-            -   Removed initial calculation cards (Receita Bruta, Produtividade, etc.).
-            -   Ensured  are loaded and used for product selection dropdown.
--   ****: Main HTML entry point.
-    -   **Summary**: Links , registers .
-    -   **Changes**: Updated Apple touch icon with new logo (via Imgur URL).
--   ****: Web App Manifest.
-    -   **Summary**: Defines app metadata and icons.
-    -   **Changes**: Updated app icons to use the new provided logo (via Imgur URL).
--   ** (NEW file)**: A backup of  created before major comparison page refactoring.
-</code_architecture>
+**Key Technical Concepts**:
+- React Single Page Application architecture.
+- FastAPI backend communicating with MongoDB.
+- Service Worker () handling offline caching and version bumping ( component).
+- Complex state management in  for dynamic planning formulas and comparison rendering.
 
-<pending_tasks>
--   Complete the Planejamento feature by adding the two tables for nutrient extraction and exportation, with values based on the selected culture and expected harvest.
-</pending_tasks>
+**key DB schema**:
+- , , , .
+- *(New schema needed soon for  to track market inputs per user)*.
 
-<current_work>
-The AI engineer was most recently working on completing the Planejamento feature. The core planning functionality, including selecting up to 15 MicroXisto products, inputting doses and values, and calculating total nutrients and a resumo do manejo, has been implemented and refined based on user feedback. The dropdown for selecting MicroXisto products was fixed to correctly fetch and display products.
+**changes in tech stack**:
+- None yet, but a PDF generation library (like  and ) and Excel export library (like  or  in backend) will be needed for Upcoming Tasks.
 
-The very last request from the user was to add two new tables within the Planejamento section, specifically below the Nutrientes Aportados section. These tables should display Extração (Extraction) and Exportação (Exportation) of nutrients. The values in these tables must vary based on the selected crop (Soja or Milho) and be scaled by the Colheita esperada (Expected Harvest). The user provided detailed reference values for N, P, K, Ca, Mg, S (in Kg/ha) and B, Cu, Fe, Mn, Zn, Mo (in g/ha) for both Soja and Milho per sack/hectare.
+**All files of reference**:
+- : Core file modified heavily for logic and UI.
+- : Modified to handle app versioning.
+- : Will need updates for the Estudo de Mercado API endpoints.
 
-The AI engineer's immediate action before this summary request was to begin modifying the  handler for the Calcular Resumo do Manejo button in  to incorporate these new extraction and exportation calculations.
-</current_work>
+**Areas that need refactoring**:
+-  is extremely large. While functional, future feature additions (like the new Market Study tab) will make it unwieldy. Consider modularizing new tabs into separate components if time permits, but prioritize feature completion first.
 
-<optional_next_step>
-Implement the nutrient Extração and Exportação tables in the Planejamento section of the frontend.
-</optional_next_step>
+**key api endpoints**:
+- 
+- 
+- *(Upcoming)* 
 
+**Critical Info for New Agent**:
+- **MAINTENANCE MODE IS HIGHEST PRIORITY:** The user wants the live application hidden behind a maintenance screen right now, while keeping a way to test the new features.
+- When generating the PDF (FASE 3), strict branding rules apply (Colors: #004F27, #9BE178, EurostileEF Black font, specific social media handles).
+- Avoid modifying the protected environment variables for MongoDB and Backend URLs.
+
+**documents and test reports created in this job**:
+- 
+- 
+- Multiple  files were created for user tutorials (, , etc.)
+
+**Last 10 User Messages and any pending HUMAN messages**:
+- *Latest*: Pode gerar o ultimo link da versão de teste que fizemos. Hoje vamos finalizar o app. Outra coisa. Gostaria de tirar ele do ar por enquanto e deixar uma mensagem que ele está em atualização
+- *Agent Response to Latest*: Agent acknowledged and stated they would provide the test link and create the maintenance page, but the session ended before execution.
+
+**Project Health Check**:
+- Frontend: Stable
+- Backend: Stable
+
+**3rd Party Integrations**:
+- None currently requiring active API keys (Imgur used for direct URL image hosting).
+
+**Testing status**:
+- Testing agent used after significant changes: YES
+- Troubleshoot agent used after agent stuck in loop: YES
+- Test files created: None
+- Known regressions: None
+
+**Credentials to test flow**:
+- Email: agrofialho@gmail.com
+- Password: adm@123
+
+**What agent forgot to execute**:
+- The agent promised to generate the maintenance screen and provide the testing environment link in the final message but the turn ended before any code was written for the maintenance block. Execute this immediately.</analysis>
