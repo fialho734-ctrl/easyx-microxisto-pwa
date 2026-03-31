@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { PDF_ASSETS } from './pdfAssets';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -4006,7 +4004,12 @@ function App() {
                     {/* Botão Gerar Recomendação PDF */}
                     <div className="mt-6">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
+                          try {
+                              const { default: jsPDF } = await import('jspdf');
+                              const autoTableModule = await import('jspdf-autotable');
+                              const autoTable = autoTableModule.default || autoTableModule.applyPlugin || autoTableModule;
+                              
                               const doc = new jsPDF({ unit: 'pt', format: [540, 780] });
                               const pw = 540;
                               const ph = 780;
@@ -4058,16 +4061,29 @@ function App() {
                                 `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
                               ]);
                               
-                              autoTable(doc, {
-                                startY: y,
-                                head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
-                                body: tableData,
-                                theme: 'grid',
-                                headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
-                                bodyStyles: { fontSize: 9, textColor: [50, 50, 50], cellPadding: 4 },
-                                alternateRowStyles: { fillColor: [240, 255, 240] },
-                                margin: { left: 40, right: 40 }
-                              });
+                              if (typeof autoTable === 'function') {
+                                autoTable(doc, {
+                                  startY: y,
+                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
+                                  body: tableData,
+                                  theme: 'grid',
+                                  headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
+                                  bodyStyles: { fontSize: 9, textColor: [50, 50, 50], cellPadding: 4 },
+                                  alternateRowStyles: { fillColor: [240, 255, 240] },
+                                  margin: { left: 40, right: 40 }
+                                });
+                              } else {
+                                doc.autoTable({
+                                  startY: y,
+                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
+                                  body: tableData,
+                                  theme: 'grid',
+                                  headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
+                                  bodyStyles: { fontSize: 9, textColor: [50, 50, 50], cellPadding: 4 },
+                                  alternateRowStyles: { fillColor: [240, 255, 240] },
+                                  margin: { left: 40, right: 40 }
+                                });
+                              }
                               
                               // Financial summary
                               let yFin = doc.lastAutoTable.finalY + 18;
@@ -4113,7 +4129,20 @@ function App() {
                               doc.setFont('helvetica', 'bold');
                               doc.text('MICROXISTO', 50, ph - 12);
                               
-                              doc.save(`plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`);
+                              const pdfBlob = doc.output('blob');
+                              const pdfUrl = URL.createObjectURL(pdfBlob);
+                              const link = document.createElement('a');
+                              link.href = pdfUrl;
+                              link.download = `plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`;
+                              link.target = '_blank';
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                              setTimeout(() => URL.revokeObjectURL(pdfUrl), 5000);
+                          } catch(err) {
+                              console.error('PDF Error:', err);
+                              alert('Erro ao gerar PDF: ' + err.message);
+                          }
                         }}
                         className="w-full bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-800 font-semibold text-base"
                         data-testid="generate-pdf-btn"
