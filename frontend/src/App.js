@@ -4022,10 +4022,10 @@ function App() {
                                 doc.addImage(PDF_ASSETS.topDecoration, 'PNG', 210, 0, 330, 273);
                               } catch(e) {}
                               
-                              // Title
+                              // Title - cor #002F17
                               doc.setFont('helvetica', 'bold');
                               doc.setFontSize(20);
-                              doc.setTextColor(0, 0, 0);
+                              doc.setTextColor(0, 47, 23); // #002F17
                               doc.text('Plano de manejo MicroXisto', 145, 52);
                               
                               // Planning info
@@ -4107,27 +4107,14 @@ function App() {
                               yFin += 14;
                               doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
                               
-                              // Bottom branding block image
-                              try {
-                                doc.addImage(PDF_ASSETS.bottomBranding, 'PNG', 41, ph - footerH - 55, 145, 53);
-                              } catch(e) {}
-                              
-                              // Dark green footer bar
-                              doc.setFillColor(10, 79, 46);
+                              // Dark green footer bar with branding
+                              doc.setFillColor(0, 47, 23); // #002F17
                               doc.rect(0, ph - footerH, pw, footerH, 'F');
                               
-                              doc.setTextColor(255, 255, 255);
-                              doc.setFontSize(9);
-                              doc.setFont('helvetica', 'normal');
-                              doc.text('Por quê', 50, ph - 42);
-                              doc.setFontSize(12);
-                              doc.setTextColor(118, 212, 94);
-                              doc.setFont('helvetica', 'bolditalic');
-                              doc.text('eu escolho', 50, ph - 28);
-                              doc.setTextColor(255, 255, 255);
-                              doc.setFontSize(16);
-                              doc.setFont('helvetica', 'bold');
-                              doc.text('MICROXISTO', 50, ph - 12);
+                              // Branding image inside footer
+                              try {
+                                doc.addImage(PDF_ASSETS.bottomBranding, 'PNG', 30, ph - footerH + 5, 160, 48);
+                              } catch(e) {}
                               
                               const pdfBlob = doc.output('blob');
                               const pdfUrl = URL.createObjectURL(pdfBlob);
