@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { PDF_ASSETS } from './pdfAssets';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -4005,8 +4007,6 @@ function App() {
                     <div className="mt-6">
                       <button
                         onClick={() => {
-                          import('jspdf').then(({ default: jsPDF }) => {
-                            import('jspdf-autotable').then(() => {
                               const doc = new jsPDF({ unit: 'pt', format: [540, 780] });
                               const pw = 540; // page width
                               const ph = 780; // page height
@@ -4090,7 +4090,7 @@ function App() {
                                 `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`
                               ]);
                               
-                              doc.autoTable({
+                              autoTable(doc, {
                                 startY: 55,
                                 head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
                                 body: tableData,
@@ -4124,8 +4124,6 @@ function App() {
                               doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 50, yFin);
                               
                               doc.save(`plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`);
-                            });
-                          });
                         }}
                         className="w-full bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-800 font-semibold text-base"
                         data-testid="generate-pdf-btn"
