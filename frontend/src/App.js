@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { PDF_ASSETS } from './pdfAssets';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -4006,50 +4007,81 @@ function App() {
                         onClick={() => {
                           import('jspdf').then(({ default: jsPDF }) => {
                             import('jspdf-autotable').then(() => {
-                              const doc = new jsPDF();
-                              const pageWidth = doc.internal.pageSize.getWidth();
+                              const doc = new jsPDF({ unit: 'pt', format: [540, 780] });
+                              const pw = 540; // page width
+                              const ph = 780; // page height
                               
-                              // Header with brand colors
-                              doc.setFillColor(0, 79, 39); // #004F27
-                              doc.rect(0, 0, pageWidth, 35, 'F');
+                              // ===== PAGE 1: COVER PAGE (matching template) =====
                               
-                              doc.setTextColor(155, 225, 120); // #9BE178
-                              doc.setFontSize(22);
+                              // Top-right green leaf decoration
+                              try {
+                                doc.addImage(PDF_ASSETS.topDecoration, 'PNG', 210, 0, 330, 273);
+                              } catch(e) { console.log('Could not add top decoration'); }
+                              
+                              // Title
                               doc.setFont('helvetica', 'bold');
-                              doc.text('MICROXISTO', pageWidth / 2, 15, { align: 'center' });
-                              doc.setFontSize(12);
-                              doc.setTextColor(255, 255, 255);
-                              doc.text('Recomendação de Manejo', pageWidth / 2, 25, { align: 'center' });
+                              doc.setFontSize(20);
+                              doc.setTextColor(0, 0, 0);
+                              doc.text('Plano de manejo MicroXisto', 145, 52);
                               
-                              // Date
-                              doc.setFontSize(9);
-                              doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth - 15, 32, { align: 'right' });
-                              
-                              // Planning details
-                              let yPos = 45;
-                              doc.setTextColor(0, 79, 39);
+                              // Center info on cover page
+                              let cy = 320;
                               doc.setFontSize(14);
-                              doc.setFont('helvetica', 'bold');
-                              doc.text('Dados do Planejamento', 14, yPos);
+                              doc.setTextColor(10, 79, 46);
+                              doc.text('Dados do Planejamento', pw / 2, cy, { align: 'center' });
                               
-                              yPos += 8;
-                              doc.setFontSize(10);
+                              cy += 30;
                               doc.setFont('helvetica', 'normal');
+                              doc.setFontSize(12);
                               doc.setTextColor(60, 60, 60);
-                              doc.text(`Cultura: ${planejamentoForm.cultura}`, 14, yPos);
-                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 100, yPos);
-                              yPos += 6;
-                              doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, 14, yPos);
-                              doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca || 0).toFixed(2)}`, 100, yPos);
+                              doc.text(`Cultura: ${planejamentoForm.cultura}`, pw / 2, cy, { align: 'center' });
+                              cy += 20;
+                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, pw / 2, cy, { align: 'center' });
+                              cy += 20;
+                              doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, pw / 2, cy, { align: 'center' });
+                              cy += 20;
+                              if (planejamentoForm.valor_saca) {
+                                doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, pw / 2, cy, { align: 'center' });
+                              }
+                              cy += 30;
+                              doc.setFontSize(10);
+                              doc.setTextColor(120, 120, 120);
+                              doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pw / 2, cy, { align: 'center' });
                               
-                              // Products table
-                              yPos += 12;
-                              doc.setTextColor(0, 79, 39);
+                              // Bottom branding block
+                              try {
+                                doc.addImage(PDF_ASSETS.bottomBranding, 'PNG', 41, 722, 145, 53);
+                              } catch(e) { console.log('Could not add bottom branding'); }
+                              
+                              // Dark green footer bar
+                              doc.setFillColor(10, 79, 46);
+                              doc.rect(0, ph - 58, pw, 58, 'F');
+                              
+                              // Footer branding text
+                              doc.setTextColor(255, 255, 255);
+                              doc.setFontSize(9);
+                              doc.setFont('helvetica', 'normal');
+                              doc.text('Por quê', 50, ph - 42);
+                              doc.setFontSize(12);
+                              doc.setTextColor(118, 212, 94);
+                              doc.setFont('helvetica', 'bolditalic');
+                              doc.text('eu escolho', 50, ph - 28);
+                              doc.setTextColor(255, 255, 255);
+                              doc.setFontSize(16);
+                              doc.setFont('helvetica', 'bold');
+                              doc.text('MICROXISTO', 50, ph - 12);
+                              
+                              // ===== PAGE 2: PRODUCTS TABLE =====
+                              doc.addPage([540, 780]);
+                              
+                              // Light header bar
+                              doc.setFillColor(10, 79, 46);
+                              doc.rect(0, 0, pw, 40, 'F');
+                              doc.setTextColor(255, 255, 255);
                               doc.setFontSize(14);
                               doc.setFont('helvetica', 'bold');
-                              doc.text('Produtos Recomendados', 14, yPos);
+                              doc.text('Produtos Recomendados', pw / 2, 26, { align: 'center' });
                               
-                              yPos += 4;
                               const tableData = resumoManejo.produtos.map(p => [
                                 p.nome,
                                 p.estagio || '-',
@@ -4059,70 +4091,76 @@ function App() {
                               ]);
                               
                               doc.autoTable({
-                                startY: yPos,
-                                head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume Total (L)', 'Valor (R$)']],
+                                startY: 55,
+                                head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)']],
                                 body: tableData,
                                 theme: 'grid',
-                                headStyles: { fillColor: [0, 79, 39], textColor: [255, 255, 255], fontSize: 9 },
-                                bodyStyles: { fontSize: 9 },
-                                alternateRowStyles: { fillColor: [240, 255, 240] }
+                                headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 10, font: 'helvetica', fontStyle: 'bold' },
+                                bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
+                                alternateRowStyles: { fillColor: [240, 255, 240] },
+                                margin: { left: 30, right: 30 }
                               });
                               
-                              // Financial summary
-                              yPos = doc.lastAutoTable.finalY + 10;
-                              doc.setTextColor(0, 79, 39);
-                              doc.setFontSize(14);
+                              // Financial summary section
+                              let yFin = doc.lastAutoTable.finalY + 25;
+                              doc.setFillColor(245, 250, 245);
+                              doc.roundedRect(30, yFin - 10, pw - 60, 80, 5, 5, 'F');
+                              doc.setDrawColor(10, 79, 46);
+                              doc.roundedRect(30, yFin - 10, pw - 60, 80, 5, 5, 'S');
+                              
+                              doc.setTextColor(10, 79, 46);
+                              doc.setFontSize(13);
                               doc.setFont('helvetica', 'bold');
-                              doc.text('Resumo Financeiro', 14, yPos);
+                              doc.text('Resumo Financeiro', pw / 2, yFin + 5, { align: 'center' });
                               
-                              yPos += 8;
+                              yFin += 22;
                               doc.setFontSize(11);
-                              doc.setTextColor(60, 60, 60);
                               doc.setFont('helvetica', 'normal');
-                              doc.text(`Custo Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 14, yPos);
-                              yPos += 6;
-                              doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 14, yPos);
-                              yPos += 6;
-                              doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 14, yPos);
+                              doc.setTextColor(50, 50, 50);
+                              doc.text(`Custo Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 50, yFin);
+                              yFin += 16;
+                              doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 50, yFin);
+                              yFin += 16;
+                              doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 50, yFin);
                               
-                              // Nutrient summary if available
+                              // Nutrient table if available
                               if (resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
-                                yPos += 12;
-                                doc.setTextColor(0, 79, 39);
-                                doc.setFontSize(14);
+                                let yNut = yFin + 30;
+                                doc.setTextColor(10, 79, 46);
+                                doc.setFontSize(13);
                                 doc.setFont('helvetica', 'bold');
-                                doc.text('Nutrientes Aportados (g/ha)', 14, yPos);
+                                doc.text('Nutrientes Aportados (g/ha)', pw / 2, yNut, { align: 'center' });
                                 
                                 const nutrientData = Object.entries(resumoManejo.totalNutrientes)
                                   .filter(([, v]) => v > 0)
                                   .map(([k, v]) => [k, v.toFixed(1)]);
                                 
                                 if (nutrientData.length > 0) {
-                                  yPos += 4;
                                   doc.autoTable({
-                                    startY: yPos,
+                                    startY: yNut + 8,
                                     head: [['Nutriente', 'Quantidade (g/ha)']],
                                     body: nutrientData,
                                     theme: 'grid',
-                                    headStyles: { fillColor: [0, 79, 39], textColor: [255, 255, 255], fontSize: 9 },
-                                    bodyStyles: { fontSize: 9 },
-                                    columnStyles: { 0: { cellWidth: 40 } }
+                                    headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold' },
+                                    bodyStyles: { fontSize: 9, textColor: [50, 50, 50] },
+                                    columnStyles: { 0: { cellWidth: 100 } },
+                                    margin: { left: 30, right: 30 },
+                                    alternateRowStyles: { fillColor: [240, 255, 240] }
                                   });
                                 }
                               }
                               
-                              // Footer
-                              const pageHeight = doc.internal.pageSize.getHeight();
-                              doc.setFillColor(0, 79, 39);
-                              doc.rect(0, pageHeight - 20, pageWidth, 20, 'F');
-                              doc.setTextColor(155, 225, 120);
+                              // Footer on page 2
+                              doc.setFillColor(10, 79, 46);
+                              doc.rect(0, ph - 25, pw, 25, 'F');
+                              doc.setTextColor(118, 212, 94);
                               doc.setFontSize(8);
-                              doc.text('MicroXisto - Tecnologia em Nutrição Vegetal', pageWidth / 2, pageHeight - 12, { align: 'center' });
+                              doc.text('MicroXisto - Tecnologia em Nutrição Vegetal', pw / 2, ph - 14, { align: 'center' });
                               doc.setTextColor(255, 255, 255);
                               doc.setFontSize(7);
-                              doc.text('@microxisto | www.microxisto.com.br', pageWidth / 2, pageHeight - 6, { align: 'center' });
+                              doc.text('@microxisto | www.microxisto.com.br', pw / 2, ph - 6, { align: 'center' });
                               
-                              doc.save(`recomendacao_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`);
+                              doc.save(`plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`);
                             });
                           });
                         }}
