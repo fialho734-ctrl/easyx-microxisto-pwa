@@ -4297,7 +4297,7 @@ function App() {
                               if (incluirNutrientesPDF && resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
                                 const nutrientEntries = Object.entries(resumoManejo.totalNutrientes).filter(([, v]) => v > 0);
                                 if (nutrientEntries.length > 0) {
-                                  let yNut = yFin + 20;
+                                  let yNut = yFin + 45;
                                   doc.setTextColor(10, 79, 46);
                                   doc.setFontSize(10);
                                   doc.setFont('helvetica', 'bold');
