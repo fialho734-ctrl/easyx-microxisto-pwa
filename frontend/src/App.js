@@ -2495,6 +2495,8 @@ function App() {
   // Planejamento states
   const [planejamentos, setPlanejamentos] = useState([]);
   const [planejamentoForm, setPlanejamentoForm] = useState({
+    nome_produtor: '',
+    nome_fazenda: '',
     cultura: '',
     colheita_esperada: '',
     area_tratada: '',
@@ -2506,6 +2508,7 @@ function App() {
   const [produtoAtual, setProdutoAtual] = useState({ produto_id: '', dose_lha: 0, valor_litro: 0 });
   const [resumoManejo, setResumoManejo] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
+  const [incluirNutrientesPDF, setIncluirNutrientesPDF] = useState(false);
 
   // Maintenance mode
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -2619,7 +2622,10 @@ function App() {
 
   const checkMaintenanceMode = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/maintenance-status`);
+      const response = await fetch(`${API_BASE}/api/maintenance-status`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+      });
       if (response.ok) {
         const data = await response.json();
         setMaintenanceMode(data.active);
@@ -3624,6 +3630,31 @@ function App() {
                 <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-4">Dados do Planejamento</h3>
                   
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Nome do Produtor</label>
+                      <input
+                        type="text"
+                        value={planejamentoForm.nome_produtor}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, nome_produtor: e.target.value})}
+                        placeholder="Ex: João da Silva"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="nome-produtor-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Nome da Fazenda</label>
+                      <input
+                        type="text"
+                        value={planejamentoForm.nome_fazenda}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, nome_fazenda: e.target.value})}
+                        placeholder="Ex: Fazenda São José"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="nome-fazenda-input"
+                      />
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div>
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Cultura</label>
@@ -4089,6 +4120,21 @@ function App() {
                       </div>
                     </div>
                     
+                    {/* Opção de incluir nutrientes no PDF */}
+                    <div className="mt-4 flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="incluir-nutrientes"
+                        checked={incluirNutrientesPDF}
+                        onChange={(e) => setIncluirNutrientesPDF(e.target.checked)}
+                        className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                        data-testid="incluir-nutrientes-checkbox"
+                      />
+                      <label htmlFor="incluir-nutrientes" className="text-sm text-gray-700 font-medium cursor-pointer">
+                        Incluir "Total de Nutrientes Aportados (g/ha)" no relatório PDF
+                      </label>
+                    </div>
+                    
                     {/* Botão Gerar Recomendação PDF */}
                     <div className="mt-6">
                       <button
@@ -4131,6 +4177,14 @@ function App() {
                               doc.setFont('helvetica', 'normal');
                               doc.setFontSize(10);
                               doc.setTextColor(60, 60, 60);
+                              if (planejamentoForm.nome_produtor) {
+                                doc.text(`Produtor: ${planejamentoForm.nome_produtor}`, 40, y);
+                                y += 14;
+                              }
+                              if (planejamentoForm.nome_fazenda) {
+                                doc.text(`Fazenda: ${planejamentoForm.nome_fazenda}`, 40, y);
+                                y += 14;
+                              }
                               doc.text(`Cultura: ${planejamentoForm.cultura}`, 40, y);
                               doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 200, y);
                               y += 14;
@@ -4201,6 +4255,48 @@ function App() {
                               doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
                               yFin += 14;
                               doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
+                              
+                              // Nutrientes Aportados (opcional)
+                              if (incluirNutrientesPDF && resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
+                                let yNut = yFin + 25;
+                                doc.setTextColor(10, 79, 46);
+                                doc.setFontSize(11);
+                                doc.setFont('helvetica', 'bold');
+                                doc.text('Total de Nutrientes Aportados (g/ha)', pw / 2, yNut, { align: 'center' });
+                                
+                                const nutrientData = Object.entries(resumoManejo.totalNutrientes)
+                                  .filter(([, v]) => v > 0)
+                                  .map(([k, v]) => [k, v.toFixed(1)]);
+                                
+                                if (nutrientData.length > 0) {
+                                  yNut += 6;
+                                  if (typeof autoTable === 'function') {
+                                    autoTable(doc, {
+                                      startY: yNut,
+                                      head: [['Nutriente', 'Quantidade (g/ha)']],
+                                      body: nutrientData,
+                                      theme: 'grid',
+                                      headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 8, font: 'helvetica', fontStyle: 'bold', cellPadding: 3 },
+                                      bodyStyles: { fontSize: 8, textColor: [50, 50, 50], cellPadding: 3 },
+                                      columnStyles: { 0: { cellWidth: 100 } },
+                                      margin: { left: 40, right: 40 },
+                                      alternateRowStyles: { fillColor: [240, 255, 240] }
+                                    });
+                                  } else {
+                                    doc.autoTable({
+                                      startY: yNut,
+                                      head: [['Nutriente', 'Quantidade (g/ha)']],
+                                      body: nutrientData,
+                                      theme: 'grid',
+                                      headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 8, font: 'helvetica', fontStyle: 'bold', cellPadding: 3 },
+                                      bodyStyles: { fontSize: 8, textColor: [50, 50, 50], cellPadding: 3 },
+                                      columnStyles: { 0: { cellWidth: 100 } },
+                                      margin: { left: 40, right: 40 },
+                                      alternateRowStyles: { fillColor: [240, 255, 240] }
+                                    });
+                                  }
+                                }
+                              }
                               
                               // Logo MicroXisto centralizada no rodapé
                               try {

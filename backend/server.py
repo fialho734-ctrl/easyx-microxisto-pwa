@@ -850,11 +850,11 @@ async def create_competitor(competitor: Competitor, admin_user: dict = Depends(g
 
 @app.get("/api/maintenance-status")
 async def get_maintenance_status():
-    """Check if maintenance mode is active"""
+    """Check if maintenance mode is active - never cache"""
+    from fastapi.responses import JSONResponse
     status = await db.settings.find_one({"key": "maintenance_mode"}, {"_id": 0})
-    if status:
-        return {"active": status.get("active", False), "message": status.get("message", "Em atualização")}
-    return {"active": False, "message": ""}
+    data = {"active": status.get("active", False), "message": status.get("message", "Em atualização")} if status else {"active": False, "message": ""}
+    return JSONResponse(content=data, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
 
 @app.post("/api/admin/maintenance")
 async def toggle_maintenance(admin_user: dict = Depends(get_admin_user)):

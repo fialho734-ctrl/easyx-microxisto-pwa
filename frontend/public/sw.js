@@ -1,6 +1,6 @@
 // Service Worker SIMPLES E FUNCIONAL para funcionar OFFLINE
-const CACHE_NAME = 'easyx-offline-v10';
-const APP_VERSION = '3.0.0'; // Estágio, PDF, Estudo de Mercado, Dashboard, Manutenção
+const CACHE_NAME = 'easyx-offline-v11';
+const APP_VERSION = '3.1.0'; // Produtor, Fazenda, Nutrientes opcionais, Fix manutenção iOS
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
@@ -98,6 +98,11 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   
   try {
+    // Maintenance status - SEMPRE buscar da rede, nunca cachear
+    if (url.pathname === '/api/maintenance-status') {
+      return await fetch(request);
+    }
+    
     // Para navegação (HTML), sempre tentar cache primeiro
     if (request.mode === 'navigate' || url.pathname === '/') {
       return await handleNavigation(request);
