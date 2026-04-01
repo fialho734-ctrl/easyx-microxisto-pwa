@@ -2849,21 +2849,25 @@ function App() {
 
 
   const loadComparison = async () => {
-    if (selectedCompetitor && selectedComparisonProduct) {
+    // Permitir comparação apenas com concorrente (sem produto MicroXisto)
+    if (selectedCompetitor) {
       setLoading(true);
       setSuggestedProducts([]); // Limpar sugestões anteriores
       try {
-        const [competitorResponse, microxistoResponse] = await Promise.all([
-          fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`),
-          fetch(`${API_BASE}/api/products/${selectedComparisonProduct}`)
-        ]);
-        
+        const competitorResponse = await fetch(`${API_BASE}/api/competitors/${selectedCompetitor}`);
         const competitorData = await competitorResponse.json();
-        const microxistoData = await microxistoResponse.json();
+        
+        let microxistoData = null;
+        
+        // Buscar produto MicroXisto apenas se selecionado
+        if (selectedComparisonProduct) {
+          const microxistoResponse = await fetch(`${API_BASE}/api/products/${selectedComparisonProduct}`);
+          microxistoData = await microxistoResponse.json();
+        }
         
         setComparisonData({
           competitor: competitorData,
-          product: microxistoData
+          product: microxistoData // Pode ser null
         });
 
         // Buscar sugestões APÓS a comparação se o concorrente tiver propósito
@@ -3170,7 +3174,7 @@ function App() {
                     rel="noopener noreferrer"
                     className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
                   >
-                    Baixar PDF Informativo
+                    Baixar Portfólio
                   </a>
                 )}
               </div>
@@ -3994,9 +3998,11 @@ function App() {
             
             {comparisonData && (
               <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">Comparação de Produtos</h3>
+                <h3 className="text-xl lg:text-2xl font-bold text-green-800 mb-6 text-center">
+                  {comparisonData.product ? 'Comparação de Produtos' : 'Produto Concorrente'}
+                </h3>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6">
+                <div className={`grid grid-cols-1 ${comparisonData.product ? 'lg:grid-cols-2' : ''} gap-4 lg:gap-6 mb-6`}>
                   <div className="text-center">
                     <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
                     <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
@@ -4007,43 +4013,48 @@ function App() {
                         <p className="font-bold text-blue-600 mt-2">🎯 Propósito: {comparisonData.competitor.proposito}</p>
                       )}
                     </div>
-                  </div>                  
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <img src={comparisonData.product.logo} alt="MicroXisto" className="h-6 lg:h-8" />
-                      <h4 className="text-lg lg:text-xl font-semibold text-green-800">MicroXisto</h4>
-                    </div>
-                    <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.product.name}</h5>
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.product.density} g/mL</p>
-                      <p>Natureza: {comparisonData.product.nature}</p>
-                    </div>
                   </div>
+                  
+                  {comparisonData.product && (
+                    <div className="text-center">
+                      <div className="flex items-center justify-center space-x-2 mb-2">
+                        <img src={comparisonData.product.logo} alt="MicroXisto" className="h-6 lg:h-8" />
+                        <h4 className="text-lg lg:text-xl font-semibold text-green-800">MicroXisto</h4>
+                      </div>
+                      <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.product.name}</h5>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>Densidade: {comparisonData.product.density} g/mL</p>
+                        <p>Natureza: {comparisonData.product.nature}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+                <div className={`grid grid-cols-1 ${comparisonData.product ? 'lg:grid-cols-2' : ''} gap-4 lg:gap-6`}>
                   {renderCompositionTable(comparisonData.competitor.composition, `${comparisonData.competitor.company} - ${comparisonData.competitor.product}`)}
-                  {renderCompositionTable(comparisonData.product.composition, `MicroXisto - ${comparisonData.product.name}`)}
+                  {comparisonData.product && renderCompositionTable(comparisonData.product.composition, `MicroXisto - ${comparisonData.product.name}`)}
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mt-6">
+                <div className={`grid grid-cols-1 ${comparisonData.product ? 'lg:grid-cols-2' : ''} gap-4 lg:gap-6 mt-6`}>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h5 className="font-semibold text-gray-800 mb-2">Aditivos - <span translate="no">{comparisonData.competitor.company}</span></h5>
                     <p className="text-gray-600 text-sm" translate="no">{comparisonData.competitor.additives}</p>
                   </div>
                   
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
-                    <p className="text-gray-600 text-sm" translate="no">{comparisonData.product.additives}</p>
-                    
-                    {/* Descrição do produto MicroXisto */}
-                    <div className="mt-4 pt-3 border-t border-green-200">
-                      <h6 className="font-semibold text-green-800 mb-2">📝 Descrição</h6>
-                      <p className="text-gray-600 text-sm" translate="no">
-                        {comparisonData.product.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
-                      </p>
+                  {comparisonData.product && (
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h5 className="font-semibold text-green-800 mb-2">Aditivos - MicroXisto</h5>
+                      <p className="text-gray-600 text-sm" translate="no">{comparisonData.product.additives}</p>
+                      
+                      {/* Descrição do produto MicroXisto */}
+                      <div className="mt-4 pt-3 border-t border-green-200">
+                        <h6 className="font-semibold text-green-800 mb-2">📝 Descrição</h6>
+                        <p className="text-gray-600 text-sm" translate="no">
+                          {comparisonData.product.description || 'Produto inovador da linha MicroXisto com tecnologia avançada para nutrição vegetal.'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
