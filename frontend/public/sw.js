@@ -1,6 +1,6 @@
 // Service Worker SIMPLES E FUNCIONAL para funcionar OFFLINE
-const CACHE_NAME = 'easyx-offline-v11';
-const APP_VERSION = '3.1.0'; // Produtor, Fazenda, Nutrientes opcionais, Fix manutenção iOS
+const CACHE_NAME = 'easyx-offline-v12';
+const APP_VERSION = '3.2.0';
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {

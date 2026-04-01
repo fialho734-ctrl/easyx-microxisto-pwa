@@ -25,26 +25,27 @@ Build and expand a Progressive Web App (PWA) for MicroXisto, a company focused o
 - PWA with offline support and auto-update
 - Custom domain mapping
 
-### Phase 1 - Simple Adjustments (Completed 2026-03-31)
+### Phase 1 - Simple Adjustments (Completed)
 - Button text changed from "Baixar PDF" to "Baixar Portfolio"
 - Comparativo allows viewing competitor without selecting MicroXisto product
 - Clickable product suggestions in Comparativo
 
-### Phase 2 - Estagio Field in Planejamento (Completed 2026-03-31)
+### Phase 2 - Estagio Field in Planejamento (Completed)
 - Added "Estagio" dropdown to product selection (TS, Sulco, V1-V8, R1-R6)
 - Same product can be added multiple times for different stages
 - Estagio displayed in management summary table
 
-### Phase 3 - PDF Recommendation (Completed 2026-03-31)
+### Phase 3 - PDF Recommendation (Completed)
 - "Gerar Recomendacao (PDF)" button in Planejamento
 - Single-page PDF with MicroXisto branding template
 - Uses EurostileEF Black font for title, color #002F17
 - Includes products table with Estagio and Obs. columns
 - Financial summary (custo total, por hectare, sacas/ha)
-- Footer with "Por que eu escolho MICROXISTO" branding (transparent logo)
-- Observation field per product in planning form
+- Optional "Total de Nutrientes Aportados" in compact horizontal grid
+- Footer with MicroXisto transparent logo
+- Fields: Produtor, Fazenda, Representante, Telefone, Cultura, Colheita, Area, Valor Saca
 
-### Phase 4 - Estudo de Mercado Tab (Completed 2026-03-31)
+### Phase 4 - Estudo de Mercado Tab (Completed)
 - New "Estudo de Mercado" tab with full CRUD
 - Fields: Empresa, Produto, Dose/ha, Valor, Venda type, Estado
 - R$/ha auto-calculated
@@ -52,10 +53,15 @@ Build and expand a Progressive Web App (PWA) for MicroXisto, a company focused o
 - Dashboard with national averages by company and regional averages by state
 - Admin Excel export
 
-### Admin Tools (Completed 2026-03-31)
+### Admin Tools (Completed)
 - Maintenance Mode toggle
 - User Activity tracking (total accesses, days active, last access)
 - Market Study Excel export
+
+### PWA Updates (Completed)
+- App icon updated to EasyX logo
+- Service Worker cache-busting for maintenance status (iOS fix)
+- Auto-update notification banner
 
 ## Key API Endpoints
 - POST /api/auth/login, /api/auth/register
@@ -70,6 +76,10 @@ Build and expand a Progressive Web App (PWA) for MicroXisto, a company focused o
 - home_content, planejamentos, settings (maintenance mode)
 - market_studies
 
+## Current App Version
+- SW Cache: easyx-offline-v12
+- App Version: 3.2.0
+
 ## Remaining/Future Tasks
-- P2: Remove maintenance mode after user approves all features
-- Refactoring: App.js is ~4600 lines; consider modularizing into components
+- P2: Remove maintenance mode after user approves all features (currently OFF)
+- P3: Refactoring - App.js is ~5000+ lines; modularize into components
