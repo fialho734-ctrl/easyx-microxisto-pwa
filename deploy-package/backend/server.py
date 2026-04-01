@@ -404,7 +404,7 @@ async def login(request: LoginRequest):
     if not user["is_approved"]:
         raise HTTPException(status_code=401, detail="Account not approved")
     
-    access_token = create_access_token(data={"sub": user["id"]})
+    access_token = create_access_token(data={"sub": user["id"], "is_admin": user["is_admin"]})
     return {"access_token": access_token, "token_type": "bearer", "is_admin": user["is_admin"]}
 
 @app.get("/api/technologies")
