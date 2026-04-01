@@ -2501,6 +2501,8 @@ function App() {
     colheita_esperada: '',
     area_tratada: '',
     valor_saca: '',
+    representante: '',
+    telefone: '',
     produtos_selecionados: []
   });
   const [calculoResultado, setCalculoResultado] = useState(null);
@@ -3705,6 +3707,31 @@ function App() {
                     </div>
                   </div>
                   
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Representante</label>
+                      <input
+                        type="text"
+                        value={planejamentoForm.representante}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, representante: e.target.value})}
+                        placeholder="Ex: Carlos Mendes"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="representante-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Telefone</label>
+                      <input
+                        type="tel"
+                        value={planejamentoForm.telefone}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, telefone: e.target.value})}
+                        placeholder="Ex: (11) 99999-9999"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="telefone-input"
+                      />
+                    </div>
+                  </div>
+                  
                   {planejamentoForm.cultura && planejamentoForm.colheita_esperada > 0 && planejamentoForm.area_tratada > 0 && (
                     <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                       <p className="text-sm text-green-800">
@@ -4192,6 +4219,16 @@ function App() {
                               if (planejamentoForm.valor_saca) {
                                 doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, 200, y);
                               }
+                              y += 14;
+                              if (planejamentoForm.representante) {
+                                doc.text(`Representante: ${planejamentoForm.representante}`, 40, y);
+                              }
+                              if (planejamentoForm.telefone) {
+                                doc.text(`Telefone: ${planejamentoForm.telefone}`, 200, y);
+                              }
+                              if (planejamentoForm.representante || planejamentoForm.telefone) {
+                                y += 14;
+                              }
                               y += 10;
                               doc.setFontSize(8);
                               doc.setTextColor(140, 140, 140);
@@ -4256,45 +4293,47 @@ function App() {
                               yFin += 14;
                               doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
                               
-                              // Nutrientes Aportados (opcional)
+                              // Nutrientes Aportados (opcional - formato compacto)
                               if (incluirNutrientesPDF && resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
-                                let yNut = yFin + 25;
-                                doc.setTextColor(10, 79, 46);
-                                doc.setFontSize(11);
-                                doc.setFont('helvetica', 'bold');
-                                doc.text('Total de Nutrientes Aportados (g/ha)', pw / 2, yNut, { align: 'center' });
-                                
-                                const nutrientData = Object.entries(resumoManejo.totalNutrientes)
-                                  .filter(([, v]) => v > 0)
-                                  .map(([k, v]) => [k, v.toFixed(1)]);
-                                
-                                if (nutrientData.length > 0) {
-                                  yNut += 6;
-                                  if (typeof autoTable === 'function') {
-                                    autoTable(doc, {
-                                      startY: yNut,
-                                      head: [['Nutriente', 'Quantidade (g/ha)']],
-                                      body: nutrientData,
-                                      theme: 'grid',
-                                      headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 8, font: 'helvetica', fontStyle: 'bold', cellPadding: 3 },
-                                      bodyStyles: { fontSize: 8, textColor: [50, 50, 50], cellPadding: 3 },
-                                      columnStyles: { 0: { cellWidth: 100 } },
-                                      margin: { left: 40, right: 40 },
-                                      alternateRowStyles: { fillColor: [240, 255, 240] }
-                                    });
-                                  } else {
-                                    doc.autoTable({
-                                      startY: yNut,
-                                      head: [['Nutriente', 'Quantidade (g/ha)']],
-                                      body: nutrientData,
-                                      theme: 'grid',
-                                      headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 8, font: 'helvetica', fontStyle: 'bold', cellPadding: 3 },
-                                      bodyStyles: { fontSize: 8, textColor: [50, 50, 50], cellPadding: 3 },
-                                      columnStyles: { 0: { cellWidth: 100 } },
-                                      margin: { left: 40, right: 40 },
-                                      alternateRowStyles: { fillColor: [240, 255, 240] }
-                                    });
-                                  }
+                                const nutrientEntries = Object.entries(resumoManejo.totalNutrientes).filter(([, v]) => v > 0);
+                                if (nutrientEntries.length > 0) {
+                                  let yNut = yFin + 20;
+                                  doc.setTextColor(10, 79, 46);
+                                  doc.setFontSize(10);
+                                  doc.setFont('helvetica', 'bold');
+                                  doc.text('Total de Nutrientes Aportados (g/ha)', pw / 2, yNut, { align: 'center' });
+                                  
+                                  yNut += 10;
+                                  const boxW = 52;
+                                  const boxH = 28;
+                                  const gap = 4;
+                                  const cols = Math.min(nutrientEntries.length, 8);
+                                  const totalW = cols * boxW + (cols - 1) * gap;
+                                  let startX = (pw - totalW) / 2;
+                                  
+                                  nutrientEntries.forEach(([nome, valor], i) => {
+                                    const row = Math.floor(i / 8);
+                                    const col = i % 8;
+                                    const x = startX + col * (boxW + gap);
+                                    const yBox = yNut + row * (boxH + gap);
+                                    
+                                    // Box background
+                                    doc.setFillColor(240, 248, 255);
+                                    doc.setDrawColor(10, 79, 46);
+                                    doc.roundedRect(x, yBox, boxW, boxH, 2, 2, 'FD');
+                                    
+                                    // Nutrient name
+                                    doc.setFontSize(7);
+                                    doc.setTextColor(100, 100, 100);
+                                    doc.setFont('helvetica', 'normal');
+                                    doc.text(nome, x + boxW / 2, yBox + 10, { align: 'center' });
+                                    
+                                    // Value
+                                    doc.setFontSize(9);
+                                    doc.setTextColor(10, 79, 46);
+                                    doc.setFont('helvetica', 'bold');
+                                    doc.text(valor.toFixed(1), x + boxW / 2, yBox + 22, { align: 'center' });
+                                  });
                                 }
                               }
                               
