@@ -4657,7 +4657,7 @@ function App() {
                 {dashboardData && (dashboardData.national.length > 0 || dashboardData.by_state.length > 0) && (
                   <div className="mb-6 space-y-4">
                     
-                    {/* Admin Filters */}
+                    {/* Admin Filters - only for admins */}
                     {isAdmin && (
                       <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
                         <h3 className="text-lg font-bold text-green-800 mb-3">Filtros</h3>
@@ -4743,7 +4743,13 @@ function App() {
                     {/* Product Averages */}
                     {dashboardData.national.length > 0 && (
                       <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-4">Preço por Produto</h3>
+                        <h3 className="text-lg font-bold text-green-800 mb-1">
+                          {isAdmin ? 'Preço por Produto' : `Preços no seu Estado${dashboardData.user_states ? ' (' + dashboardData.user_states.join(', ') + ')' : ''}`}
+                        </h3>
+                        {!isAdmin && (
+                          <p className="text-sm text-gray-500 mb-4">Dados agregados de todos os registros do seu estado</p>
+                        )}
+                        {isAdmin && <div className="mb-4"></div>}
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead className="bg-green-50">
@@ -4777,8 +4783,8 @@ function App() {
                       </div>
                     )}
                     
-                    {/* By State */}
-                    {dashboardData.by_state.length > 0 && (
+                    {/* By State - only for admin */}
+                    {isAdmin && dashboardData.by_state.length > 0 && (
                       <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
                         <h3 className="text-lg font-bold text-green-800 mb-4">Média por Região (Estado)</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

@@ -949,11 +949,20 @@ async def delete_market_study(study_id: str, credentials: HTTPAuthorizationCrede
 
 @app.get("/api/market-studies/dashboard")
 async def get_market_studies_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get dashboard data for regular users (aggregated market study data)"""
+    """Get dashboard data for regular users - only shows data from their state"""
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
         
-        all_studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
+        # Find user's states from their own studies
+        user_studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0, "estado": 1}).to_list(None)
+        user_states = list(set(s.get("estado", "") for s in user_studies if s.get("estado")))
+        
+        # Get all studies from user's states
+        if user_states:
+            all_studies = await db.market_studies.find({"estado": {"$in": user_states}}, {"_id": 0}).to_list(None)
+        else:
+            all_studies = []
         
         # Aggregate by empresa+produto
         product_map = {}
@@ -1008,7 +1017,7 @@ async def get_market_studies_dashboard(credentials: HTTPAuthorizationCredentials
                 "empresas": sorted(list(st["empresas_set"]))
             })
         
-        return {"national": products, "by_state": by_state}
+        return {"national": products, "by_state": by_state, "user_states": user_states}
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
