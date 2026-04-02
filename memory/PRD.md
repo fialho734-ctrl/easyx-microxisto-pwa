@@ -36,8 +36,14 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
   - Header visível na Home page apenas no desktop (oculto no mobile)
   - Classes CSS `mobile-only` e `desktop-only` para visibilidade responsiva
   - Hover animations nos botões desktop (translate-y e shadow)
+- **Footer profissional** adicionado no desktop:
+  - Branding XistoApp com descrição
+  - Links Rápidos para navegação
+  - Redes Sociais: site (microxisto.com.br), Instagram (@microxisto), Facebook, LinkedIn
+  - Copyright dinâmico
 - Corrigido bug de botões Login/Cadastro duplicados no header desktop
 - Corrigido erro `currentUser is not defined` no header mobile
+- Testes frontend: 100% pass
 
 ### Sessão 02/04/2026 (anterior)
 - Criados endpoints faltantes no backend (maintenance, market-studies, competitors, activity)
