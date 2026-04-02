@@ -39,8 +39,11 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 - Criado `pdfAssets.js` stub para corrigir erro de compilação
 - Instalado jspdf e jspdf-autotable para geração de PDF
 - JWT token inclui `is_admin` claim (corrigido em sessão anterior)
-- Todos os 21 testes de backend passaram (100%)
-- Frontend funcional com todas as navegações
+- **Bug fix**: Cultura CRUD retornava 500 (ObjectId serialization) - corrigido com `pop('_id')`
+- **Bug fix**: Update cultura sobrescrevia ID com None - corrigido com `exclude={'id'}`
+- **Bug fix**: PDF desconfigurado - extraídos assets reais (decoração verde + logo) do PDF de referência do usuário
+- **Bug fix**: Fonte EurostileEF falhava silenciosamente - adicionado fallback para helvetica
+- Todos os 27 testes passaram (21 gerais + 6 cultura CRUD)
 
 ### Sessões anteriores
 - Tabelas de Extração/Exportação no Planejamento
