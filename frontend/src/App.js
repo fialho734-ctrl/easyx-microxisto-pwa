@@ -3469,7 +3469,18 @@ function App() {
                 </button>
                 {/* Tecnologias */}
                 <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-tecnologias">
-                  <img src="/icon-tecnologias.png" alt="Tecnologias" className="w-14 h-14 rounded-xl object-cover shadow-sm" />
+                  <svg viewBox="0 0 48 48" className="w-12 h-12">
+                    {/* Atom/Molecule icon */}
+                    <ellipse cx="24" cy="20" rx="12" ry="5" fill="none" stroke="#004F27" strokeWidth="1.8" transform="rotate(-30 24 20)"/>
+                    <ellipse cx="24" cy="20" rx="12" ry="5" fill="none" stroke="#004F27" strokeWidth="1.8" transform="rotate(30 24 20)"/>
+                    <ellipse cx="24" cy="20" rx="12" ry="5" fill="none" stroke="#004F27" strokeWidth="1.8" transform="rotate(90 24 20)"/>
+                    <circle cx="24" cy="20" r="3" fill="#004F27"/>
+                    <circle cx="13" cy="16" r="1.8" fill="#9BE178"/>
+                    <circle cx="35" cy="16" r="1.8" fill="#9BE178"/>
+                    <circle cx="24" cy="8" r="1.8" fill="#9BE178"/>
+                    <line x1="24" y1="28" x2="24" y2="34" stroke="#004F27" strokeWidth="1.8" strokeLinecap="round"/>
+                    <polygon points="18,34 30,34 30,42 27,45 21,45 18,42" fill="none" stroke="#004F27" strokeWidth="1.8" strokeLinejoin="round"/>
+                  </svg>
                   <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
                 </button>
                 {/* Portfolio */}
@@ -3479,7 +3490,26 @@ function App() {
                 </button>
                 {/* Comparativo */}
                 <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-comparativo">
-                  <img src="/icon-comparativo.png" alt="Comparativo" className="w-14 h-14 rounded-xl object-cover shadow-sm" />
+                  <svg viewBox="0 0 48 48" className="w-12 h-12">
+                    {/* Comparison/Exchange icon - two bottles with ruler and arrows */}
+                    <rect x="4" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                    <rect x="7" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                    <rect x="32" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                    <rect x="35" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                    {/* Ruler */}
+                    <line x1="24" y1="12" x2="24" y2="40" stroke="#004F27" strokeWidth="1.5"/>
+                    <line x1="22" y1="16" x2="26" y2="16" stroke="#004F27" strokeWidth="1.2"/>
+                    <line x1="23" y1="20" x2="25" y2="20" stroke="#004F27" strokeWidth="1"/>
+                    <line x1="22" y1="24" x2="26" y2="24" stroke="#004F27" strokeWidth="1.2"/>
+                    <line x1="23" y1="28" x2="25" y2="28" stroke="#004F27" strokeWidth="1"/>
+                    <line x1="22" y1="32" x2="26" y2="32" stroke="#004F27" strokeWidth="1.2"/>
+                    <line x1="23" y1="36" x2="25" y2="36" stroke="#004F27" strokeWidth="1"/>
+                    {/* Exchange arrows */}
+                    <path d="M16 20 Q24 14 32 20" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                    <polygon points="30,18 34,20 30,22" fill="#9BE178"/>
+                    <path d="M32 32 Q24 38 16 32" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                    <polygon points="18,30 14,32 18,34" fill="#9BE178"/>
+                  </svg>
                   <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
                 </button>
               </div>
@@ -3533,7 +3563,22 @@ function App() {
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Portfolio</span>
                       </button>
                       <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-comparativo">
-                        <img src="/icon-comparativo.png" alt="Comparativo" className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                        <svg viewBox="0 0 48 48" className="w-11 h-11">
+                          <rect x="4" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                          <rect x="7" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                          <rect x="32" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                          <rect x="35" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                          <line x1="24" y1="12" x2="24" y2="40" stroke="#004F27" strokeWidth="1.5"/>
+                          <line x1="22" y1="16" x2="26" y2="16" stroke="#004F27" strokeWidth="1.2"/>
+                          <line x1="23" y1="20" x2="25" y2="20" stroke="#004F27" strokeWidth="1"/>
+                          <line x1="22" y1="24" x2="26" y2="24" stroke="#004F27" strokeWidth="1.2"/>
+                          <line x1="23" y1="28" x2="25" y2="28" stroke="#004F27" strokeWidth="1"/>
+                          <line x1="22" y1="32" x2="26" y2="32" stroke="#004F27" strokeWidth="1.2"/>
+                          <path d="M16 20 Q24 14 32 20" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                          <polygon points="30,18 34,20 30,22" fill="#9BE178"/>
+                          <path d="M32 32 Q24 38 16 32" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                          <polygon points="18,30 14,32 18,34" fill="#9BE178"/>
+                        </svg>
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
                       </button>
                     </div>
