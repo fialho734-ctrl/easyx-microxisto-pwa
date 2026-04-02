@@ -26,17 +26,30 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 
 ## O que foi implementado
 
-### Sessão atual (02/04/2026)
+### Sessão 02/04/2026 (continuação)
+- Cortado whitespace do ícone XistoApp (removido ~135px de padding branco do PNG)
+- Removidos 1000 registros fake de Estudo de Mercado
+- **Layout Desktop implementado**:
+  - Header com navegação completa (Início, Tecnologias, Culturas, Planejamento, Comparativo, Estudo de Mercado, Admin, Sair)
+  - Hero section side-by-side: branding+botões à esquerda, imagem da rocha à direita
+  - Grid de 3 colunas para botões de feature
+  - Header visível na Home page apenas no desktop (oculto no mobile)
+  - Classes CSS `mobile-only` e `desktop-only` para visibilidade responsiva
+  - Hover animations nos botões desktop (translate-y e shadow)
+- Corrigido bug de botões Login/Cadastro duplicados no header desktop
+- Corrigido erro `currentUser is not defined` no header mobile
+
+### Sessão 02/04/2026 (anterior)
 - Criados endpoints faltantes no backend (maintenance, market-studies, competitors, activity)
 - Removido manutencao.html estático
-- **Bug fix**: Cultura CRUD retornava 500 (ObjectId serialization) - corrigido
-- **Bug fix**: Update cultura sobrescrevia ID com None - corrigido  
-- **Bug fix**: Culturas com ID=None no banco restauradas (Soja, dados de teste limpos)
-- **PDF fixes**: Título verde escuro (#002F17), campos Colheita/Valor/Telefone deslocados (x=290), logo MicroXisto em alta resolução com fundo transparente (extraída de PDF vetorial do usuário)
-- **Dashboard Estudo de Mercado** movido para Painel Admin com filtros (Empresa/Produto/Venda/Estado), tabela min/avg/max, detalhamento por estado, export Excel
+- Bug fix: Cultura CRUD retornava 500 (ObjectId serialization) - corrigido
+- Bug fix: Update cultura sobrescrevia ID com None - corrigido
+- PDF fixes: Título verde escuro, campos deslocados, logo HD
+- Dashboard Estudo de Mercado movido para Admin com filtros, tabela min/avg/max, export Excel
 - Para usuários comuns: aba "Estudo de Mercado" mostra apenas preços do estado dele
-- Assets reais no pdfAssets.js (decoração verde + logo HD)
-- Todos os 27 testes passaram
+- Assets reais no pdfAssets.js
+- Home page mobile redesenhada com hero image, custom logo, paleta verde, bottom nav
+- Todos os testes de frontend passaram (100%)
 
 ### Sessões anteriores
 - Tabelas de Extração/Exportação no Planejamento
@@ -52,11 +65,11 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 - Nenhum bloqueio atual
 
 ### P1 (Importante)
-- Substituir imagens placeholder das culturas por imagens reais
-- Adicionar assets reais no pdfAssets.js (logo e decoração para PDFs)
-- Adicionar data-testid em todos os elementos interativos
+- Ícones das culturas via links de imagem do Imgur (usuário vai inserir manualmente)
+- Suporte para campo image_url nas culturas (backend + frontend)
 
 ### P2 (Melhorias)
-- Refatorar App.js (5183 linhas) em componentes menores
+- Refatorar App.js (5300+ linhas) em componentes menores
 - Otimização PWA: melhorar cache offline
 - Testes automatizados mais abrangentes
+- Adicionar data-testid em todos os elementos interativos
