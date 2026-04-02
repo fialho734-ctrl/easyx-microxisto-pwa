@@ -33,8 +33,8 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 - **Bug fix**: Update cultura sobrescrevia ID com None - corrigido  
 - **Bug fix**: Culturas com ID=None no banco restauradas (Soja, dados de teste limpos)
 - **PDF fixes**: Título verde escuro (#002F17), campos Colheita/Valor/Telefone deslocados (x=290), logo MicroXisto em alta resolução com fundo transparente (extraída de PDF vetorial do usuário)
-- **Dashboard Estudo de Mercado** reconstruído: filtros por Empresa/Produto/Tipo de Venda/Estado, tabela com menor/médio/maior preço, dose média, R$/ha médio
-- 18 registros de exemplo inseridos (Bayer, Syngenta, BASF, FMC, MicroXisto)
+- **Dashboard Estudo de Mercado** movido para Painel Admin com filtros (Empresa/Produto/Venda/Estado), tabela min/avg/max, detalhamento por estado, export Excel
+- Para usuários comuns: aba "Estudo de Mercado" mostra apenas preços do estado dele
 - Assets reais no pdfAssets.js (decoração verde + logo HD)
 - Todos os 27 testes passaram
 

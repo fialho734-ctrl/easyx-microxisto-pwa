@@ -2608,12 +2608,19 @@ function App() {
     }
   }, [isLoggedIn, token]);
 
-  // Fetch dashboard when on estudo-mercado page
+  // Fetch dashboard when on estudo-mercado page or admin market tab
   useEffect(() => {
     if (isLoggedIn && token && currentPage === 'estudo-mercado') {
       fetchDashboard();
     }
   }, [currentPage, isLoggedIn, token]);
+
+  // Fetch dashboard when admin opens market-export tab
+  useEffect(() => {
+    if (isAdmin && token && adminTab === 'market-export') {
+      fetchDashboard();
+    }
+  }, [adminTab, isAdmin, token]);
 
   // Fetch user activity when on admin page
   useEffect(() => {
@@ -4653,157 +4660,41 @@ function App() {
               <div className="max-w-6xl mx-auto" data-testid="market-study-page">
                 <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Estudo de Mercado</h2>
                 
-                {/* Dashboard */}
-                {dashboardData && (dashboardData.national.length > 0 || dashboardData.by_state.length > 0) && (
-                  <div className="mb-6 space-y-4">
-                    
-                    {/* Admin Filters - only for admins */}
-                    {isAdmin && (
-                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-3">Filtros</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Empresa</label>
-                            <select
-                              value={dashboardFilters.empresa}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, empresa: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-empresa"
-                            >
-                              <option value="">Todas</option>
-                              {filterOptions.empresas.map(emp => (
-                                <option key={emp} value={emp}>{emp}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Produto</label>
-                            <select
-                              value={dashboardFilters.produto}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, produto: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-produto"
-                            >
-                              <option value="">Todos</option>
-                              {filterOptions.produtos.map(p => (
-                                <option key={p} value={p}>{p}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Tipo de Venda</label>
-                            <select
-                              value={dashboardFilters.venda}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, venda: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-venda"
-                            >
-                              <option value="">Todos</option>
-                              {filterOptions.vendas.map(v => (
-                                <option key={v} value={v}>{v}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Estado</label>
-                            <select
-                              value={dashboardFilters.estado}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, estado: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-estado"
-                            >
-                              <option value="">Todos</option>
-                              {filterOptions.estados.map(uf => (
-                                <option key={uf} value={uf}>{uf}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={fetchDashboard}
-                            className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 font-semibold"
-                            data-testid="apply-filters-btn"
-                          >
-                            Aplicar Filtros
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDashboardFilters({ estado: '', empresa: '', produto: '', venda: '' });
-                              setTimeout(fetchDashboard, 100);
-                            }}
-                            className="px-4 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
-                          >
-                            Limpar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Product Averages */}
-                    {dashboardData.national.length > 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-1">
-                          {isAdmin ? 'Preço por Produto' : `Preços no seu Estado${dashboardData.user_states ? ' (' + dashboardData.user_states.join(', ') + ')' : ''}`}
-                        </h3>
-                        {!isAdmin && (
-                          <p className="text-sm text-gray-500 mb-4">Dados agregados de todos os registros do seu estado</p>
-                        )}
-                        {isAdmin && <div className="mb-4"></div>}
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-green-50">
-                              <tr>
-                                <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
-                                <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Menor (R$)</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Preço Médio (R$)</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Maior (R$)</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Dose Média</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
+                {/* User Dashboard - only shows prices from their state */}
+                {!isAdmin && dashboardData && dashboardData.national && dashboardData.national.length > 0 && (
+                  <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                      <h3 className="text-lg font-bold text-green-800 mb-1">
+                        {`Preços no seu Estado${dashboardData.user_states ? ' (' + dashboardData.user_states.join(', ') + ')' : ''}`}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4">Dados agregados de todos os registros do seu estado</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-green-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
+                              <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Menor (R$)</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Preço Médio (R$)</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Maior (R$)</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {dashboardData.national.map((item, i) => (
+                              <tr key={i} className="border-t hover:bg-gray-50">
+                                <td className="px-3 py-2">{item.empresa}</td>
+                                <td className="px-3 py-2 font-semibold">{item.produto}</td>
+                                <td className="px-3 py-2 text-center text-blue-600">R$ {(item.min_valor || 0).toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center text-red-600">R$ {(item.max_valor || 0).toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</td>
                               </tr>
-                            </thead>
-                            <tbody>
-                              {dashboardData.national.map((item, i) => (
-                                <tr key={i} className="border-t hover:bg-gray-50">
-                                  <td className="px-3 py-2">{item.empresa}</td>
-                                  <td className="px-3 py-2 font-semibold">{item.produto}</td>
-                                  <td className="px-3 py-2 text-center text-blue-600">R$ {(item.min_valor || 0).toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center text-red-600">R$ {(item.max_valor || 0).toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center">{(item.avg_dose || 0).toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center">{item.count}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    )}
-                    
-                    {/* By State - only for admin */}
-                    {isAdmin && dashboardData.by_state.length > 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-4">Média por Região (Estado)</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {dashboardData.by_state.map((item, i) => (
-                            <div key={i} className="bg-green-50 p-3 rounded-lg border border-green-200">
-                              <div className="text-lg font-bold text-green-800">{item.estado}</div>
-                              <div className="text-sm text-gray-600 mt-1">R$/ha médio:</div>
-                              <div className="text-xl font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                Preço médio: R$ {item.avg_valor.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {item.count} registro{item.count > 1 ? 's' : ''} | {item.empresas.length} empresa{item.empresas.length > 1 ? 's' : ''}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
                 
@@ -5131,38 +5022,193 @@ function App() {
             )}
             
             {adminTab === 'market-export' && (
-              <div className="card bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Exportar Estudo de Mercado</h3>
-                <p className="text-gray-600 mb-4">
-                  Exporte todos os dados de estudo de mercado de todos os usuários em formato Excel.
-                </p>
-                <button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (response.ok) {
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'estudo_mercado.xlsx';
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                      } else {
-                        alert('Erro ao exportar dados');
-                      }
-                    } catch (error) {
-                      console.error('Error exporting:', error);
-                      alert('Erro ao exportar');
-                    }
-                  }}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-                  data-testid="export-market-btn"
-                >
-                  📥 Baixar Excel
-                </button>
+              <div className="space-y-4" data-testid="admin-market-dashboard">
+                <div className="card bg-white rounded-lg shadow-md p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">Dashboard Estudo de Mercado</h3>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'estudo_mercado.xlsx';
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                          } else {
+                            alert('Erro ao exportar dados');
+                          }
+                        } catch (error) {
+                          alert('Erro ao exportar');
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-sm"
+                      data-testid="export-market-btn"
+                    >
+                      Baixar Excel
+                    </button>
+                  </div>
+                  
+                  {/* Filters */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Empresa</label>
+                      <select
+                        value={dashboardFilters.empresa}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, empresa: e.target.value})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-empresa"
+                      >
+                        <option value="">Todas</option>
+                        {filterOptions.empresas.map(emp => (
+                          <option key={emp} value={emp}>{emp}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Produto</label>
+                      <select
+                        value={dashboardFilters.produto}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, produto: e.target.value})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-produto"
+                      >
+                        <option value="">Todos</option>
+                        {filterOptions.produtos.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Tipo de Venda</label>
+                      <select
+                        value={dashboardFilters.venda}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, venda: e.target.value})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-venda"
+                      >
+                        <option value="">Todos</option>
+                        {filterOptions.vendas.map(v => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Estado</label>
+                      <select
+                        value={dashboardFilters.estado}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, estado: e.target.value})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-estado"
+                      >
+                        <option value="">Todos</option>
+                        {filterOptions.estados.map(uf => (
+                          <option key={uf} value={uf}>{uf}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={fetchDashboard}
+                      className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 font-semibold"
+                      data-testid="apply-filters-btn"
+                    >
+                      Aplicar Filtros
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDashboardFilters({ estado: '', empresa: '', produto: '', venda: '' });
+                        setTimeout(fetchDashboard, 100);
+                      }}
+                      className="px-4 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                </div>
+
+                {/* Results */}
+                {dashboardData && dashboardData.national && dashboardData.national.length > 0 && (
+                  <div className="card bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-lg font-bold text-green-800 mb-4">
+                      Resultado {dashboardFilters.estado ? `- ${dashboardFilters.estado}` : '- Todos os Estados'}
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-green-50">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
+                            <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Menor Valor (R$)</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Valor Médio (R$)</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Maior Valor (R$)</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Dose Média</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {dashboardData.national.map((item, i) => (
+                            <tr key={i} className="border-t hover:bg-gray-50">
+                              <td className="px-3 py-2">{item.empresa}</td>
+                              <td className="px-3 py-2 font-semibold">{item.produto}</td>
+                              <td className="px-3 py-2 text-center text-blue-600 font-medium">R$ {(item.min_valor || 0).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center text-red-600 font-medium">R$ {(item.max_valor || 0).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{(item.avg_dose || 0).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{item.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* By State breakdown - only when "Todos" states selected */}
+                {dashboardData && dashboardData.by_state && dashboardData.by_state.length > 1 && !dashboardFilters.estado && (
+                  <div className="card bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-lg font-bold text-green-800 mb-4">Detalhamento por Estado</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {dashboardData.by_state.map((item, i) => (
+                        <div key={i} className="bg-green-50 p-4 rounded-lg border border-green-200">
+                          <div className="text-xl font-bold text-green-800 mb-2">{item.estado}</div>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Valor Médio:</span>
+                              <span className="font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">R$/ha Médio:</span>
+                              <span className="font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Registros:</span>
+                              <span className="font-semibold">{item.count}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Empresas:</span>
+                              <span className="text-xs">{(item.empresas || []).join(', ')}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {dashboardData && dashboardData.national && dashboardData.national.length === 0 && (
+                  <div className="card bg-white rounded-lg shadow-md p-6 text-center">
+                    <p className="text-gray-500 py-4">Nenhum dado encontrado para os filtros selecionados.</p>
+                  </div>
+                )}
               </div>
             )}
             
