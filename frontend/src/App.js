@@ -3470,16 +3470,21 @@ function App() {
                 {/* Tecnologias */}
                 <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-tecnologias">
                   <svg viewBox="0 0 48 48" className="w-12 h-12">
-                    {/* Atom/Molecule icon */}
-                    <ellipse cx="24" cy="20" rx="12" ry="5" fill="none" stroke="#004F27" strokeWidth="1.8" transform="rotate(-30 24 20)"/>
-                    <ellipse cx="24" cy="20" rx="12" ry="5" fill="none" stroke="#004F27" strokeWidth="1.8" transform="rotate(30 24 20)"/>
-                    <ellipse cx="24" cy="20" rx="12" ry="5" fill="none" stroke="#004F27" strokeWidth="1.8" transform="rotate(90 24 20)"/>
-                    <circle cx="24" cy="20" r="3" fill="#004F27"/>
-                    <circle cx="13" cy="16" r="1.8" fill="#9BE178"/>
-                    <circle cx="35" cy="16" r="1.8" fill="#9BE178"/>
-                    <circle cx="24" cy="8" r="1.8" fill="#9BE178"/>
-                    <line x1="24" y1="28" x2="24" y2="34" stroke="#004F27" strokeWidth="1.8" strokeLinecap="round"/>
-                    <polygon points="18,34 30,34 30,42 27,45 21,45 18,42" fill="none" stroke="#004F27" strokeWidth="1.8" strokeLinejoin="round"/>
+                    {/* Atom with orbits + hexagonal molecule */}
+                    {/* 3 orbital ellipses */}
+                    <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(0 24 16)"/>
+                    <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(60 24 16)"/>
+                    <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(120 24 16)"/>
+                    {/* Nucleus */}
+                    <circle cx="24" cy="16" r="3.5" fill="#004F27"/>
+                    {/* Electrons on orbits */}
+                    <circle cx="38" cy="16" r="2" fill="#9BE178"/>
+                    <circle cx="17" cy="6" r="2" fill="#9BE178"/>
+                    <circle cx="17" cy="26" r="2" fill="#9BE178"/>
+                    {/* Connecting line */}
+                    <line x1="24" y1="23" x2="24" y2="32" stroke="#004F27" strokeWidth="1.5" strokeLinecap="round"/>
+                    {/* Hexagonal ring */}
+                    <polygon points="24,32 29,35 29,40 24,43 19,40 19,35" fill="none" stroke="#004F27" strokeWidth="1.5" strokeLinejoin="round"/>
                   </svg>
                   <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
                 </button>
@@ -3555,7 +3560,17 @@ function App() {
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Mercado</span>
                       </button>
                       <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-tecnologias">
-                        <img src="/icon-tecnologias.png" alt="Tecnologias" className="w-12 h-12 rounded-xl object-cover shadow-sm" />
+                        <svg viewBox="0 0 48 48" className="w-11 h-11">
+                          <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(0 24 16)"/>
+                          <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(60 24 16)"/>
+                          <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(120 24 16)"/>
+                          <circle cx="24" cy="16" r="3.5" fill="#004F27"/>
+                          <circle cx="38" cy="16" r="2" fill="#9BE178"/>
+                          <circle cx="17" cy="6" r="2" fill="#9BE178"/>
+                          <circle cx="17" cy="26" r="2" fill="#9BE178"/>
+                          <line x1="24" y1="23" x2="24" y2="32" stroke="#004F27" strokeWidth="1.5" strokeLinecap="round"/>
+                          <polygon points="24,32 29,35 29,40 24,43 19,40 19,35" fill="none" stroke="#004F27" strokeWidth="1.5" strokeLinejoin="round"/>
+                        </svg>
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
                       </button>
                       <button onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-portfolio">
