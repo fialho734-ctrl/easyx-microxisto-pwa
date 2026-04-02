@@ -1,12 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import uuid
 import bcrypt
 import csv
@@ -139,6 +140,14 @@ class CompetitorUpdate(BaseModel):
     composition: ProductComposition
     additives: str
     proposito: Optional[str] = ""  # NOVO CAMPO
+
+class MarketStudy(BaseModel):
+    empresa: str
+    produto: str
+    dose_ha: float
+    valor: float
+    venda: str
+    estado: str
 
 # Lifespan manager
 @asynccontextmanager
@@ -824,6 +833,312 @@ async def create_competitor(competitor: Competitor, admin_user: dict = Depends(g
     competitor.id = str(uuid.uuid4())
     await db.competitors.insert_one(competitor.dict())
     return competitor
+
+# ==========================================
+# GET ALL COMPETITORS (for autocomplete search)
+# ==========================================
+@app.get("/api/competitors")
+async def get_all_competitors():
+    """Get all competitors"""
+    competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
+    return competitors
+
+# ==========================================
+# MAINTENANCE MODE APIs
+# ==========================================
+@app.get("/api/maintenance-status")
+async def get_maintenance_status():
+    """Check if maintenance mode is active"""
+    config = await db.app_config.find_one({"key": "maintenance_mode"}, {"_id": 0})
+    if config:
+        return {"active": config.get("active", False)}
+    return {"active": False}
+
+@app.post("/api/admin/maintenance")
+async def toggle_maintenance(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Toggle maintenance mode (admin only)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        config = await db.app_config.find_one({"key": "maintenance_mode"})
+        current_status = config.get("active", False) if config else False
+        new_status = not current_status
+        
+        await db.app_config.update_one(
+            {"key": "maintenance_mode"},
+            {"$set": {"key": "maintenance_mode", "active": new_status, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True
+        )
+        
+        status_text = "ativado" if new_status else "desativado"
+        return {"active": new_status, "message": f"Modo manutenção {status_text}"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ==========================================
+# MARKET STUDIES APIs
+# ==========================================
+@app.get("/api/market-studies")
+async def get_market_studies(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get market studies for logged user"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0}).to_list(None)
+        return studies
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.post("/api/market-studies")
+async def create_market_study(study: MarketStudy, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Create a new market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        study_data = study.dict()
+        study_data["id"] = str(uuid.uuid4())
+        study_data["user_id"] = user_id
+        study_data["created_at"] = datetime.now(timezone.utc).isoformat()
+        study_data["rs_ha"] = study.dose_ha * study.valor
+        
+        await db.market_studies.insert_one(study_data)
+        result = {k: v for k, v in study_data.items() if k != "_id"}
+        return result
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.put("/api/market-studies/{study_id}")
+async def update_market_study(study_id: str, study: MarketStudy, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Update a market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        update_data = study.dict()
+        update_data["rs_ha"] = study.dose_ha * study.valor
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        result = await db.market_studies.update_one(
+            {"id": study_id, "user_id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Study not found")
+        return {"message": "Estudo atualizado com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/market-studies/{study_id}")
+async def delete_market_study(study_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete a market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        result = await db.market_studies.delete_one({"id": study_id, "user_id": user_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Study not found")
+        return {"message": "Estudo removido com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/market-studies/dashboard")
+async def get_market_studies_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get dashboard data for regular users (aggregated market study data)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        all_studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
+        
+        # Aggregate by product
+        product_map = {}
+        state_map = {}
+        for s in all_studies:
+            key = s.get("produto", "")
+            if key not in product_map:
+                product_map[key] = {"produto": key, "count": 0, "total_valor": 0, "total_dose": 0}
+            product_map[key]["count"] += 1
+            product_map[key]["total_valor"] += s.get("valor", 0)
+            product_map[key]["total_dose"] += s.get("dose_ha", 0)
+            
+            state = s.get("estado", "")
+            if state not in state_map:
+                state_map[state] = {"estado": state, "count": 0, "total_valor": 0}
+            state_map[state]["count"] += 1
+            state_map[state]["total_valor"] += s.get("valor", 0)
+        
+        products = []
+        for p in product_map.values():
+            p["media_valor"] = p["total_valor"] / p["count"] if p["count"] > 0 else 0
+            p["media_dose"] = p["total_dose"] / p["count"] if p["count"] > 0 else 0
+            products.append(p)
+        
+        by_state = list(state_map.values())
+        
+        return {"national": products, "by_state": by_state}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/admin/market-studies/dashboard-filtered")
+async def get_market_studies_dashboard_filtered(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    estado: Optional[str] = Query(None),
+    empresa: Optional[str] = Query(None),
+    data_inicio: Optional[str] = Query(None),
+    data_fim: Optional[str] = Query(None)
+):
+    """Get filtered dashboard data for admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        query = {}
+        if estado:
+            query["estado"] = estado
+        if empresa:
+            query["empresa"] = empresa
+        
+        all_studies = await db.market_studies.find(query, {"_id": 0}).to_list(None)
+        
+        # Filter by date if provided
+        if data_inicio or data_fim:
+            filtered = []
+            for s in all_studies:
+                created = s.get("created_at", "")
+                if data_inicio and created < data_inicio:
+                    continue
+                if data_fim and created > data_fim:
+                    continue
+                filtered.append(s)
+            all_studies = filtered
+        
+        # Aggregate
+        product_map = {}
+        state_map = {}
+        empresas_set = set()
+        estados_set = set()
+        
+        # Get all studies for filter options (unfiltered)
+        all_for_filters = await db.market_studies.find({}, {"_id": 0, "empresa": 1, "estado": 1}).to_list(None)
+        for s in all_for_filters:
+            empresas_set.add(s.get("empresa", ""))
+            estados_set.add(s.get("estado", ""))
+        
+        for s in all_studies:
+            key = s.get("produto", "")
+            if key not in product_map:
+                product_map[key] = {"produto": key, "count": 0, "total_valor": 0, "total_dose": 0}
+            product_map[key]["count"] += 1
+            product_map[key]["total_valor"] += s.get("valor", 0)
+            product_map[key]["total_dose"] += s.get("dose_ha", 0)
+            
+            state = s.get("estado", "")
+            if state not in state_map:
+                state_map[state] = {"estado": state, "count": 0, "total_valor": 0}
+            state_map[state]["count"] += 1
+            state_map[state]["total_valor"] += s.get("valor", 0)
+        
+        products = []
+        for p in product_map.values():
+            p["media_valor"] = p["total_valor"] / p["count"] if p["count"] > 0 else 0
+            p["media_dose"] = p["total_dose"] / p["count"] if p["count"] > 0 else 0
+            products.append(p)
+        
+        by_state = list(state_map.values())
+        
+        return {
+            "products": products,
+            "by_state": by_state,
+            "filter_options": {
+                "empresas": sorted(list(empresas_set)),
+                "estados": sorted(list(estados_set))
+            }
+        }
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/admin/market-studies/export")
+async def export_market_studies(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Export all market studies as xlsx"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        import openpyxl
+        
+        studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Estudo de Mercado"
+        
+        headers = ["Empresa", "Produto", "Dose/ha", "Valor (R$)", "R$/ha", "Venda", "Estado", "Data"]
+        ws.append(headers)
+        
+        for s in studies:
+            ws.append([
+                s.get("empresa", ""),
+                s.get("produto", ""),
+                s.get("dose_ha", 0),
+                s.get("valor", 0),
+                s.get("dose_ha", 0) * s.get("valor", 0),
+                s.get("venda", ""),
+                s.get("estado", ""),
+                s.get("created_at", "")
+            ])
+        
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=estudo_mercado.xlsx"}
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ==========================================
+# USER ACTIVITY TRACKING
+# ==========================================
+@app.post("/api/track-activity")
+async def track_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Track user login activity"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+        if user:
+            await db.user_activity.insert_one({
+                "user_id": user_id,
+                "email": user.get("email", ""),
+                "action": "login",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+        return {"message": "Activity tracked"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/admin/user-activity")
+async def get_user_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get user activity for admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        activities = await db.user_activity.find({}, {"_id": 0}).sort("timestamp", -1).to_list(100)
+        return activities
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 if __name__ == "__main__":
     import uvicorn
