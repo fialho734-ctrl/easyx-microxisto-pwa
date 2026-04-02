@@ -26,56 +26,35 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 
 ## O que foi implementado
 
-### Sessão 02/04/2026 (continuação)
-- Cortado whitespace do ícone XistoApp (removido ~135px de padding branco do PNG)
-- Removidos 1000 registros fake de Estudo de Mercado
-- **Layout Desktop implementado**:
-  - Header com navegação completa (Início, Tecnologias, Culturas, Planejamento, Comparativo, Estudo de Mercado, Admin, Sair)
-  - Hero section side-by-side: branding+botões à esquerda, imagem da rocha à direita
-  - Grid de 3 colunas para botões de feature
-  - Header visível na Home page apenas no desktop (oculto no mobile)
-  - Classes CSS `mobile-only` e `desktop-only` para visibilidade responsiva
-  - Hover animations nos botões desktop (translate-y e shadow)
-- **Footer profissional** adicionado no desktop:
-  - Branding XistoApp com descrição
-  - Links Rápidos para navegação
-  - Redes Sociais: site (microxisto.com.br), Instagram (@microxisto), Facebook, LinkedIn
-  - Copyright dinâmico
-- Corrigido bug de botões Login/Cadastro duplicados no header desktop
-- Corrigido erro `currentUser is not defined` no header mobile
-- Testes frontend: 100% pass
+### Sessão 02/04/2026 (final)
+- Ícones SVG customizados para Tecnologias (átomo/molécula) e Comparativo (frascos+régua+setas)
+- Segurança admin reforçada: JWT decoded no frontend (não mais confiando em localStorage)
+- useEffect de proteção: redireciona não-admin para Home se tentar acessar /admin
+- Instruções PWA melhoradas: modal com passos para iOS (Safari) e Android (Chrome)
+- Queries MongoDB limitadas (to_list(5000)) para produção
+- Deploy preparado e aprovado pelo deployment agent
 
 ### Sessão 02/04/2026 (anterior)
-- Criados endpoints faltantes no backend (maintenance, market-studies, competitors, activity)
-- Removido manutencao.html estático
-- Bug fix: Cultura CRUD retornava 500 (ObjectId serialization) - corrigido
-- Bug fix: Update cultura sobrescrevia ID com None - corrigido
-- PDF fixes: Título verde escuro, campos deslocados, logo HD
-- Dashboard Estudo de Mercado movido para Admin com filtros, tabela min/avg/max, export Excel
-- Para usuários comuns: aba "Estudo de Mercado" mostra apenas preços do estado dele
-- Assets reais no pdfAssets.js
-- Home page mobile redesenhada com hero image, custom logo, paleta verde, bottom nav
-- Todos os testes de frontend passaram (100%)
+- Layout Desktop completo com hero side-by-side, header e footer
+- Footer profissional com redes sociais (site, Instagram, Facebook, LinkedIn)
+- Ícone XistoApp cortado (removido whitespace)
+- 1000 registros fake do Estudo de Mercado removidos
+- Classes CSS mobile-only/desktop-only para responsividade
 
 ### Sessões anteriores
-- Tabelas de Extração/Exportação no Planejamento
-- Service Worker com notificação de atualização
+- Dashboard completo do Estudo de Mercado
+- PDF com logo HD e cores corretas
+- Home page mobile redesenhada
+- Bottom navigation bar
+- Service Worker com auto-update
 - Domínio customizado easyx.agr.br
-- Sugestões clicáveis no Comparativo
-- Inputs numéricos sem "0" padrão no Planejamento
-- Sincronização do App.js com versão do usuário
 
 ## Backlog (P0/P1/P2)
 
-### P0 (Crítico)
-- Nenhum bloqueio atual
-
 ### P1 (Importante)
-- Ícones das culturas via links de imagem do Imgur (usuário vai inserir manualmente)
-- Suporte para campo image_url nas culturas (backend + frontend)
+- Ícones das culturas via links de imagem do Imgur
 
 ### P2 (Melhorias)
-- Refatorar App.js (5300+ linhas) em componentes menores
+- Refatorar App.js (5500+ linhas) em componentes menores
 - Otimização PWA: melhorar cache offline
-- Testes automatizados mais abrangentes
-- Adicionar data-testid em todos os elementos interativos
+- Paginação nas consultas de dados
