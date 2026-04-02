@@ -2757,7 +2757,7 @@ function App() {
         });
         if (response.ok) {
           const data = await response.json();
-          setDashboardData({ national: data.products, by_state: data.by_state });
+          setDashboardData(data);
           setFilterOptions(data.filter_options);
         }
       } else {
@@ -5136,37 +5136,88 @@ function App() {
                   </div>
                 </div>
 
-                {/* Results */}
-                {dashboardData && dashboardData.national && dashboardData.national.length > 0 && (
+                {/* Summary Cards */}
+                {dashboardData && dashboardData.summary && dashboardData.summary.total > 0 && (
                   <div className="card bg-white rounded-lg shadow-md p-6">
                     <h3 className="text-lg font-bold text-green-800 mb-4">
-                      Resultado {dashboardFilters.estado ? `- ${dashboardFilters.estado}` : '- Todos os Estados'}
+                      Resumo {dashboardFilters.estado ? `- ${dashboardFilters.estado}` : '- Todos os Estados'}
+                      <span className="text-sm font-normal text-gray-500 ml-2">({dashboardData.summary.total} registros)</span>
                     </h3>
-                    <div className="overflow-x-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 text-center">
+                        <div className="text-xs text-gray-600">Menor Valor</div>
+                        <div className="text-xl font-bold text-blue-600">R$ {dashboardData.summary.min_valor.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
+                        <div className="text-xs text-gray-600">Valor Médio</div>
+                        <div className="text-xl font-bold">R$ {dashboardData.summary.avg_valor.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-center">
+                        <div className="text-xs text-gray-600">Maior Valor</div>
+                        <div className="text-xl font-bold text-red-600">R$ {dashboardData.summary.max_valor.toFixed(2)}</div>
+                      </div>
+                    </div>
+
+                    {/* By State breakdown */}
+                    {dashboardData.by_state && dashboardData.by_state.length > 1 && !dashboardFilters.estado && (
+                      <>
+                        <h4 className="text-sm font-bold text-green-800 mb-2 mt-4">Por Estado</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {dashboardData.by_state.map((st, i) => (
+                            <div key={i} className="bg-green-50 p-3 rounded-lg border border-green-200">
+                              <div className="font-bold text-green-800 text-lg mb-1">{st.estado}</div>
+                              <div className="grid grid-cols-3 gap-1 text-xs">
+                                <div><span className="text-gray-500">Menor:</span> <span className="font-semibold text-blue-600">R$ {(st.min_valor || 0).toFixed(2)}</span></div>
+                                <div><span className="text-gray-500">Médio:</span> <span className="font-bold">R$ {(st.avg_valor || 0).toFixed(2)}</span></div>
+                                <div><span className="text-gray-500">Maior:</span> <span className="font-semibold text-red-600">R$ {(st.max_valor || 0).toFixed(2)}</span></div>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">{st.count} registros</div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* All Records Table */}
+                {dashboardData && dashboardData.records && dashboardData.records.length > 0 && (
+                  <div className="card bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-lg font-bold text-green-800 mb-4">
+                      Registros ({dashboardData.records.length})
+                    </h3>
+                    <div className="overflow-x-auto" style={{maxHeight: '500px', overflowY: 'auto'}}>
                       <table className="w-full text-sm">
-                        <thead className="bg-green-50">
+                        <thead className="bg-green-50 sticky top-0">
                           <tr>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Menor Valor (R$)</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Valor Médio (R$)</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Maior Valor (R$)</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Dose Média</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Valor (R$)</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Dose/ha</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Tipo de Venda</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Estado</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {dashboardData.national.map((item, i) => (
+                          {dashboardData.records.map((rec, i) => (
                             <tr key={i} className="border-t hover:bg-gray-50">
-                              <td className="px-3 py-2">{item.empresa}</td>
-                              <td className="px-3 py-2 font-semibold">{item.produto}</td>
-                              <td className="px-3 py-2 text-center text-blue-600 font-medium">R$ {(item.min_valor || 0).toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center text-red-600 font-medium">R$ {(item.max_valor || 0).toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center">{(item.avg_dose || 0).toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center">{item.count}</td>
+                              <td className="px-3 py-1.5">{rec.empresa}</td>
+                              <td className="px-3 py-1.5 font-semibold">{rec.produto}</td>
+                              <td className="px-3 py-1.5 text-center">R$ {(rec.valor || 0).toFixed(2)}</td>
+                              <td className="px-3 py-1.5 text-center">{(rec.dose_ha || 0).toFixed(2)}</td>
+                              <td className="px-3 py-1.5 text-center font-bold text-green-700">R$ {(rec.rs_ha || 0).toFixed(2)}</td>
+                              <td className="px-3 py-1.5 text-center">
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  rec.venda === 'Venda direta' ? 'bg-blue-100 text-blue-800' :
+                                  rec.venda === 'Distribuicao' ? 'bg-orange-100 text-orange-800' :
+                                  rec.venda === 'Cooperativa' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-teal-100 text-teal-800'
+                                }`}>
+                                  {rec.venda}
+                                </span>
+                              </td>
+                              <td className="px-3 py-1.5 text-center font-medium">{rec.estado}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -5175,39 +5226,7 @@ function App() {
                   </div>
                 )}
 
-                {/* By State breakdown - only when "Todos" states selected */}
-                {dashboardData && dashboardData.by_state && dashboardData.by_state.length > 1 && !dashboardFilters.estado && (
-                  <div className="card bg-white rounded-lg shadow-md p-6">
-                    <h3 className="text-lg font-bold text-green-800 mb-4">Detalhamento por Estado</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {dashboardData.by_state.map((item, i) => (
-                        <div key={i} className="bg-green-50 p-4 rounded-lg border border-green-200">
-                          <div className="text-xl font-bold text-green-800 mb-2">{item.estado}</div>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Valor Médio:</span>
-                              <span className="font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">R$/ha Médio:</span>
-                              <span className="font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Registros:</span>
-                              <span className="font-semibold">{item.count}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Empresas:</span>
-                              <span className="text-xs">{(item.empresas || []).join(', ')}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {dashboardData && dashboardData.national && dashboardData.national.length === 0 && (
+                {dashboardData && dashboardData.records && dashboardData.records.length === 0 && (
                   <div className="card bg-white rounded-lg shadow-md p-6 text-center">
                     <p className="text-gray-500 py-4">Nenhum dado encontrado para os filtros selecionados.</p>
                   </div>

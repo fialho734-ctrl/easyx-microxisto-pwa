@@ -1049,18 +1049,6 @@ async def get_market_studies_dashboard_filtered(
         
         all_studies = await db.market_studies.find(query, {"_id": 0}).to_list(None)
         
-        # Filter by date if provided
-        if data_inicio or data_fim:
-            filtered = []
-            for s in all_studies:
-                created = s.get("created_at", "")
-                if data_inicio and created < data_inicio:
-                    continue
-                if data_fim and created > data_fim:
-                    continue
-                filtered.append(s)
-            all_studies = filtered
-        
         # Get all studies for filter options (unfiltered)
         all_for_filters = await db.market_studies.find({}, {"_id": 0}).to_list(None)
         empresas_set = set()
@@ -1080,48 +1068,46 @@ async def get_market_studies_dashboard_filtered(
                 produtos_by_empresa[emp] = set()
             produtos_by_empresa[emp].add(prod)
         
-        # Aggregate by empresa+produto
-        product_map = {}
+        # Individual records for the table
+        records = []
+        for s in all_studies:
+            records.append({
+                "id": s.get("id", ""),
+                "empresa": s.get("empresa", ""),
+                "produto": s.get("produto", ""),
+                "valor": s.get("valor", 0),
+                "dose_ha": s.get("dose_ha", 0),
+                "rs_ha": s.get("rs_ha", round(s.get("dose_ha", 0) * s.get("valor", 0), 2)),
+                "venda": s.get("venda", ""),
+                "estado": s.get("estado", ""),
+            })
+        
+        # Summary stats
+        summary = {}
+        if records:
+            valores = [r["valor"] for r in records]
+            rs_has = [r["rs_ha"] for r in records]
+            summary = {
+                "total": len(records),
+                "avg_valor": sum(valores) / len(valores),
+                "min_valor": min(valores),
+                "max_valor": max(valores),
+                "avg_rs_ha": sum(rs_has) / len(rs_has),
+                "min_rs_ha": min(rs_has),
+                "max_rs_ha": max(rs_has),
+            }
+        
+        # By state breakdown
         state_map = {}
         for s in all_studies:
-            key = f"{s.get('empresa', '')}|{s.get('produto', '')}"
-            valor = s.get("valor", 0)
-            dose = s.get("dose_ha", 0)
-            rs_ha = dose * valor
-            
-            if key not in product_map:
-                product_map[key] = {
-                    "empresa": s.get("empresa", ""),
-                    "produto": s.get("produto", ""),
-                    "count": 0, "valores": [], "doses": [], "rs_has": []
-                }
-            product_map[key]["count"] += 1
-            product_map[key]["valores"].append(valor)
-            product_map[key]["doses"].append(dose)
-            product_map[key]["rs_has"].append(rs_ha)
-            
             state = s.get("estado", "")
+            valor = s.get("valor", 0)
+            rs_ha = s.get("dose_ha", 0) * valor
             if state not in state_map:
-                state_map[state] = {"estado": state, "count": 0, "valores": [], "rs_has": [], "empresas_set": set()}
+                state_map[state] = {"estado": state, "count": 0, "valores": [], "rs_has": []}
             state_map[state]["count"] += 1
             state_map[state]["valores"].append(valor)
             state_map[state]["rs_has"].append(rs_ha)
-            state_map[state]["empresas_set"].add(s.get("empresa", ""))
-        
-        products = []
-        for p in product_map.values():
-            products.append({
-                "empresa": p["empresa"],
-                "produto": p["produto"],
-                "count": p["count"],
-                "avg_valor": sum(p["valores"]) / len(p["valores"]),
-                "min_valor": min(p["valores"]),
-                "max_valor": max(p["valores"]),
-                "avg_dose": sum(p["doses"]) / len(p["doses"]),
-                "avg_rs_ha": sum(p["rs_has"]) / len(p["rs_has"]),
-                "min_rs_ha": min(p["rs_has"]),
-                "max_rs_ha": max(p["rs_has"]),
-            })
         
         by_state = []
         for st in state_map.values():
@@ -1129,12 +1115,14 @@ async def get_market_studies_dashboard_filtered(
                 "estado": st["estado"],
                 "count": st["count"],
                 "avg_valor": sum(st["valores"]) / len(st["valores"]),
+                "min_valor": min(st["valores"]),
+                "max_valor": max(st["valores"]),
                 "avg_rs_ha": sum(st["rs_has"]) / len(st["rs_has"]),
-                "empresas": sorted(list(st["empresas_set"]))
             })
         
         return {
-            "products": products,
+            "records": records,
+            "summary": summary,
             "by_state": by_state,
             "filter_options": {
                 "empresas": sorted(list(empresas_set)),
