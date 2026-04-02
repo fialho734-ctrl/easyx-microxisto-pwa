@@ -3324,9 +3324,8 @@ function App() {
       <OfflineIndicator />
       <InstallPWAButton />
       
-      {/* Header - hidden on home, visible on other pages */}
-      {currentPage !== 'home' && (
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      {/* Header - mobile: hidden on home. desktop: always visible */}
+      <header className={`bg-white shadow-sm sticky top-0 z-50 ${currentPage === 'home' ? 'hidden lg:block' : ''}`}>
         <div className="container mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
             <img src="/xistoapp-icon.png" alt="XistoApp" className="h-8 w-8 rounded-lg object-cover" />
@@ -3336,7 +3335,7 @@ function App() {
           </div>
           
           {/* Desktop nav links */}
-          <nav className="hidden lg:flex items-center gap-2">
+          <nav className="desktop-only flex items-center gap-2">
             {isLoggedIn && (
               <>
                 {[
@@ -3350,46 +3349,48 @@ function App() {
                   <button
                     key={item.page}
                     onClick={() => setCurrentPage(item.page)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === item.page ? 'bg-green-600 text-white' : 'text-green-700 hover:bg-green-50'}`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === item.page ? 'text-white' : 'hover:bg-green-50'}`}
+                    style={currentPage === item.page ? {backgroundColor: '#004F27', color: '#fff'} : {color: '#004F27'}}
                   >
                     {item.label}
                   </button>
                 ))}
                 {isAdmin && (
-                  <button onClick={() => setCurrentPage('admin')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === 'admin' ? 'bg-green-800 text-white' : 'text-green-800 hover:bg-green-100'}`}>
+                  <button onClick={() => setCurrentPage('admin')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === 'admin' ? 'text-white' : 'hover:bg-green-100'}`}
+                    style={currentPage === 'admin' ? {backgroundColor: '#004F27', color: '#fff'} : {color: '#004F27'}}
+                  >
                     Admin
                   </button>
                 )}
-                <button onClick={handleLogout} className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition ml-2">
+                <button onClick={handleLogout} className="px-3 py-1.5 rounded-lg text-sm font-medium transition ml-2" style={{backgroundColor: '#004F27', color: '#fff'}}>
                   Sair
                 </button>
               </>
             )}
             {!isLoggedIn && (
               <>
-                <button onClick={() => setCurrentPage('login')} className="px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Login</button>
-                <button onClick={() => setCurrentPage('register')} className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Cadastro</button>
+                <button onClick={() => setCurrentPage('login')} className="px-4 py-1.5 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition" style={{backgroundColor: '#004F27'}}>Login</button>
+                <button onClick={() => setCurrentPage('register')} className="px-4 py-1.5 rounded-lg text-sm font-semibold border-2 hover:opacity-90 transition" style={{borderColor: '#004F27', color: '#004F27'}}>Cadastro</button>
               </>
             )}
           </nav>
           
           {/* Mobile auth buttons */}
           {!isLoggedIn && (
-            <div className="flex lg:hidden items-center gap-2">
-              <button onClick={() => setCurrentPage('login')} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Login</button>
-              <button onClick={() => setCurrentPage('register')} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Cadastro</button>
+            <div className="mobile-only flex items-center gap-2">
+              <button onClick={() => setCurrentPage('login')} className="px-3 py-1.5 rounded-lg text-sm font-medium text-white" style={{backgroundColor: '#004F27'}}>Login</button>
+              <button onClick={() => setCurrentPage('register')} className="px-3 py-1.5 rounded-lg text-sm font-medium border-2" style={{borderColor: '#004F27', color: '#004F27'}}>Cadastro</button>
             </div>
           )}
         </div>
       </header>
-      )}
 
       {/* Main Content */}
       <main className={`flex-1 pb-28 lg:pb-8 ${currentPage !== 'home' ? 'container mx-auto px-4 py-4' : ''}`}>
         {currentPage === 'home' && (
           <div>
-            {/* Top section - seamless background */}
-            <div className="max-w-md mx-auto lg:max-w-4xl">
+            {/* === MOBILE HOME === */}
+            <div className="lg:hidden">
               {/* Login/Register buttons when not logged in */}
               {!isLoggedIn && (
                 <div className="flex justify-center gap-3 pt-3 mb-2">
@@ -3400,122 +3401,120 @@ function App() {
               
               {/* Logo + XistoApp */}
               <div className="flex items-center justify-center gap-1 pt-3 mb-2">
-                <img src="/xistoapp-icon.png" alt="XistoApp" className="h-24 w-24 lg:h-28 lg:w-28 rounded-3xl object-cover shadow-lg" />
-                <span className="text-5xl lg:text-6xl font-bold tracking-tight flex items-center">
-                  <img src="/x-logo.png" alt="X" className="h-14 lg:h-16 inline-block" style={{marginRight: '-3px'}} />
+                <img src="/xistoapp-icon.png" alt="XistoApp" className="h-24 w-24 rounded-3xl object-cover shadow-lg" />
+                <span className="text-5xl font-bold tracking-tight flex items-center">
+                  <img src="/x-logo.png" alt="X" className="h-14 inline-block" style={{marginRight: '-3px'}} />
                   <span style={{color: '#004F27'}}>isto</span><span style={{color: '#9BE178'}}>App</span>
                 </span>
               </div>
               
               {/* Welcome */}
-              <h2 className="text-xl lg:text-2xl font-semibold text-center mb-3" style={{color: '#004F27'}}>
+              <h2 className="text-xl font-semibold text-center mb-3" style={{color: '#004F27'}}>
                 Bem-vindo ao XistoApp
               </h2>
+              
+              {/* Rock image */}
+              <div className="w-full overflow-hidden mb-4" style={{backgroundColor: '#EFF8EF'}}>
+                <img src="/xisto-rock.png" alt="Xisto" className="w-full object-contain max-h-52 mx-auto" style={{mixBlendMode: 'multiply'}} />
+              </div>
+              
+              {/* Button Grid 2 cols mobile */}
+              <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto px-4 pt-5 pb-4">
+                {/* Planejamento */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('planejamento'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-planejamento">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><rect x="6" y="28" width="10" height="16" rx="2" fill="#9BE178"/><rect x="19" y="18" width="10" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="6" width="10" height="38" rx="2" fill="#004F27"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Planejamento</span>
+                </button>
+                {/* Culturas */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('cultures'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-culturas">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><ellipse cx="24" cy="42" rx="14" ry="4" fill="#8B6914"/><path d="M24 38V22" stroke="#004F27" strokeWidth="3" strokeLinecap="round"/><path d="M24 28C18 28 15 22 15 18C18 18 22 20 24 24C26 20 30 18 33 18C33 22 30 28 24 28Z" fill="#9BE178"/><path d="M24 22C20 16 22 10 26 8C28 12 28 18 24 22Z" fill="#004F27"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Culturas</span>
+                </button>
+                {/* Mercado */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('estudo-mercado'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-mercado">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><rect x="8" y="26" width="8" height="16" rx="2" fill="#9BE178"/><rect x="20" y="16" width="8" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="8" width="8" height="34" rx="2" fill="#004F27"/><circle cx="38" cy="6" r="4" fill="#9BE178"/><text x="38" y="9" textAnchor="middle" fill="#004F27" fontSize="8" fontWeight="bold">+</text></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Mercado</span>
+                </button>
+                {/* Tecnologias */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-tecnologias">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><path d="M6 38L16 28L24 32L36 14L42 8" stroke="#004F27" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><polygon points="42,4 46,12 38,12" fill="#9BE178"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
+                </button>
+                {/* Portfolio */}
+                <button onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-portfolio">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><rect x="8" y="6" width="32" height="36" rx="4" fill="none" stroke="#004F27" strokeWidth="3"/><path d="M16 16H32M16 24H32M16 32H26" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/><circle cx="36" cy="36" r="8" fill="#9BE178"/><path d="M33 36H39M36 33V39" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Portfolio</span>
+                </button>
+                {/* Comparativo */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-comparativo">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><path d="M8 24C8 24 14 12 24 12C34 12 40 24 40 24" stroke="#004F27" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M40 24C40 24 34 36 24 36C14 36 8 24 8 24" stroke="#9BE178" strokeWidth="3" fill="none" strokeLinecap="round"/><polygon points="40,20 44,24 40,28" fill="#004F27"/><polygon points="8,20 4,24 8,28" fill="#9BE178"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
+                </button>
+              </div>
             </div>
             
-            {/* Rock image - full width, blended background */}
-            <div className="w-full overflow-hidden mb-4" style={{backgroundColor: '#EFF8EF'}}>
-              <img
-                src="/xisto-rock.png"
-                alt="Xisto"
-                className="w-full object-contain max-h-52 lg:max-h-72 mx-auto"
-                style={{mixBlendMode: 'multiply'}}
-              />
-            </div>
-            
-            {/* Button Grid 3x2 */}
-            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto lg:max-w-lg lg:gap-5 px-4 pt-5 pb-4">
-              {/* Planejamento */}
-              <button
-                onClick={() => { if (isLoggedIn) setCurrentPage('planejamento'); else setCurrentPage('login'); }}
-                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100"
-                data-testid="home-btn-planejamento"
-              >
-                <svg viewBox="0 0 48 48" className="w-12 h-12">
-                  <rect x="6" y="28" width="10" height="16" rx="2" fill="#9BE178"/>
-                  <rect x="19" y="18" width="10" height="26" rx="2" fill="#6BBF4E"/>
-                  <rect x="32" y="6" width="10" height="38" rx="2" fill="#004F27"/>
-                </svg>
-                <span className="text-sm font-semibold" style={{color: '#004F27'}}>Planejamento</span>
-              </button>
-              
-              {/* Culturas */}
-              <button
-                onClick={() => { if (isLoggedIn) setCurrentPage('cultures'); else setCurrentPage('login'); }}
-                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100"
-                data-testid="home-btn-culturas"
-              >
-                <svg viewBox="0 0 48 48" className="w-12 h-12">
-                  <ellipse cx="24" cy="42" rx="14" ry="4" fill="#8B6914"/>
-                  <path d="M24 38V22" stroke="#004F27" strokeWidth="3" strokeLinecap="round"/>
-                  <path d="M24 28C18 28 15 22 15 18C18 18 22 20 24 24C26 20 30 18 33 18C33 22 30 28 24 28Z" fill="#9BE178"/>
-                  <path d="M24 22C20 16 22 10 26 8C28 12 28 18 24 22Z" fill="#004F27"/>
-                </svg>
-                <span className="text-sm font-semibold" style={{color: '#004F27'}}>Culturas</span>
-              </button>
-              
-              {/* Mercado (Estudo de Mercado) */}
-              <button
-                onClick={() => { if (isLoggedIn) setCurrentPage('estudo-mercado'); else setCurrentPage('login'); }}
-                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100"
-                data-testid="home-btn-mercado"
-              >
-                <svg viewBox="0 0 48 48" className="w-12 h-12">
-                  <rect x="8" y="26" width="8" height="16" rx="2" fill="#9BE178"/>
-                  <rect x="20" y="16" width="8" height="26" rx="2" fill="#6BBF4E"/>
-                  <rect x="32" y="8" width="8" height="34" rx="2" fill="#004F27"/>
-                  <circle cx="38" cy="6" r="4" fill="#9BE178"/>
-                  <text x="38" y="9" textAnchor="middle" fill="#004F27" fontSize="8" fontWeight="bold">+</text>
-                </svg>
-                <span className="text-sm font-semibold" style={{color: '#004F27'}}>Mercado</span>
-              </button>
-              
-              {/* Tecnologias */}
-              <button
-                onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }}
-                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100"
-                data-testid="home-btn-tecnologias"
-              >
-                <svg viewBox="0 0 48 48" className="w-12 h-12">
-                  <path d="M6 38L16 28L24 32L36 14L42 8" stroke="#004F27" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                  <polygon points="42,4 46,12 38,12" fill="#9BE178"/>
-                </svg>
-                <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
-              </button>
-              
-              {/* Portfolio */}
-              <button
-                onClick={() => {
-                  if (homeContent.pdf_url) {
-                    window.open(homeContent.pdf_url, '_blank');
-                  }
-                }}
-                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100"
-                data-testid="home-btn-portfolio"
-              >
-                <svg viewBox="0 0 48 48" className="w-12 h-12">
-                  <rect x="8" y="6" width="32" height="36" rx="4" fill="none" stroke="#004F27" strokeWidth="3"/>
-                  <path d="M16 16H32M16 24H32M16 32H26" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/>
-                  <circle cx="36" cy="36" r="8" fill="#9BE178"/>
-                  <path d="M33 36H39M36 33V39" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-                <span className="text-sm font-semibold" style={{color: '#004F27'}}>Portfolio</span>
-              </button>
-              
-              {/* Comparativo */}
-              <button
-                onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }}
-                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100"
-                data-testid="home-btn-comparativo"
-              >
-                <svg viewBox="0 0 48 48" className="w-12 h-12">
-                  <path d="M8 24C8 24 14 12 24 12C34 12 40 24 40 24" stroke="#004F27" strokeWidth="3" fill="none" strokeLinecap="round"/>
-                  <path d="M40 24C40 24 34 36 24 36C14 36 8 24 8 24" stroke="#9BE178" strokeWidth="3" fill="none" strokeLinecap="round"/>
-                  <polygon points="40,20 44,24 40,28" fill="#004F27"/>
-                  <polygon points="8,20 4,24 8,28" fill="#9BE178"/>
-                </svg>
-                <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
-              </button>
+            {/* === DESKTOP HOME === */}
+            <div className="hidden lg:block">
+              {/* Hero Section */}
+              <div className="max-w-6xl mx-auto px-8 py-10">
+                <div className="flex items-stretch gap-10">
+                  {/* Left: Branding & Feature Buttons */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    {/* Logo + XistoApp */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <img src="/xistoapp-icon.png" alt="XistoApp" className="h-28 w-28 rounded-3xl object-cover shadow-lg" />
+                        <span className="text-6xl font-bold tracking-tight flex items-center">
+                          <img src="/x-logo.png" alt="X" className="h-16 inline-block" style={{marginRight: '-3px'}} />
+                          <span style={{color: '#004F27'}}>isto</span><span style={{color: '#9BE178'}}>App</span>
+                        </span>
+                      </div>
+                      
+                      <h2 className="text-2xl font-semibold mb-1" style={{color: '#004F27'}}>
+                        Bem-vindo ao XistoApp
+                      </h2>
+                      <p className="text-base mb-6" style={{color: '#4a7c59'}}>
+                        Consulta e comparação de produtos MicroXisto para o agronegócio
+                      </p>
+                    </div>
+                    
+                    {/* Desktop Feature Grid - 3 columns */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('planejamento'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-planejamento">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><rect x="6" y="28" width="10" height="16" rx="2" fill="#9BE178"/><rect x="19" y="18" width="10" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="6" width="10" height="38" rx="2" fill="#004F27"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Planejamento</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('cultures'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-culturas">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><ellipse cx="24" cy="42" rx="14" ry="4" fill="#8B6914"/><path d="M24 38V22" stroke="#004F27" strokeWidth="3" strokeLinecap="round"/><path d="M24 28C18 28 15 22 15 18C18 18 22 20 24 24C26 20 30 18 33 18C33 22 30 28 24 28Z" fill="#9BE178"/><path d="M24 22C20 16 22 10 26 8C28 12 28 18 24 22Z" fill="#004F27"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Culturas</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('estudo-mercado'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-mercado">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><rect x="8" y="26" width="8" height="16" rx="2" fill="#9BE178"/><rect x="20" y="16" width="8" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="8" width="8" height="34" rx="2" fill="#004F27"/><circle cx="38" cy="6" r="4" fill="#9BE178"/><text x="38" y="9" textAnchor="middle" fill="#004F27" fontSize="8" fontWeight="bold">+</text></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Mercado</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-tecnologias">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><path d="M6 38L16 28L24 32L36 14L42 8" stroke="#004F27" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><polygon points="42,4 46,12 38,12" fill="#9BE178"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
+                      </button>
+                      <button onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-portfolio">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><rect x="8" y="6" width="32" height="36" rx="4" fill="none" stroke="#004F27" strokeWidth="3"/><path d="M16 16H32M16 24H32M16 32H26" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/><circle cx="36" cy="36" r="8" fill="#9BE178"/><path d="M33 36H39M36 33V39" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Portfolio</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-comparativo">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><path d="M8 24C8 24 14 12 24 12C34 12 40 24 40 24" stroke="#004F27" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M40 24C40 24 34 36 24 36C14 36 8 24 8 24" stroke="#9BE178" strokeWidth="3" fill="none" strokeLinecap="round"/><polygon points="40,20 44,24 40,28" fill="#004F27"/><polygon points="8,20 4,24 8,28" fill="#9BE178"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Right: Rock Image */}
+                  <div className="flex-shrink-0 w-[440px] flex items-center">
+                    <div className="w-full rounded-2xl overflow-hidden p-4" style={{backgroundColor: '#EFF8EF'}}>
+                      <img src="/xisto-rock.png" alt="Xisto" className="w-full object-contain" style={{mixBlendMode: 'multiply', maxHeight: '480px'}} />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
