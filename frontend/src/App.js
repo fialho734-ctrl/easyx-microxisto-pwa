@@ -135,27 +135,21 @@ const UpdateNotification = () => {
 const InstallPWAButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Detectar iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
-    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-                              window.navigator.standalone === true;
+    const inStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
+                            window.navigator.standalone === true;
     
     setIsIOS(isIOSDevice);
-    
-    // Se é iOS e não está instalado, mostra instruções APENAS depois de um tempo
-    if (isIOSDevice && !isInStandaloneMode) {
-      // Aguarda 5 segundos para não interferir com autenticação
-      setTimeout(() => {
-        setShowIOSInstructions(true);
-      }, 5000);
-    }
+    setIsStandalone(inStandaloneMode);
 
+    // Android/Chrome: capture the install prompt
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -164,20 +158,24 @@ const InstallPWAButton = () => {
 
     const handleAppInstalled = () => {
       setShowInstallButton(false);
-      setShowIOSInstructions(false);
+      setShowInstructions(false);
       setDeferredPrompt(null);
+      setIsStandalone(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    // Show install button for iOS if not already installed
+    if (isIOSDevice && !inStandaloneMode) {
+      setShowInstallButton(true);
+    }
+
     // Trigger cache dinâmico após carregamento
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Aguarda 3 segundos para não atrapalhar carregamento inicial
         setTimeout(() => {
           registration.active?.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
-          console.log('🔄 Iniciando cache offline dos dados essenciais...');
         }, 3000);
       });
     }
@@ -190,112 +188,114 @@ const InstallPWAButton = () => {
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
+      // Android/Chrome: trigger native install prompt
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(`PWA install result: ${outcome}`);
-      setDeferredPrompt(null);
-      setShowInstallButton(false);
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setShowInstallButton(false);
+      }
+    } else if (isIOS) {
+      // iOS: show manual instructions
+      setShowInstructions(true);
     }
   };
 
-  const handleIOSInstallClick = () => {
-    setShowIOSInstructions(!showIOSInstructions);
-  };
+  // Don't show if already installed
+  if (isStandalone || !showInstallButton) return null;
 
-  // Botão Android/Chrome (automático)
-  if (showInstallButton && !isIOS) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
+  return (
+    <>
+      <div className="fixed bottom-20 right-4 z-50 lg:bottom-4">
         <button
           onClick={handleInstallClick}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 text-sm flex items-center space-x-2"
+          className="text-white px-4 py-2.5 rounded-xl shadow-lg text-sm flex items-center gap-2 font-semibold"
+          style={{backgroundColor: '#004F27'}}
+          data-testid="install-pwa-btn"
         >
-          <span>📱</span>
-          <span>Instalar App</span>
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/><path d="M12 15l4-4h-3V8h-2v3H8l4 4z"/></svg>
+          Instalar App
         </button>
       </div>
-    );
-  }
-
-  // Botão iOS (manual com instruções)
-  if (showIOSInstructions && isIOS) {
-    return (
-      <>
-        <div className="fixed bottom-4 right-4 z-50">
-          <button
-            onClick={handleIOSInstallClick}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 text-sm flex items-center space-x-2"
-          >
-            <span>🍎</span>
-            <span>Instalar iOS</span>
-          </button>
-        </div>
-        
-        {showIOSInstructions && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">📱 Instalar no iPhone</h3>
-                <p className="text-sm text-gray-600">Para usar como app nativo:</p>
+      
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] p-4" onClick={() => setShowInstructions(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{backgroundColor: '#EFF8EF'}}>
+                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#004F27"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
               </div>
-              
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <span className="text-blue-600 font-bold">1</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Toque no botão Compartilhar</p>
-                    <p className="text-gray-500">📤 Na barra inferior do Safari</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <span className="text-blue-600 font-bold">2</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Role para baixo</p>
-                    <p className="text-gray-500">Encontre "Adicionar à Tela de Início"</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <span className="text-blue-600 font-bold">3</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Toque "Adicionar"</p>
-                    <p className="text-gray-500">O EasyX aparecerá na sua tela inicial!</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex space-x-3">
-                <button
-                  onClick={() => setShowIOSInstructions(false)}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => {
-                    setShowIOSInstructions(false);
-                    alert('Use o botão Compartilhar 📤 do Safari para instalar!');
-                  }}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
-                >
-                  Entendi
-                </button>
-              </div>
+              <h3 className="text-lg font-bold" style={{color: '#004F27'}}>Instalar XistoApp</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {isIOS ? 'Siga os passos abaixo no Safari:' : 'Siga os passos abaixo:'}
+              </p>
             </div>
+            
+            {isIOS ? (
+              /* iOS Instructions */
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>1</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Toque no botão Compartilhar</p>
+                    <p className="text-gray-500">O quadrado com a seta para cima na barra do Safari</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>2</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Selecione "Adicionar à Tela de Início"</p>
+                    <p className="text-gray-500">Role o menu até encontrar esta opção</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>3</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Toque em "Adicionar"</p>
+                    <p className="text-gray-500">O XistoApp vai aparecer na sua tela inicial como um app!</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Android Instructions */
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>1</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Abra o menu do navegador</p>
+                    <p className="text-gray-500">Toque nos 3 pontos no canto superior direito do Chrome</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>2</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Selecione "Instalar aplicativo"</p>
+                    <p className="text-gray-500">Ou "Adicionar à tela inicial"</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>3</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Confirme a instalação</p>
+                    <p className="text-gray-500">O XistoApp vai aparecer na sua tela inicial como um app!</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <button
+              onClick={() => setShowInstructions(false)}
+              className="w-full mt-6 py-2.5 rounded-xl text-white font-semibold text-sm"
+              style={{backgroundColor: '#004F27'}}
+            >
+              Entendi!
+            </button>
           </div>
-        )}
-      </>
-    );
-  }
-
-  return null;
+        </div>
+      )}
+    </>
+  );
 };
 
 // Admin Components
@@ -2629,6 +2629,24 @@ function App() {
     }
   }, [currentPage, isAdmin, token]);
 
+  // Security: prevent non-admin users from accessing admin page
+  useEffect(() => {
+    if (currentPage === 'admin') {
+      if (!token) {
+        setCurrentPage('home');
+        return;
+      }
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.is_admin !== true) {
+          setCurrentPage('home');
+        }
+      } catch {
+        setCurrentPage('home');
+      }
+    }
+  }, [currentPage, token]);
+
   const checkMaintenanceMode = async () => {
     try {
       const response = await fetch(`${API_BASE}/api/maintenance-status`, {
@@ -2790,11 +2808,25 @@ function App() {
 
   const checkAuthStatus = () => {
     const storedToken = localStorage.getItem('token');
-    const adminStatus = localStorage.getItem('isAdmin') === 'true';
     if (storedToken) {
-      setToken(storedToken);
-      setIsLoggedIn(true);
-      setIsAdmin(adminStatus);
+      try {
+        // Decode JWT to verify is_admin from the SIGNED token, not localStorage
+        const payload = JSON.parse(atob(storedToken.split('.')[1]));
+        // Check token expiration
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          // Token expired - force logout
+          localStorage.removeItem('token');
+          localStorage.removeItem('isAdmin');
+          return;
+        }
+        setToken(storedToken);
+        setIsLoggedIn(true);
+        setIsAdmin(payload.is_admin === true);
+      } catch (e) {
+        // Invalid token - force logout
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
+      }
     }
   };
 
@@ -3437,7 +3469,7 @@ function App() {
                 </button>
                 {/* Tecnologias */}
                 <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-tecnologias">
-                  <svg viewBox="0 0 48 48" className="w-12 h-12"><path d="M6 38L16 28L24 32L36 14L42 8" stroke="#004F27" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><polygon points="42,4 46,12 38,12" fill="#9BE178"/></svg>
+                  <img src="/icon-tecnologias.png" alt="Tecnologias" className="w-14 h-14 rounded-xl object-cover shadow-sm" />
                   <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
                 </button>
                 {/* Portfolio */}
@@ -3447,7 +3479,7 @@ function App() {
                 </button>
                 {/* Comparativo */}
                 <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-comparativo">
-                  <svg viewBox="0 0 48 48" className="w-12 h-12"><path d="M8 24C8 24 14 12 24 12C34 12 40 24 40 24" stroke="#004F27" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M40 24C40 24 34 36 24 36C14 36 8 24 8 24" stroke="#9BE178" strokeWidth="3" fill="none" strokeLinecap="round"/><polygon points="40,20 44,24 40,28" fill="#004F27"/><polygon points="8,20 4,24 8,28" fill="#9BE178"/></svg>
+                  <img src="/icon-comparativo.png" alt="Comparativo" className="w-14 h-14 rounded-xl object-cover shadow-sm" />
                   <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
                 </button>
               </div>
@@ -3493,7 +3525,7 @@ function App() {
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Mercado</span>
                       </button>
                       <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-tecnologias">
-                        <svg viewBox="0 0 48 48" className="w-11 h-11"><path d="M6 38L16 28L24 32L36 14L42 8" stroke="#004F27" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><polygon points="42,4 46,12 38,12" fill="#9BE178"/></svg>
+                        <img src="/icon-tecnologias.png" alt="Tecnologias" className="w-12 h-12 rounded-xl object-cover shadow-sm" />
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
                       </button>
                       <button onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-portfolio">
@@ -3501,7 +3533,7 @@ function App() {
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Portfolio</span>
                       </button>
                       <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-comparativo">
-                        <svg viewBox="0 0 48 48" className="w-11 h-11"><path d="M8 24C8 24 14 12 24 12C34 12 40 24 40 24" stroke="#004F27" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M40 24C40 24 34 36 24 36C14 36 8 24 8 24" stroke="#9BE178" strokeWidth="3" fill="none" strokeLinecap="round"/><polygon points="40,20 44,24 40,28" fill="#004F27"/><polygon points="8,20 4,24 8,28" fill="#9BE178"/></svg>
+                        <img src="/icon-comparativo.png" alt="Comparativo" className="w-12 h-12 rounded-xl object-cover shadow-sm" />
                         <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
                       </button>
                     </div>
