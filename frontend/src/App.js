@@ -3318,126 +3318,179 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Componentes PWA */}
       <UpdateNotification />
       <OfflineIndicator />
       <InstallPWAButton />
       
-      {/* Header */}
-      <header className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            {/* Logo e Título */}
-            <div className="flex items-center justify-center lg:justify-start mb-4 lg:mb-0 pt-2">
-              <img src="https://i.imgur.com/lwNbD0G.png" alt="MicroXisto" className="h-10 lg:h-12" />
-            </div>
-            
-            {/* Navigation */}
-            <nav className="flex flex-col lg:flex-row items-center lg:space-x-4 space-y-2 lg:space-y-0">
-              <div className="flex flex-wrap justify-center lg:justify-start gap-2 lg:gap-4">
-                <button
-                  onClick={() => setCurrentPage('home')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'home' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  Início
-                </button>
-                <button
-                  onClick={() => setCurrentPage('technologies')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'technologies' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  Tecnologias
-                </button>
-                <button
-                  onClick={() => setCurrentPage('cultures')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'cultures' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  🌾 Culturas
-                </button>
-                <button
-                  onClick={() => setCurrentPage('planejamento')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'planejamento' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  📊 Planejamento
-                </button>
-                <button
-                  onClick={() => setCurrentPage('comparison')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'comparison' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                  data-testid="nav-comparison"
-                >
-                  Comparativo
-                </button>
-                <button
-                  onClick={() => setCurrentPage('estudo-mercado')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'estudo-mercado' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                  data-testid="nav-market-study"
-                >
-                  Estudo de Mercado
-                </button>
-                {isLoggedIn && (
+      {/* Header - compact with logo */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentPage('home')}>
+            <img src="/xistoapp-icon.png" alt="XistoApp" className="h-9 w-9 rounded-full object-cover" />
+            <span className="text-xl font-bold text-green-800 tracking-tight">XistoApp</span>
+          </div>
+          
+          {/* Desktop nav links */}
+          <nav className="hidden lg:flex items-center gap-2">
+            {isLoggedIn && (
+              <>
+                {[
+                  { page: 'home', label: 'Início' },
+                  { page: 'technologies', label: 'Tecnologias' },
+                  { page: 'cultures', label: 'Culturas' },
+                  { page: 'planejamento', label: 'Planejamento' },
+                  { page: 'comparison', label: 'Comparativo' },
+                  { page: 'estudo-mercado', label: 'Estudo de Mercado' },
+                ].map(item => (
                   <button
-                    onClick={handleLogout}
-                    className="px-3 lg:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm lg:text-base"
+                    key={item.page}
+                    onClick={() => setCurrentPage(item.page)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === item.page ? 'bg-green-600 text-white' : 'text-green-700 hover:bg-green-50'}`}
                   >
-                    Sair
+                    {item.label}
+                  </button>
+                ))}
+                {isAdmin && (
+                  <button onClick={() => setCurrentPage('admin')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === 'admin' ? 'bg-green-800 text-white' : 'text-green-800 hover:bg-green-100'}`}>
+                    Admin
                   </button>
                 )}
-              </div>
-              
-              {/* Auth buttons */}
-              <div className="flex items-center space-x-2 mt-2 lg:mt-0">
-                {isLoggedIn ? (
-                  <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-2">
-                    {isAdmin && (
-                      <button
-                        onClick={() => setCurrentPage('admin')}
-                        className="px-3 lg:px-4 py-2 bg-green-800 text-white rounded-lg hover:bg-green-900 text-sm lg:text-base"
-                      >
-                        Admin
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col lg:flex-row gap-2">
-                    <button
-                      onClick={() => setCurrentPage('login')}
-                      className="px-3 lg:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm lg:text-base"
-                    >
-                      Login
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage('register')}
-                      className="px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm lg:text-base"
-                    >
-                      Cadastro
-                    </button>
-                  </div>
-                )}
-              </div>
-            </nav>
-          </div>
+                <button onClick={handleLogout} className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition ml-2">
+                  Sair
+                </button>
+              </>
+            )}
+            {!isLoggedIn && (
+              <>
+                <button onClick={() => setCurrentPage('login')} className="px-4 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Login</button>
+                <button onClick={() => setCurrentPage('register')} className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Cadastro</button>
+              </>
+            )}
+          </nav>
+          
+          {/* Mobile auth buttons */}
+          {!isLoggedIn && (
+            <div className="flex lg:hidden items-center gap-2">
+              <button onClick={() => setCurrentPage('login')} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">Login</button>
+              <button onClick={() => setCurrentPage('register')} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Cadastro</button>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-6 pb-24 lg:pb-8">
         {currentPage === 'home' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-6 lg:p-8 text-center">
-              <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6 object-contain" />
-              <div className="prose max-w-none">
-                <p className="text-base lg:text-lg text-gray-700 mb-6">{homeContent.text}</p>
-                {homeContent.pdf_url && (
-                  <a
-                    href={homeContent.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
-                  >
-                    Baixar Portfólio
-                  </a>
-                )}
-              </div>
+          <div className="max-w-md mx-auto lg:max-w-4xl">
+            {/* Welcome */}
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800 text-center mb-5">
+              Bem-vindo ao XistoApp
+            </h2>
+            
+            {/* Hero image */}
+            <div className="rounded-2xl overflow-hidden shadow-lg mb-6 mx-auto max-w-sm lg:max-w-lg">
+              <img
+                src="https://static.prod-images.emergentagent.com/jobs/2520cdd8-2453-493e-bf61-832ca1e2e082/images/10ddc2a96ea50ec8a4c6916b79175d73f8309bcb5c78606b9463793af82aa5f2.png"
+                alt="Xisto"
+                className="w-full h-48 lg:h-64 object-cover"
+              />
+            </div>
+            
+            {/* Button Grid 3x2 */}
+            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto lg:max-w-lg lg:gap-5">
+              {/* Planejamento */}
+              <button
+                onClick={() => { if (isLoggedIn) setCurrentPage('planejamento'); else setCurrentPage('login'); }}
+                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95"
+                data-testid="home-btn-planejamento"
+              >
+                <svg viewBox="0 0 48 48" className="w-12 h-12">
+                  <rect x="6" y="28" width="10" height="16" rx="2" fill="#FBBF24"/>
+                  <rect x="19" y="18" width="10" height="26" rx="2" fill="#86EFAC"/>
+                  <rect x="32" y="6" width="10" height="38" rx="2" fill="#166534"/>
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Planejamento</span>
+              </button>
+              
+              {/* Culturas */}
+              <button
+                onClick={() => { if (isLoggedIn) setCurrentPage('cultures'); else setCurrentPage('login'); }}
+                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95"
+                data-testid="home-btn-culturas"
+              >
+                <svg viewBox="0 0 48 48" className="w-12 h-12">
+                  <ellipse cx="24" cy="42" rx="14" ry="4" fill="#92400E"/>
+                  <path d="M24 38V22" stroke="#166534" strokeWidth="3" strokeLinecap="round"/>
+                  <path d="M24 28C18 28 15 22 15 18C18 18 22 20 24 24C26 20 30 18 33 18C33 22 30 28 24 28Z" fill="#22C55E"/>
+                  <path d="M24 22C20 16 22 10 26 8C28 12 28 18 24 22Z" fill="#16A34A"/>
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Culturas</span>
+              </button>
+              
+              {/* Mercado (Estudo de Mercado) */}
+              <button
+                onClick={() => { if (isLoggedIn) setCurrentPage('estudo-mercado'); else setCurrentPage('login'); }}
+                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95"
+                data-testid="home-btn-mercado"
+              >
+                <svg viewBox="0 0 48 48" className="w-12 h-12">
+                  <rect x="8" y="26" width="8" height="16" rx="2" fill="#166534"/>
+                  <rect x="20" y="16" width="8" height="26" rx="2" fill="#166534"/>
+                  <rect x="32" y="8" width="8" height="34" rx="2" fill="#166534"/>
+                  <circle cx="38" cy="6" r="4" fill="#22C55E"/>
+                  <text x="38" y="9" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">+</text>
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Mercado</span>
+              </button>
+              
+              {/* Tecnologias */}
+              <button
+                onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }}
+                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95"
+                data-testid="home-btn-tecnologias"
+              >
+                <svg viewBox="0 0 48 48" className="w-12 h-12">
+                  <path d="M6 38L16 28L24 32L36 14L42 8" stroke="#166534" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  <polygon points="42,4 46,12 38,12" fill="#166534"/>
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Tecnologias</span>
+              </button>
+              
+              {/* Portfolio */}
+              <button
+                onClick={() => {
+                  if (homeContent.pdf_url) {
+                    window.open(homeContent.pdf_url, '_blank');
+                  }
+                }}
+                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95"
+                data-testid="home-btn-portfolio"
+              >
+                <svg viewBox="0 0 48 48" className="w-12 h-12">
+                  <rect x="8" y="6" width="32" height="36" rx="4" fill="none" stroke="#166534" strokeWidth="3"/>
+                  <path d="M16 16H32M16 24H32M16 32H26" stroke="#166534" strokeWidth="2" strokeLinecap="round"/>
+                  <circle cx="36" cy="36" r="8" fill="#22C55E"/>
+                  <path d="M33 36H39M36 33V39" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Portfolio</span>
+              </button>
+              
+              {/* Comparativo */}
+              <button
+                onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }}
+                className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95"
+                data-testid="home-btn-comparativo"
+              >
+                <svg viewBox="0 0 48 48" className="w-12 h-12">
+                  <path d="M8 24C8 24 14 12 24 12C34 12 40 24 40 24" stroke="#166534" strokeWidth="3" fill="none" strokeLinecap="round"/>
+                  <path d="M40 24C40 24 34 36 24 36C14 36 8 24 8 24" stroke="#22C55E" strokeWidth="3" fill="none" strokeLinecap="round"/>
+                  <polygon points="40,20 44,24 40,28" fill="#166534"/>
+                  <polygon points="8,20 4,24 8,28" fill="#22C55E"/>
+                </svg>
+                <span className="text-sm font-semibold text-gray-800">Comparativo</span>
+              </button>
             </div>
           </div>
         )}
@@ -5270,6 +5323,44 @@ function App() {
           </div>
         )}
       </main>
+      
+      {/* Bottom Navigation - Mobile only */}
+      {isLoggedIn && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-50" data-testid="bottom-nav">
+          <div className="flex justify-around items-center py-2">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 ${currentPage === 'home' ? 'text-green-700' : 'text-gray-500'}`}
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span className="text-xs font-medium">Inicio</span>
+            </button>
+            <button
+              onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }}
+              className="flex flex-col items-center gap-0.5 px-3 py-1 text-gray-500"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+              <span className="text-xs font-medium">Portfolio</span>
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setCurrentPage('admin')}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 ${currentPage === 'admin' ? 'text-green-700' : 'text-gray-500'}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                <span className="text-xs font-medium">Admin</span>
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center gap-0.5 px-3 py-1 text-red-500"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              <span className="text-xs font-medium">Sair</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }
