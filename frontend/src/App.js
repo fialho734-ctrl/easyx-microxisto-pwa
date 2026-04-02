@@ -3324,7 +3324,8 @@ function App() {
       <OfflineIndicator />
       <InstallPWAButton />
       
-      {/* Header - compact with logo */}
+      {/* Header - hidden on home, visible on other pages */}
+      {currentPage !== 'home' && (
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
@@ -3381,35 +3382,49 @@ function App() {
           )}
         </div>
       </header>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-6 pb-24 lg:pb-8">
+      <main className={`flex-1 pb-28 lg:pb-8 ${currentPage !== 'home' ? 'container mx-auto px-4 py-4' : ''}`}>
         {currentPage === 'home' && (
-          <div className="max-w-md mx-auto lg:max-w-4xl">
-            {/* Logo + XistoApp - estilo da arte */}
-            <div className="flex items-center justify-center gap-2 mb-2 mt-2">
-              <img src="/xistoapp-icon.png" alt="XistoApp" className="h-16 w-16 lg:h-20 lg:w-20 rounded-2xl object-cover shadow-md" />
-              <span className="text-4xl lg:text-5xl font-bold tracking-tight" style={{color: '#004F27'}}>
-                <span style={{color: '#004F27'}}>Xisto</span><span style={{color: '#9BE178'}}>App</span>
-              </span>
+          <div>
+            {/* Top section - seamless background */}
+            <div className="max-w-md mx-auto lg:max-w-4xl">
+              {/* Login/Register buttons when not logged in */}
+              {!isLoggedIn && (
+                <div className="flex justify-center gap-3 pt-3 mb-2">
+                  <button onClick={() => setCurrentPage('login')} className="px-5 py-2 rounded-lg text-sm font-semibold text-white" style={{backgroundColor: '#004F27'}}>Login</button>
+                  <button onClick={() => setCurrentPage('register')} className="px-5 py-2 rounded-lg text-sm font-semibold border-2" style={{borderColor: '#004F27', color: '#004F27'}}>Cadastro</button>
+                </div>
+              )}
+              
+              {/* Logo + XistoApp */}
+              <div className="flex items-center justify-center gap-1 pt-3 mb-2">
+                <img src="/xistoapp-icon.png" alt="XistoApp" className="h-16 w-16 lg:h-20 lg:w-20 rounded-2xl object-cover shadow-md" />
+                <span className="text-4xl lg:text-5xl font-bold tracking-tight flex items-center">
+                  <img src="/x-logo.png" alt="X" className="h-11 lg:h-14 inline-block" style={{marginRight: '-3px'}} />
+                  <span style={{color: '#004F27'}}>isto</span><span style={{color: '#9BE178'}}>App</span>
+                </span>
+              </div>
+              
+              {/* Welcome */}
+              <h2 className="text-xl lg:text-2xl font-semibold text-center mb-3" style={{color: '#004F27'}}>
+                Bem-vindo ao XistoApp
+              </h2>
             </div>
             
-            {/* Welcome */}
-            <h2 className="text-xl lg:text-2xl font-semibold text-center mb-5" style={{color: '#004F27'}}>
-              Bem-vindo ao XistoApp
-            </h2>
-            
-            {/* Hero image - rocha xisto */}
-            <div className="rounded-2xl overflow-hidden shadow-lg mb-6 mx-auto max-w-xs lg:max-w-md bg-white">
+            {/* Rock image - full width, blended background */}
+            <div className="w-full overflow-hidden mb-4" style={{backgroundColor: '#EFF8EF'}}>
               <img
                 src="/xisto-rock.png"
                 alt="Xisto"
-                className="w-full object-contain"
+                className="w-full object-contain max-h-52 lg:max-h-72 mx-auto"
+                style={{mixBlendMode: 'multiply'}}
               />
             </div>
             
             {/* Button Grid 3x2 */}
-            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto lg:max-w-lg lg:gap-5">
+            <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto lg:max-w-lg lg:gap-5 px-4 pt-5 pb-4">
               {/* Planejamento */}
               <button
                 onClick={() => { if (isLoggedIn) setCurrentPage('planejamento'); else setCurrentPage('login'); }}
