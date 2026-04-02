@@ -3400,9 +3400,9 @@ function App() {
               
               {/* Logo + XistoApp */}
               <div className="flex items-center justify-center gap-1 pt-3 mb-2">
-                <img src="/xistoapp-icon.png" alt="XistoApp" className="h-16 w-16 lg:h-20 lg:w-20 rounded-2xl object-cover shadow-md" />
-                <span className="text-4xl lg:text-5xl font-bold tracking-tight flex items-center">
-                  <img src="/x-logo.png" alt="X" className="h-11 lg:h-14 inline-block" style={{marginRight: '-3px'}} />
+                <img src="/xistoapp-icon.png" alt="XistoApp" className="h-24 w-24 lg:h-28 lg:w-28 rounded-3xl object-cover shadow-lg" />
+                <span className="text-5xl lg:text-6xl font-bold tracking-tight flex items-center">
+                  <img src="/x-logo.png" alt="X" className="h-14 lg:h-16 inline-block" style={{marginRight: '-3px'}} />
                   <span style={{color: '#004F27'}}>isto</span><span style={{color: '#9BE178'}}>App</span>
                 </span>
               </div>
