@@ -452,6 +452,7 @@ async def create_culture(culture: Culture, credentials: HTTPAuthorizationCredent
         culture_data["created_at"] = datetime.utcnow()
         
         await db.cultures.insert_one(culture_data)
+        culture_data.pop("_id", None)
         return {"message": "Culture created successfully", "culture": culture_data}
     
     except jwt.InvalidTokenError:
@@ -466,8 +467,8 @@ async def update_culture(culture_id: str, culture: Culture, credentials: HTTPAut
         if not payload.get("is_admin"):
             raise HTTPException(status_code=403, detail="Admin access required")
         
-        # Update culture
-        culture_data = culture.dict()
+        # Update culture - exclude id to preserve the original
+        culture_data = culture.dict(exclude={"id"})
         culture_data["updated_at"] = datetime.utcnow()
         
         result = await db.cultures.update_one(
@@ -530,7 +531,7 @@ async def create_planejamento(planejamento: Planejamento, credentials: HTTPAutho
         planejamento_data["created_at"] = datetime.utcnow().isoformat()
         
         await db.planejamentos.insert_one(planejamento_data)
-        
+        planejamento_data.pop("_id", None)
         return planejamento_data
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")

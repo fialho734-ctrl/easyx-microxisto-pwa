@@ -4183,14 +4183,22 @@ function App() {
                                 doc.addImage(PDF_ASSETS.topDecoration, 'PNG', 210, 0, 330, 273);
                               } catch(e) {}
                               
-                              // Register EurostileEF Black font (TTF)
-                              doc.addFileToVFS('EurostileEF-Black.ttf', EUROSTILE_FONT);
-                              doc.addFont('EurostileEF-Black.ttf', 'EurostileEF', 'normal');
+                              // Register EurostileEF Black font (TTF) - fallback to helvetica if not available
+                              let titleFont = 'helvetica';
+                              let titleStyle = 'bold';
+                              if (EUROSTILE_FONT && EUROSTILE_FONT.length > 100) {
+                                try {
+                                  doc.addFileToVFS('EurostileEF-Black.ttf', EUROSTILE_FONT);
+                                  doc.addFont('EurostileEF-Black.ttf', 'EurostileEF', 'normal');
+                                  titleFont = 'EurostileEF';
+                                  titleStyle = 'normal';
+                                } catch(e) {}
+                              }
                               
-                              // Title - cor #002F17 com EurostileEF Black
-                              doc.setFont('EurostileEF', 'normal');
+                              // Title - cor #002F17
+                              doc.setFont(titleFont, titleStyle);
                               doc.setFontSize(20);
-                              doc.setTextColor(0, 47, 23); // #002F17
+                              doc.setTextColor(0, 0, 0);
                               doc.text('Plano de manejo MicroXisto', 145, 52);
                               
                               // Planning info
