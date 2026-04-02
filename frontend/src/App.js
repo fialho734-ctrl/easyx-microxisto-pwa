@@ -3318,7 +3318,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{backgroundColor: '#EFF8EF'}}>
       {/* Componentes PWA */}
       <UpdateNotification />
       <OfflineIndicator />
@@ -3389,13 +3389,18 @@ function App() {
               Bem-vindo ao XistoApp
             </h2>
             
-            {/* Hero image - rocha xisto com fundo discreto */}
-            <div className="rounded-2xl overflow-hidden shadow-lg mb-6 mx-auto max-w-sm lg:max-w-lg" style={{background: 'linear-gradient(135deg, #f0f7f0 0%, #e8f5e8 50%, #f5f5f5 100%)'}}>
-              <img
-                src="/xisto-rock.png"
-                alt="Xisto"
-                className="w-full h-48 lg:h-64 object-contain p-4"
-              />
+            {/* Hero image - rocha xisto com gramado */}
+            <div className="rounded-2xl overflow-hidden shadow-lg mb-6 mx-auto max-w-sm lg:max-w-lg relative" style={{background: '#e8f0e8'}}>
+              <div className="relative flex items-end justify-center pt-4" style={{height: '220px'}}>
+                <img
+                  src="/xisto-rock.png"
+                  alt="Xisto"
+                  className="relative z-10 object-contain"
+                  style={{maxHeight: '180px', maxWidth: '85%'}}
+                />
+              </div>
+              {/* Gramado */}
+              <div style={{height: '30px', background: 'linear-gradient(to bottom, #7BC67B, #5BA85B)', borderRadius: '50% 50% 0 0', marginTop: '-8px', position: 'relative', zIndex: 5}}></div>
             </div>
             
             {/* Button Grid 3x2 */}
@@ -5335,13 +5340,6 @@ function App() {
             >
               <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
               <span className="text-xs font-medium">Inicio</span>
-            </button>
-            <button
-              onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }}
-              className="flex flex-col items-center gap-0.5 px-3 py-1 text-gray-400"
-            >
-              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
-              <span className="text-xs font-medium">Portfolio</span>
             </button>
             {isAdmin && (
               <button
