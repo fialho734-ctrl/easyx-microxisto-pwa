@@ -2534,7 +2534,7 @@ function App() {
   const [dashboardData, setDashboardData] = useState(null);
   const [userActivity, setUserActivity] = useState([]);
   const [dashboardFilters, setDashboardFilters] = useState({ estado: '', empresa: '', produto: '', venda: '' });
-  const [filterOptions, setFilterOptions] = useState({ empresas: [], estados: [], produtos: [], vendas: [] });
+  const [filterOptions, setFilterOptions] = useState({ empresas: [], estados: [], produtos: [], vendas: [], produtos_by_empresa: {} });
 
 
   // Propósito options - NOVA FUNCIONALIDADE
@@ -5060,7 +5060,7 @@ function App() {
                       <label className="block text-xs text-gray-600 mb-1">Empresa</label>
                       <select
                         value={dashboardFilters.empresa}
-                        onChange={(e) => setDashboardFilters({...dashboardFilters, empresa: e.target.value})}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, empresa: e.target.value, produto: ''})}
                         className="w-full px-2 py-1.5 border rounded text-sm"
                         data-testid="filter-empresa"
                       >
@@ -5079,7 +5079,10 @@ function App() {
                         data-testid="filter-produto"
                       >
                         <option value="">Todos</option>
-                        {filterOptions.produtos.map(p => (
+                        {(dashboardFilters.empresa && filterOptions.produtos_by_empresa
+                          ? (filterOptions.produtos_by_empresa[dashboardFilters.empresa] || [])
+                          : filterOptions.produtos
+                        ).map(p => (
                           <option key={p} value={p}>{p}</option>
                         ))}
                       </select>

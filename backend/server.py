@@ -1067,12 +1067,18 @@ async def get_market_studies_dashboard_filtered(
         estados_set = set()
         produtos_set = set()
         vendas_set = set()
+        produtos_by_empresa = {}
         for s in all_for_filters:
-            empresas_set.add(s.get("empresa", ""))
+            emp = s.get("empresa", "")
+            prod = s.get("produto", "")
+            empresas_set.add(emp)
             estados_set.add(s.get("estado", ""))
-            produtos_set.add(s.get("produto", ""))
+            produtos_set.add(prod)
             if s.get("venda"):
                 vendas_set.add(s.get("venda", ""))
+            if emp not in produtos_by_empresa:
+                produtos_by_empresa[emp] = set()
+            produtos_by_empresa[emp].add(prod)
         
         # Aggregate by empresa+produto
         product_map = {}
@@ -1134,7 +1140,8 @@ async def get_market_studies_dashboard_filtered(
                 "empresas": sorted(list(empresas_set)),
                 "estados": sorted(list(estados_set)),
                 "produtos": sorted(list(produtos_set)),
-                "vendas": sorted(list(vendas_set))
+                "vendas": sorted(list(vendas_set)),
+                "produtos_by_empresa": {k: sorted(list(v)) for k, v in produtos_by_empresa.items()}
             }
         }
     except jwt.InvalidTokenError:
