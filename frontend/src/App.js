@@ -2533,8 +2533,8 @@ function App() {
   // Dashboard data
   const [dashboardData, setDashboardData] = useState(null);
   const [userActivity, setUserActivity] = useState([]);
-  const [dashboardFilters, setDashboardFilters] = useState({ estado: '', empresa: '', data_inicio: '', data_fim: '' });
-  const [filterOptions, setFilterOptions] = useState({ empresas: [], estados: [] });
+  const [dashboardFilters, setDashboardFilters] = useState({ estado: '', empresa: '', produto: '', venda: '' });
+  const [filterOptions, setFilterOptions] = useState({ empresas: [], estados: [], produtos: [], vendas: [] });
 
 
   // Propósito options - NOVA FUNCIONALIDADE
@@ -2742,8 +2742,8 @@ function App() {
         const params = new URLSearchParams();
         if (dashboardFilters.estado) params.append('estado', dashboardFilters.estado);
         if (dashboardFilters.empresa) params.append('empresa', dashboardFilters.empresa);
-        if (dashboardFilters.data_inicio) params.append('data_inicio', dashboardFilters.data_inicio);
-        if (dashboardFilters.data_fim) params.append('data_fim', dashboardFilters.data_fim);
+        if (dashboardFilters.produto) params.append('produto', dashboardFilters.produto);
+        if (dashboardFilters.venda) params.append('venda', dashboardFilters.venda);
         const url = `${API_BASE}/api/admin/market-studies/dashboard-filtered${params.toString() ? '?' + params.toString() : ''}`;
         const response = await fetch(url, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -4660,22 +4660,8 @@ function App() {
                     {/* Admin Filters */}
                     {isAdmin && (
                       <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-3">Filtros (Admin)</h3>
+                        <h3 className="text-lg font-bold text-green-800 mb-3">Filtros</h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Estado</label>
-                            <select
-                              value={dashboardFilters.estado}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, estado: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-estado"
-                            >
-                              <option value="">Todos</option>
-                              {filterOptions.estados.map(uf => (
-                                <option key={uf} value={uf}>{uf}</option>
-                              ))}
-                            </select>
-                          </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">Empresa</label>
                             <select
@@ -4691,24 +4677,46 @@ function App() {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-600 mb-1">Data Início</label>
-                            <input
-                              type="date"
-                              value={dashboardFilters.data_inicio}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, data_inicio: e.target.value})}
+                            <label className="block text-xs text-gray-600 mb-1">Produto</label>
+                            <select
+                              value={dashboardFilters.produto}
+                              onChange={(e) => setDashboardFilters({...dashboardFilters, produto: e.target.value})}
                               className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-data-inicio"
-                            />
+                              data-testid="filter-produto"
+                            >
+                              <option value="">Todos</option>
+                              {filterOptions.produtos.map(p => (
+                                <option key={p} value={p}>{p}</option>
+                              ))}
+                            </select>
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-600 mb-1">Data Fim</label>
-                            <input
-                              type="date"
-                              value={dashboardFilters.data_fim}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, data_fim: e.target.value})}
+                            <label className="block text-xs text-gray-600 mb-1">Tipo de Venda</label>
+                            <select
+                              value={dashboardFilters.venda}
+                              onChange={(e) => setDashboardFilters({...dashboardFilters, venda: e.target.value})}
                               className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-data-fim"
-                            />
+                              data-testid="filter-venda"
+                            >
+                              <option value="">Todos</option>
+                              {filterOptions.vendas.map(v => (
+                                <option key={v} value={v}>{v}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Estado</label>
+                            <select
+                              value={dashboardFilters.estado}
+                              onChange={(e) => setDashboardFilters({...dashboardFilters, estado: e.target.value})}
+                              className="w-full px-2 py-1.5 border rounded text-sm"
+                              data-testid="filter-estado"
+                            >
+                              <option value="">Todos</option>
+                              {filterOptions.estados.map(uf => (
+                                <option key={uf} value={uf}>{uf}</option>
+                              ))}
+                            </select>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -4721,7 +4729,7 @@ function App() {
                           </button>
                           <button
                             onClick={() => {
-                              setDashboardFilters({ estado: '', empresa: '', data_inicio: '', data_fim: '' });
+                              setDashboardFilters({ estado: '', empresa: '', produto: '', venda: '' });
                               setTimeout(fetchDashboard, 100);
                             }}
                             className="px-4 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
@@ -4735,14 +4743,16 @@ function App() {
                     {/* Product Averages */}
                     {dashboardData.national.length > 0 && (
                       <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-4">Preço Médio por Produto</h3>
+                        <h3 className="text-lg font-bold text-green-800 mb-4">Preço por Produto</h3>
                         <div className="overflow-x-auto">
                           <table className="w-full text-sm">
                             <thead className="bg-green-50">
                               <tr>
                                 <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
                                 <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
+                                <th className="px-3 py-2 text-center font-semibold text-green-800">Menor (R$)</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">Preço Médio (R$)</th>
+                                <th className="px-3 py-2 text-center font-semibold text-green-800">Maior (R$)</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">Dose Média</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
                                 <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
@@ -4753,9 +4763,11 @@ function App() {
                                 <tr key={i} className="border-t hover:bg-gray-50">
                                   <td className="px-3 py-2">{item.empresa}</td>
                                   <td className="px-3 py-2 font-semibold">{item.produto}</td>
-                                  <td className="px-3 py-2 text-center">R$ {item.avg_valor.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center">{item.avg_dose.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center text-blue-600">R$ {(item.min_valor || 0).toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center text-red-600">R$ {(item.max_valor || 0).toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center">{(item.avg_dose || 0).toFixed(2)}</td>
+                                  <td className="px-3 py-2 text-center font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</td>
                                   <td className="px-3 py-2 text-center">{item.count}</td>
                                 </tr>
                               ))}

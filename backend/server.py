@@ -955,30 +955,58 @@ async def get_market_studies_dashboard(credentials: HTTPAuthorizationCredentials
         
         all_studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
         
-        # Aggregate by product
+        # Aggregate by empresa+produto
         product_map = {}
         state_map = {}
         for s in all_studies:
-            key = s.get("produto", "")
+            key = f"{s.get('empresa', '')}|{s.get('produto', '')}"
+            valor = s.get("valor", 0)
+            dose = s.get("dose_ha", 0)
+            rs_ha = dose * valor
+            
             if key not in product_map:
-                product_map[key] = {"produto": key, "count": 0, "total_valor": 0, "total_dose": 0}
+                product_map[key] = {
+                    "empresa": s.get("empresa", ""),
+                    "produto": s.get("produto", ""),
+                    "count": 0, "valores": [], "doses": [], "rs_has": []
+                }
             product_map[key]["count"] += 1
-            product_map[key]["total_valor"] += s.get("valor", 0)
-            product_map[key]["total_dose"] += s.get("dose_ha", 0)
+            product_map[key]["valores"].append(valor)
+            product_map[key]["doses"].append(dose)
+            product_map[key]["rs_has"].append(rs_ha)
             
             state = s.get("estado", "")
             if state not in state_map:
-                state_map[state] = {"estado": state, "count": 0, "total_valor": 0}
+                state_map[state] = {"estado": state, "count": 0, "valores": [], "rs_has": [], "empresas_set": set()}
             state_map[state]["count"] += 1
-            state_map[state]["total_valor"] += s.get("valor", 0)
+            state_map[state]["valores"].append(valor)
+            state_map[state]["rs_has"].append(rs_ha)
+            state_map[state]["empresas_set"].add(s.get("empresa", ""))
         
         products = []
         for p in product_map.values():
-            p["media_valor"] = p["total_valor"] / p["count"] if p["count"] > 0 else 0
-            p["media_dose"] = p["total_dose"] / p["count"] if p["count"] > 0 else 0
-            products.append(p)
+            products.append({
+                "empresa": p["empresa"],
+                "produto": p["produto"],
+                "count": p["count"],
+                "avg_valor": sum(p["valores"]) / len(p["valores"]),
+                "min_valor": min(p["valores"]),
+                "max_valor": max(p["valores"]),
+                "avg_dose": sum(p["doses"]) / len(p["doses"]),
+                "avg_rs_ha": sum(p["rs_has"]) / len(p["rs_has"]),
+                "min_rs_ha": min(p["rs_has"]),
+                "max_rs_ha": max(p["rs_has"]),
+            })
         
-        by_state = list(state_map.values())
+        by_state = []
+        for st in state_map.values():
+            by_state.append({
+                "estado": st["estado"],
+                "count": st["count"],
+                "avg_valor": sum(st["valores"]) / len(st["valores"]),
+                "avg_rs_ha": sum(st["rs_has"]) / len(st["rs_has"]),
+                "empresas": sorted(list(st["empresas_set"]))
+            })
         
         return {"national": products, "by_state": by_state}
     except jwt.InvalidTokenError:
@@ -989,6 +1017,8 @@ async def get_market_studies_dashboard_filtered(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     estado: Optional[str] = Query(None),
     empresa: Optional[str] = Query(None),
+    produto: Optional[str] = Query(None),
+    venda: Optional[str] = Query(None),
     data_inicio: Optional[str] = Query(None),
     data_fim: Optional[str] = Query(None)
 ):
@@ -1003,6 +1033,10 @@ async def get_market_studies_dashboard_filtered(
             query["estado"] = estado
         if empresa:
             query["empresa"] = empresa
+        if produto:
+            query["produto"] = produto
+        if venda:
+            query["venda"] = venda
         
         all_studies = await db.market_studies.find(query, {"_id": 0}).to_list(None)
         
@@ -1018,46 +1052,80 @@ async def get_market_studies_dashboard_filtered(
                 filtered.append(s)
             all_studies = filtered
         
-        # Aggregate
-        product_map = {}
-        state_map = {}
+        # Get all studies for filter options (unfiltered)
+        all_for_filters = await db.market_studies.find({}, {"_id": 0}).to_list(None)
         empresas_set = set()
         estados_set = set()
-        
-        # Get all studies for filter options (unfiltered)
-        all_for_filters = await db.market_studies.find({}, {"_id": 0, "empresa": 1, "estado": 1}).to_list(None)
+        produtos_set = set()
+        vendas_set = set()
         for s in all_for_filters:
             empresas_set.add(s.get("empresa", ""))
             estados_set.add(s.get("estado", ""))
+            produtos_set.add(s.get("produto", ""))
+            if s.get("venda"):
+                vendas_set.add(s.get("venda", ""))
         
+        # Aggregate by empresa+produto
+        product_map = {}
+        state_map = {}
         for s in all_studies:
-            key = s.get("produto", "")
+            key = f"{s.get('empresa', '')}|{s.get('produto', '')}"
+            valor = s.get("valor", 0)
+            dose = s.get("dose_ha", 0)
+            rs_ha = dose * valor
+            
             if key not in product_map:
-                product_map[key] = {"produto": key, "count": 0, "total_valor": 0, "total_dose": 0}
+                product_map[key] = {
+                    "empresa": s.get("empresa", ""),
+                    "produto": s.get("produto", ""),
+                    "count": 0, "valores": [], "doses": [], "rs_has": []
+                }
             product_map[key]["count"] += 1
-            product_map[key]["total_valor"] += s.get("valor", 0)
-            product_map[key]["total_dose"] += s.get("dose_ha", 0)
+            product_map[key]["valores"].append(valor)
+            product_map[key]["doses"].append(dose)
+            product_map[key]["rs_has"].append(rs_ha)
             
             state = s.get("estado", "")
             if state not in state_map:
-                state_map[state] = {"estado": state, "count": 0, "total_valor": 0}
+                state_map[state] = {"estado": state, "count": 0, "valores": [], "rs_has": [], "empresas_set": set()}
             state_map[state]["count"] += 1
-            state_map[state]["total_valor"] += s.get("valor", 0)
+            state_map[state]["valores"].append(valor)
+            state_map[state]["rs_has"].append(rs_ha)
+            state_map[state]["empresas_set"].add(s.get("empresa", ""))
         
         products = []
         for p in product_map.values():
-            p["media_valor"] = p["total_valor"] / p["count"] if p["count"] > 0 else 0
-            p["media_dose"] = p["total_dose"] / p["count"] if p["count"] > 0 else 0
-            products.append(p)
+            products.append({
+                "empresa": p["empresa"],
+                "produto": p["produto"],
+                "count": p["count"],
+                "avg_valor": sum(p["valores"]) / len(p["valores"]),
+                "min_valor": min(p["valores"]),
+                "max_valor": max(p["valores"]),
+                "avg_dose": sum(p["doses"]) / len(p["doses"]),
+                "avg_rs_ha": sum(p["rs_has"]) / len(p["rs_has"]),
+                "min_rs_ha": min(p["rs_has"]),
+                "max_rs_ha": max(p["rs_has"]),
+            })
         
-        by_state = list(state_map.values())
+        by_state = []
+        for st in state_map.values():
+            by_state.append({
+                "estado": st["estado"],
+                "count": st["count"],
+                "avg_valor": sum(st["valores"]) / len(st["valores"]),
+                "avg_rs_ha": sum(st["rs_has"]) / len(st["rs_has"]),
+                "empresas": sorted(list(st["empresas_set"]))
+            })
         
         return {
             "products": products,
             "by_state": by_state,
             "filter_options": {
                 "empresas": sorted(list(empresas_set)),
-                "estados": sorted(list(estados_set))
+                "estados": sorted(list(estados_set)),
+                "produtos": sorted(list(produtos_set)),
+                "vendas": sorted(list(vendas_set))
             }
         }
     except jwt.InvalidTokenError:
