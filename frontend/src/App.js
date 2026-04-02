@@ -3389,18 +3389,13 @@ function App() {
               Bem-vindo ao XistoApp
             </h2>
             
-            {/* Hero image - rocha xisto com gramado */}
-            <div className="rounded-2xl overflow-hidden shadow-lg mb-6 mx-auto max-w-sm lg:max-w-lg relative" style={{background: '#e8f0e8'}}>
-              <div className="relative flex items-end justify-center pt-4" style={{height: '220px'}}>
-                <img
-                  src="/xisto-rock.png"
-                  alt="Xisto"
-                  className="relative z-10 object-contain"
-                  style={{maxHeight: '180px', maxWidth: '85%'}}
-                />
-              </div>
-              {/* Gramado */}
-              <div style={{height: '30px', background: 'linear-gradient(to bottom, #7BC67B, #5BA85B)', borderRadius: '50% 50% 0 0', marginTop: '-8px', position: 'relative', zIndex: 5}}></div>
+            {/* Hero image - rocha xisto */}
+            <div className="rounded-2xl overflow-hidden shadow-lg mb-6 mx-auto max-w-xs lg:max-w-md bg-white">
+              <img
+                src="/xisto-rock.png"
+                alt="Xisto"
+                className="w-full object-contain"
+              />
             </div>
             
             {/* Button Grid 3x2 */}
