@@ -418,12 +418,12 @@ async def login(request: LoginRequest):
 
 @app.get("/api/technologies")
 async def get_technologies():
-    technologies = await db.technologies.find({}, {"_id": 0}).to_list(None)
+    technologies = await db.technologies.find({}, {"_id": 0}).to_list(5000)
     return technologies
 
 @app.get("/api/technologies/{tech_id}/products")
 async def get_products_by_technology(tech_id: str):
-    products = await db.products.find({"technology_id": tech_id}, {"_id": 0}).to_list(None)
+    products = await db.products.find({"technology_id": tech_id}, {"_id": 0}).to_list(5000)
     return products
 
 
@@ -434,7 +434,7 @@ async def get_products_by_technology(tech_id: str):
 @app.get("/api/cultures")
 async def get_cultures():
     """Get all cultures for users"""
-    cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+    cultures = await db.cultures.find({}, {"_id": 0}).to_list(5000)
     return cultures
 
 @app.post("/api/admin/cultures")
@@ -513,7 +513,7 @@ async def get_planejamentos(credentials: HTTPAuthorizationCredentials = Depends(
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("email")
         
-        planejamentos = await db.planejamentos.find({"user_email": user_email}, {"_id": 0}).to_list(None)
+        planejamentos = await db.planejamentos.find({"user_email": user_email}, {"_id": 0}).to_list(5000)
         return planejamentos
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -576,7 +576,7 @@ async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Dep
         if not payload.get("is_admin"):
             raise HTTPException(status_code=403, detail="Admin access required")
         
-        cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+        cultures = await db.cultures.find({}, {"_id": 0}).to_list(5000)
         return cultures
     
     except jwt.InvalidTokenError:
@@ -589,7 +589,7 @@ async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Dep
 @app.get("/api/products")
 async def get_all_products():
     """Get all products (for planejamento)"""
-    products = await db.products.find({}, {"_id": 0}).to_list(None)
+    products = await db.products.find({}, {"_id": 0}).to_list(5000)
     return products
 
 @app.get("/api/products/{product_id}")
@@ -605,12 +605,12 @@ async def get_competitor_companies():
         {"$group": {"_id": "$company"}},
         {"$sort": {"_id": 1}}
     ]
-    companies = await db.competitors.aggregate(pipeline).to_list(None)
+    companies = await db.competitors.aggregate(pipeline).to_list(5000)
     return [{"company": item["_id"]} for item in companies]
 
 @app.get("/api/competitors/companies/{company}/products")
 async def get_competitor_products(company: str):
-    products = await db.competitors.find({"company": company}, {"_id": 0}).to_list(None)
+    products = await db.competitors.find({"company": company}, {"_id": 0}).to_list(5000)
     return products
 
 @app.get("/api/competitors/{competitor_id}")
@@ -624,7 +624,7 @@ async def get_competitor(competitor_id: str):
 @app.get("/api/products/by-proposito/{proposito}")
 async def get_products_by_proposito(proposito: str):
     """Get MicroXisto products that match a specific purpose"""
-    products = await db.products.find({"proposito": proposito}, {"_id": 0}).to_list(None)
+    products = await db.products.find({"proposito": proposito}, {"_id": 0}).to_list(5000)
     return products
 
 @app.get("/api/home")
@@ -635,12 +635,12 @@ async def get_home_content():
 # Admin routes - User Management
 @app.get("/api/admin/users")
 async def get_all_users(admin_user: dict = Depends(get_admin_user)):
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(None)
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(5000)
     return users
 
 @app.get("/api/admin/users/pending")
 async def get_pending_users(admin_user: dict = Depends(get_admin_user)):
-    users = await db.users.find({"is_approved": False}, {"_id": 0, "password": 0}).to_list(None)
+    users = await db.users.find({"is_approved": False}, {"_id": 0, "password": 0}).to_list(5000)
     return users
 
 @app.post("/api/admin/users/approve")
@@ -695,7 +695,7 @@ async def delete_technology(tech_id: str, admin_user: dict = Depends(get_admin_u
 # Admin routes - Products Management  
 @app.get("/api/admin/products")
 async def get_all_products(admin_user: dict = Depends(get_admin_user)):
-    products = await db.products.find({}, {"_id": 0}).to_list(None)
+    products = await db.products.find({}, {"_id": 0}).to_list(5000)
     return products
 
 @app.put("/api/admin/products/{product_id}")
@@ -719,7 +719,7 @@ async def delete_product(product_id: str, admin_user: dict = Depends(get_admin_u
 # Admin routes - Competitors Management
 @app.get("/api/admin/competitors")
 async def get_all_competitors(admin_user: dict = Depends(get_admin_user)):
-    competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
+    competitors = await db.competitors.find({}, {"_id": 0}).to_list(5000)
     return competitors
 
 @app.put("/api/admin/competitors/{competitor_id}")
@@ -841,7 +841,7 @@ async def create_competitor(competitor: Competitor, admin_user: dict = Depends(g
 @app.get("/api/competitors")
 async def get_all_competitors():
     """Get all competitors"""
-    competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
+    competitors = await db.competitors.find({}, {"_id": 0}).to_list(5000)
     return competitors
 
 # ==========================================
@@ -887,7 +887,7 @@ async def get_market_studies(credentials: HTTPAuthorizationCredentials = Depends
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
-        studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0}).to_list(None)
+        studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0}).to_list(5000)
         return studies
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -955,12 +955,12 @@ async def get_market_studies_dashboard(credentials: HTTPAuthorizationCredentials
         user_id = payload.get("sub")
         
         # Find user's states from their own studies
-        user_studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0, "estado": 1}).to_list(None)
+        user_studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0, "estado": 1}).to_list(5000)
         user_states = list(set(s.get("estado", "") for s in user_studies if s.get("estado")))
         
         # Get all studies from user's states
         if user_states:
-            all_studies = await db.market_studies.find({"estado": {"$in": user_states}}, {"_id": 0}).to_list(None)
+            all_studies = await db.market_studies.find({"estado": {"$in": user_states}}, {"_id": 0}).to_list(5000)
         else:
             all_studies = []
         
@@ -1047,10 +1047,10 @@ async def get_market_studies_dashboard_filtered(
         if venda:
             query["venda"] = venda
         
-        all_studies = await db.market_studies.find(query, {"_id": 0}).to_list(None)
+        all_studies = await db.market_studies.find(query, {"_id": 0}).to_list(5000)
         
         # Get all studies for filter options (unfiltered)
-        all_for_filters = await db.market_studies.find({}, {"_id": 0}).to_list(None)
+        all_for_filters = await db.market_studies.find({}, {"_id": 0}).to_list(5000)
         empresas_set = set()
         estados_set = set()
         produtos_set = set()
@@ -1145,7 +1145,7 @@ async def export_market_studies(credentials: HTTPAuthorizationCredentials = Depe
         
         import openpyxl
         
-        studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
+        studies = await db.market_studies.find({}, {"_id": 0}).to_list(5000)
         
         wb = openpyxl.Workbook()
         ws = wb.active
