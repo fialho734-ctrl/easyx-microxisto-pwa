@@ -27,23 +27,13 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 ## O que foi implementado
 
 ### Sessão atual (02/04/2026)
-- Criados endpoints faltantes no backend:
-  - `GET /api/maintenance-status` + `POST /api/admin/maintenance`
-  - `GET/POST/PUT/DELETE /api/market-studies`
-  - `GET /api/market-studies/dashboard`
-  - `GET /api/admin/market-studies/dashboard-filtered`
-  - `GET /api/admin/market-studies/export` (xlsx)
-  - `GET /api/competitors` (lista completa)
-  - `POST /api/track-activity` + `GET /api/admin/user-activity`
-- Removido `manutencao.html` estático que bloqueava login
-- Criado `pdfAssets.js` stub para corrigir erro de compilação
-- Instalado jspdf e jspdf-autotable para geração de PDF
-- JWT token inclui `is_admin` claim (corrigido em sessão anterior)
-- **Bug fix**: Cultura CRUD retornava 500 (ObjectId serialization) - corrigido com `pop('_id')`
-- **Bug fix**: Update cultura sobrescrevia ID com None - corrigido com `exclude={'id'}`
-- **Bug fix**: PDF desconfigurado - extraídos assets reais (decoração verde + logo) do PDF de referência do usuário
-- **Bug fix**: Fonte EurostileEF falhava silenciosamente - adicionado fallback para helvetica
-- Todos os 27 testes passaram (21 gerais + 6 cultura CRUD)
+- Criados endpoints faltantes no backend (maintenance, market-studies, competitors, activity)
+- Removido manutencao.html estático
+- **Bug fix**: Cultura CRUD retornava 500 (ObjectId serialization) - corrigido
+- **Bug fix**: Update cultura sobrescrevia ID com None - corrigido  
+- **PDF fixes**: Título verde escuro (#002F17), campos Colheita/Valor/Telefone deslocados (x=290), logo MicroXisto em alta resolução com fundo transparente (extraída de PDF vetorial do usuário)
+- Assets reais no pdfAssets.js (decoração verde + logo HD)
+- Todos os 27 testes passaram
 
 ### Sessões anteriores
 - Tabelas de Extração/Exportação no Planejamento

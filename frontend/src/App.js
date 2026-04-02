@@ -4195,10 +4195,10 @@ function App() {
                                 } catch(e) {}
                               }
                               
-                              // Title - cor #002F17
+                              // Title - cor verde escuro #002F17
                               doc.setFont(titleFont, titleStyle);
                               doc.setFontSize(20);
-                              doc.setTextColor(0, 0, 0);
+                              doc.setTextColor(0, 47, 23);
                               doc.text('Plano de manejo MicroXisto', 145, 52);
                               
                               // Planning info
@@ -4221,18 +4221,18 @@ function App() {
                                 y += 14;
                               }
                               doc.text(`Cultura: ${planejamentoForm.cultura}`, 40, y);
-                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 200, y);
+                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 290, y);
                               y += 14;
                               doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, 40, y);
                               if (planejamentoForm.valor_saca) {
-                                doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, 200, y);
+                                doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, 290, y);
                               }
                               y += 14;
                               if (planejamentoForm.representante) {
                                 doc.text(`Representante: ${planejamentoForm.representante}`, 40, y);
                               }
                               if (planejamentoForm.telefone) {
-                                doc.text(`Telefone: ${planejamentoForm.telefone}`, 200, y);
+                                doc.text(`Telefone: ${planejamentoForm.telefone}`, 290, y);
                               }
                               if (planejamentoForm.representante || planejamentoForm.telefone) {
                                 y += 14;
@@ -4345,11 +4345,11 @@ function App() {
                                 }
                               }
                               
-                              // Logo MicroXisto centralizada no rodapé
+                              // Logo MicroXisto centralizada no rodapé (alta resolução com fundo transparente)
                               try {
-                                const logoW = 180;
-                                const logoH = 48;
-                                doc.addImage(PDF_ASSETS.logoMicroXisto, 'PNG', (pw - logoW) / 2, ph - logoH - 20, logoW, logoH);
+                                const logoW = 200;
+                                const logoH = 67;
+                                doc.addImage(PDF_ASSETS.logoMicroXisto, 'PNG', (pw - logoW) / 2, ph - logoH - 15, logoW, logoH);
                               } catch(e) {}
                               
                               const pdfBlob = doc.output('blob');
