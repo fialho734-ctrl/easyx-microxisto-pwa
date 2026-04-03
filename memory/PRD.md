@@ -12,49 +12,44 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 1. **Início** - Home com conteúdo editável pelo admin
 2. **Tecnologias** - Lista de tecnologias MicroXisto e seus produtos
 3. **Culturas** - Culturas agrícolas com links para materiais
-4. **Planejamento** - Cálculos de manejo com tabelas de Extração/Exportação e geração de PDF
+4. **Planejamento** - Cálculos de manejo com Soja/Milho (com Extração/Exportação) e "Outros" (apenas Nutrientes Aportados)
 5. **Comparativo** - Comparação entre produtos MicroXisto e concorrentes
 6. **Estudo de Mercado** - CRUD de estudos com dashboard agregado e exportação xlsx
-7. **Admin Panel** - Gerenciamento de tudo (usuários, tecnologias, produtos, concorrentes, culturas, manutenção, atividade)
+7. **Admin Panel** - Gerenciamento de tudo (protegido por JWT is_admin)
 
 ## Stack Técnica
-- Frontend: React 19, Tailwind CSS, PWA (Service Worker)
+- Frontend: React 19, Tailwind CSS, PWA (Service Worker v11)
 - Backend: FastAPI, JWT Authentication, bcrypt
 - Database: MongoDB
-- Infra: Kubernetes, Emergent Platform
 - Domínio customizado: easyx.agr.br
 
 ## O que foi implementado
 
-### Sessão 02/04/2026 (final)
-- Ícones SVG customizados para Tecnologias (átomo/molécula) e Comparativo (frascos+régua+setas)
-- Segurança admin reforçada: JWT decoded no frontend (não mais confiando em localStorage)
-- useEffect de proteção: redireciona não-admin para Home se tentar acessar /admin
-- Instruções PWA melhoradas: modal com passos para iOS (Safari) e Android (Chrome)
-- Queries MongoDB limitadas (to_list(5000)) para produção
-- Deploy preparado e aprovado pelo deployment agent
-
-### Sessão 02/04/2026 (anterior)
-- Layout Desktop completo com hero side-by-side, header e footer
-- Footer profissional com redes sociais (site, Instagram, Facebook, LinkedIn)
-- Ícone XistoApp cortado (removido whitespace)
-- 1000 registros fake do Estudo de Mercado removidos
-- Classes CSS mobile-only/desktop-only para responsividade
+### Sessão 02-03/04/2026 (final)
+- **Planejamento "Outros"**: Opção para culturas além de Soja/Milho com campos condicionais
+- **Segurança admin reforçada**: JWT decoded no frontend, useEffect redireciona não-admins
+- **Bottom nav fix**: pb-44 para conteúdo não ser coberto pela barra inferior
+- **Ícone PWA atualizado**: apple-touch-icon 180px, manifest icons 192/512px
+- **Service Worker v11**: Cache atualizado para forçar refresh em iOS
+- **Ícones SVG personalizados**: Tecnologias (átomo+hexágono) e Comparativo (frascos+régua+setas)
+- **Layout Desktop**: Hero side-by-side, header com navegação, footer com redes sociais
+- **Footer**: microxisto.com.br, Instagram, Facebook, LinkedIn
+- Queries MongoDB limitadas (.to_list(5000))
+- 1000 registros fake removidos
 
 ### Sessões anteriores
-- Dashboard completo do Estudo de Mercado
-- PDF com logo HD e cores corretas
-- Home page mobile redesenhada
-- Bottom navigation bar
-- Service Worker com auto-update
+- Dashboard Estudo de Mercado (admin: filtros cascata, min/avg/max; user: por estado)
+- PDF com logo HD e cores corretas (jsPDF)
+- Home page mobile redesenhada (hero rock, custom logo, paleta verde)
+- Bottom navigation bar, Service Worker com auto-update
 - Domínio customizado easyx.agr.br
 
-## Backlog (P0/P1/P2)
+## Backlog
 
-### P1 (Importante)
+### P1
 - Ícones das culturas via links de imagem do Imgur
 
-### P2 (Melhorias)
-- Refatorar App.js (5500+ linhas) em componentes menores
+### P2
+- Refatorar App.js (5580+ linhas) em componentes menores
 - Otimização PWA: melhorar cache offline
 - Paginação nas consultas de dados
