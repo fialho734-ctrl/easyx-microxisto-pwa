@@ -3419,7 +3419,7 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 pb-44 lg:pb-8 ${currentPage !== 'home' ? 'container mx-auto px-4 py-4' : ''}`}>
+      <main className={`flex-1 pb-32 lg:pb-8 ${currentPage !== 'home' ? 'container mx-auto px-4 py-4' : ''}`}>
         {currentPage === 'home' && (
           <div>
             {/* === MOBILE HOME === */}
