@@ -2498,6 +2498,7 @@ function App() {
     nome_produtor: '',
     nome_fazenda: '',
     cultura: '',
+    cultura_custom: '',
     colheita_esperada: '',
     area_tratada: '',
     valor_saca: '',
@@ -3418,7 +3419,7 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 pb-28 lg:pb-8 ${currentPage !== 'home' ? 'container mx-auto px-4 py-4' : ''}`}>
+      <main className={`flex-1 pb-44 lg:pb-8 ${currentPage !== 'home' ? 'container mx-auto px-4 py-4' : ''}`}>
         {currentPage === 'home' && (
           <div>
             {/* === MOBILE HOME === */}
@@ -3838,25 +3839,42 @@ function App() {
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Cultura</label>
                       <select
                         value={planejamentoForm.cultura}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura: e.target.value})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura: e.target.value, cultura_custom: ''})}
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       >
                         <option value="">Selecione a cultura...</option>
                         <option value="Soja">Soja</option>
                         <option value="Milho">Milho</option>
+                        <option value="Outros">Outros</option>
                       </select>
                     </div>
                     
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sc/ha)</label>
-                      <input
-                        type="number"
-                        value={planejamentoForm.colheita_esperada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: e.target.value})}
-                        placeholder="Ex: 60"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
+                    {planejamentoForm.cultura === 'Outros' && (
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Nome da Cultura</label>
+                        <input
+                          type="text"
+                          value={planejamentoForm.cultura_custom || ''}
+                          onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura_custom: e.target.value})}
+                          placeholder="Ex: Algodão, Café, Trigo..."
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                          data-testid="cultura-custom-input"
+                        />
+                      </div>
+                    )}
+                    
+                    {planejamentoForm.cultura !== 'Outros' && (
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sc/ha)</label>
+                        <input
+                          type="number"
+                          value={planejamentoForm.colheita_esperada}
+                          onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: e.target.value})}
+                          placeholder="Ex: 60"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        />
+                      </div>
+                    )}
                     
                     <div>
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Área Tratada (hectares)</label>
@@ -3870,17 +3888,19 @@ function App() {
                       />
                     </div>
                     
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor da Saca (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={planejamentoForm.valor_saca}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: e.target.value})}
-                        placeholder="Ex: 120.00"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
+                    {planejamentoForm.cultura !== 'Outros' && (
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor da Saca (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={planejamentoForm.valor_saca}
+                          onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: e.target.value})}
+                          placeholder="Ex: 120.00"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -4113,8 +4133,11 @@ function App() {
                             ? custoPorHectare / valorSacaNumero 
                             : 0;
                           
-                          // Calcular extração e exportação baseado na cultura
-                          const culturaNormalizada = planejamentoForm.cultura.toLowerCase();
+                          // Calcular extração e exportação baseado na cultura (apenas Soja e Milho)
+                          const culturaNome = planejamentoForm.cultura === 'Outros' 
+                            ? (planejamentoForm.cultura_custom || 'Outros') 
+                            : planejamentoForm.cultura;
+                          const culturaNormalizada = culturaNome.toLowerCase();
                           let extracao = {};
                           let exportacao = {};
                           
@@ -4152,7 +4175,7 @@ function App() {
                             valorSacasPorHa,
                             extracao,
                             exportacao,
-                            cultura: planejamentoForm.cultura
+                            cultura: culturaNome
                           });
                         }}
                         className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base"
@@ -4300,7 +4323,7 @@ function App() {
                     </div>
                     
                     {/* Resumo Financeiro */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`grid grid-cols-1 ${resumoManejo.valorSacasPorHa > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                         <div className="text-sm text-gray-600 mb-1">Custo Total (Área Completa)</div>
                         <div className="text-2xl font-bold text-green-800">
@@ -4315,12 +4338,14 @@ function App() {
                         </div>
                       </div>
                       
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo em Sacas/ha</div>
-                        <div className="text-2xl font-bold text-yellow-800">
-                          {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
+                      {resumoManejo.valorSacasPorHa > 0 && (
+                        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                          <div className="text-sm text-gray-600 mb-1">Custo em Sacas/ha</div>
+                          <div className="text-2xl font-bold text-yellow-800">
+                            {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                     
                     {/* Opção de incluir nutrientes no PDF */}
@@ -4396,8 +4421,13 @@ function App() {
                                 doc.text(`Fazenda: ${planejamentoForm.nome_fazenda}`, 40, y);
                                 y += 14;
                               }
-                              doc.text(`Cultura: ${planejamentoForm.cultura}`, 40, y);
-                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 290, y);
+                              const culturaNomePDF = planejamentoForm.cultura === 'Outros' 
+                                ? (planejamentoForm.cultura_custom || 'Outros') 
+                                : planejamentoForm.cultura;
+                              doc.text(`Cultura: ${culturaNomePDF}`, 40, y);
+                              if (planejamentoForm.cultura !== 'Outros' && planejamentoForm.colheita_esperada) {
+                                doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 290, y);
+                              }
                               y += 14;
                               doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, 40, y);
                               if (planejamentoForm.valor_saca) {
@@ -4475,7 +4505,9 @@ function App() {
                               yFin += 14;
                               doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
                               yFin += 14;
-                              doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
+                              if (resumoManejo.valorSacasPorHa > 0) {
+                                doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
+                              }
                               
                               // Nutrientes Aportados (opcional - formato compacto)
                               if (incluirNutrientesPDF && resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
@@ -4532,7 +4564,7 @@ function App() {
                               const pdfUrl = URL.createObjectURL(pdfBlob);
                               const link = document.createElement('a');
                               link.href = pdfUrl;
-                              link.download = `plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`;
+                              link.download = `plano_manejo_${culturaNomePDF}_${new Date().toISOString().slice(0,10)}.pdf`;
                               link.target = '_blank';
                               document.body.appendChild(link);
                               link.click();

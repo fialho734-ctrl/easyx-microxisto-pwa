@@ -1,6 +1,6 @@
 // Service Worker SIMPLES E FUNCIONAL para funcionar OFFLINE
-const CACHE_NAME = 'easyx-offline-v10';
-const APP_VERSION = '2.4.0'; // FASE 1: Botão Portfólio + Comparativo só concorrente
+const CACHE_NAME = 'easyx-offline-v11';
+const APP_VERSION = '3.0.0'; // Layout Desktop + Outros cultura + Ícones SVG + Segurança Admin
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
