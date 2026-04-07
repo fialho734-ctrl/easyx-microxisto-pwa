@@ -2504,6 +2504,7 @@ function App() {
     valor_saca: '',
     representante: '',
     telefone: '',
+    prazo: '',
     produtos_selecionados: []
   });
   const [calculoResultado, setCalculoResultado] = useState(null);
@@ -2526,6 +2527,10 @@ function App() {
 
   // Estágio options
   const ESTAGIO_OPTIONS = ['TS', 'Sulco', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'R1', 'R2', 'R3', 'R4', 'R5', 'R5.1', 'R5.2', 'R5.3', 'R5.4', 'R6'];
+  
+  // AquaX technology ID - products: CitroX, TEK-F, Alvo, DTA
+  const AQUAX_TECH_ID = 'c1e0d560-297f-4879-9c1f-e732342558aa';
+  const isAquaxProduct = (produto) => produto?.technology_id === AQUAX_TECH_ID;
 
   const ESTADOS_BRASIL = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','PY'];
 
@@ -3903,7 +3908,7 @@ function App() {
                     )}
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Representante</label>
                       <input
@@ -3924,6 +3929,17 @@ function App() {
                         placeholder="Ex: (11) 99999-9999"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                         data-testid="telefone-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Prazo</label>
+                      <input
+                        type="text"
+                        value={planejamentoForm.prazo}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, prazo: e.target.value})}
+                        placeholder="Ex: 30/06/2026 ou 90 dias"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="prazo-input"
                       />
                     </div>
                   </div>
@@ -3953,22 +3969,43 @@ function App() {
                             </div>
                             
                             <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-600 mb-1">Estágio</label>
-                              <select
-                                value={item.estagio || ''}
-                                onChange={(e) => {
-                                  const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].estagio = e.target.value;
-                                  setProdutosSelecionados(novosProdutos);
-                                }}
-                                className="w-full px-2 py-1 border rounded text-sm"
-                                data-testid={`estagio-select-${index}`}
-                              >
-                                <option value="">Selecione...</option>
-                                {ESTAGIO_OPTIONS.map(opt => (
-                                  <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                              </select>
+                              {isAquaxProduct(item.produto) ? (
+                                <>
+                                  <label className="block text-xs text-gray-600 mb-1">Nº Aplicações</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={item.num_aplicacoes || ''}
+                                    onChange={(e) => {
+                                      const novosProdutos = [...produtosSelecionados];
+                                      novosProdutos[index].num_aplicacoes = e.target.value;
+                                      setProdutosSelecionados(novosProdutos);
+                                    }}
+                                    placeholder="Ex: 3"
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                    data-testid={`num-aplicacoes-${index}`}
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <label className="block text-xs text-gray-600 mb-1">Estágio</label>
+                                  <select
+                                    value={item.estagio || ''}
+                                    onChange={(e) => {
+                                      const novosProdutos = [...produtosSelecionados];
+                                      novosProdutos[index].estagio = e.target.value;
+                                      setProdutosSelecionados(novosProdutos);
+                                    }}
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                    data-testid={`estagio-select-${index}`}
+                                  >
+                                    <option value="">Selecione...</option>
+                                    {ESTAGIO_OPTIONS.map(opt => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                  </select>
+                                </>
+                              )}
                             </div>
                             
                             <div className="md:col-span-2">
@@ -3988,7 +4025,7 @@ function App() {
                             </div>
                             
                             <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-600 mb-1">Valor/L (R$)</label>
+                              <label className="block text-xs text-gray-600 mb-1">Valor (R$/L)</label>
                               <input
                                 type="number"
                                 step="0.01"
@@ -4006,7 +4043,10 @@ function App() {
                             <div className="md:col-span-2">
                               <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
                               <div className="text-sm font-semibold text-gray-700">
-                                {((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1)} L
+                                {isAquaxProduct(item.produto)
+                                  ? (((parseFloat(item.dose_lha) || 0) * (parseFloat(item.num_aplicacoes) || 0)).toFixed(1) + ' L')
+                                  : (((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1) + ' L')
+                                }
                               </div>
                             </div>
                             
@@ -4105,8 +4145,14 @@ function App() {
                             const dose = parseFloat(item.dose_lha) || 0;
                             const valorLitro = parseFloat(item.valor_litro) || 0;
                             
-                            // Volume total = dose * área
-                            const volumeTotal = dose * areaNumero;
+                            // Volume total: AquaX = dose × nº aplicações; outros = dose × área
+                            let volumeTotal;
+                            if (isAquaxProduct(item.produto)) {
+                              const numAplicacoes = parseFloat(item.num_aplicacoes) || 0;
+                              volumeTotal = dose * numAplicacoes;
+                            } else {
+                              volumeTotal = dose * areaNumero;
+                            }
                             // Valor total = volume total * valor do litro
                             const valorTotal = volumeTotal * valorLitro;
                             custoTotal += valorTotal;
@@ -4121,6 +4167,8 @@ function App() {
                             resumoProdutos.push({
                               nome: item.produto.name,
                               estagio: item.estagio || '-',
+                              isAquax: isAquaxProduct(item.produto),
+                              num_aplicacoes: item.num_aplicacoes || '',
                               dose_lha: dose,
                               volumeTotal: volumeTotal,
                               valorTotal: valorTotal,
@@ -4443,6 +4491,10 @@ function App() {
                               if (planejamentoForm.representante || planejamentoForm.telefone) {
                                 y += 14;
                               }
+                              if (planejamentoForm.prazo) {
+                                doc.text(`Prazo: ${planejamentoForm.prazo}`, 40, y);
+                                y += 14;
+                              }
                               y += 10;
                               doc.setFontSize(8);
                               doc.setTextColor(140, 140, 140);
@@ -4452,7 +4504,7 @@ function App() {
                               y += 15;
                               const tableData = resumoManejo.produtos.map(p => [
                                 p.nome,
-                                p.estagio || '-',
+                                p.isAquax ? (p.num_aplicacoes ? `${p.num_aplicacoes}x` : '-') : (p.estagio || '-'),
                                 p.dose_lha.toFixed(1),
                                 p.volumeTotal.toFixed(1),
                                 `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`,
@@ -4462,7 +4514,7 @@ function App() {
                               if (typeof autoTable === 'function') {
                                 autoTable(doc, {
                                   startY: y,
-                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
+                                  head: [['Produto', 'Estágio/Aplic.', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
                                   body: tableData,
                                   theme: 'grid',
                                   headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
@@ -4474,7 +4526,7 @@ function App() {
                               } else {
                                 doc.autoTable({
                                   startY: y,
-                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
+                                  head: [['Produto', 'Estágio/Aplic.', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
                                   body: tableData,
                                   theme: 'grid',
                                   headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
