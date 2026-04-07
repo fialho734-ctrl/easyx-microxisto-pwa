@@ -1,0 +1,103 @@
+{
+  "summary": "Iteration 6: AquaX Planejamento features testing completed. All 10 backend tests passed. All 11 frontend features verified via Playwright. The 3 key changes are working correctly: 1) Prazo field visible in header, 2) AquaX products show 'Nº Aplicações' instead of 'Estágio' with Volume = Dose × Nº aplicações, 3) Label changed to 'Valor (R$/L)'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_aquax_planejamento.py",
+    "/app/test_reports/pytest/aquax_planejamento_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "App.js is 5638 lines - consider splitting into smaller components for maintainability",
+    "AQUAX_TECH_ID constant correctly defined at line 2532",
+    "isAquaxProduct function correctly checks technology_id at line 2533",
+    "Conditional rendering for Nº Aplicações vs Estágio working correctly (lines 3972-4008)",
+    "Volume calculation logic correct: AquaX = dose × numAplicacoes, Other = dose × area (lines 4143-4177)",
+    "PDF generation includes Prazo field (lines 4494-4497) and shows 'Nº aplicações' for AquaX products (line 4507)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_aquax_planejamento.py"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10 tests passed)",
+    "frontend": "100% (all 11 features verified)"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "agrofialho@gmail.com",
+      "password": "adm@123"
+    }
+  },
+  "seed_data_creation": "N/A - used existing AquaX products (CitroX, TEK-F, Alvo, DTA) and non-AquaX product (Active)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "AquaX Planejamento features fully tested. Key findings: 1) Prazo field (data-testid='prazo-input') visible in Planejamento form header. 2) AquaX products (technology_id='c1e0d560-297f-4879-9c1f-e732342558aa') show 'Nº Aplicações' input (data-testid='num-aplicacoes-{index}') instead of 'Estágio' dropdown. 3) Non-AquaX products show 'Estágio' dropdown (data-testid='estagio-select-{index}'). 4) Volume calculation: AquaX = Dose × Nº aplicações, Non-AquaX = Dose × Área. 5) Label 'Valor (R$/L)' is correct format. 6) PDF generation includes Prazo and shows 'Nº aplicações' for AquaX products. Product selection uses dropdown 'Selecione um produto...' not tabs.",
+  "features_tested": {
+    "prazo_field": {
+      "data_testid": "prazo-input",
+      "status": "PASS",
+      "notes": "Visible in Planejamento form header with placeholder 'Ex: 30/06/2026 ou 90 dias'"
+    },
+    "aquax_num_aplicacoes": {
+      "data_testid": "num-aplicacoes-{index}",
+      "status": "PASS",
+      "notes": "Shows for AquaX products (CitroX, TEK-F, Alvo, DTA) instead of Estágio dropdown"
+    },
+    "non_aquax_estagio": {
+      "data_testid": "estagio-select-{index}",
+      "status": "PASS",
+      "notes": "Shows for non-AquaX products (Active, Magnus, etc.) with dropdown options"
+    },
+    "valor_label": {
+      "status": "PASS",
+      "notes": "Label is 'Valor (R$/L)' - correct format, not old 'Valor/L(R$)'"
+    },
+    "volume_calculation_aquax": {
+      "status": "PASS",
+      "notes": "Volume = Dose × Nº aplicações for AquaX products"
+    },
+    "volume_calculation_non_aquax": {
+      "status": "PASS",
+      "notes": "Volume = Dose × Área for non-AquaX products"
+    },
+    "aquax_technology_api": {
+      "status": "PASS",
+      "notes": "AquaX technology exists with ID c1e0d560-297f-4879-9c1f-e732342558aa"
+    },
+    "aquax_products_api": {
+      "status": "PASS",
+      "notes": "CitroX, TEK-F, Alvo, DTA all have correct technology_id"
+    },
+    "login_flow": {
+      "status": "PASS",
+      "notes": "Admin login works with agrofialho@gmail.com / adm@123"
+    },
+    "planejamento_navigation": {
+      "status": "PASS",
+      "notes": "Planejamento page loads correctly when navigated to"
+    },
+    "product_selection": {
+      "status": "PASS",
+      "notes": "Products can be selected via dropdown, up to 15 products"
+    }
+  },
+  "backend_tests": {
+    "TestAquaXProducts::test_aquax_technology_exists": "PASSED",
+    "TestAquaXProducts::test_aquax_products_exist": "PASSED",
+    "TestAquaXProducts::test_non_aquax_products_exist": "PASSED",
+    "TestProductsAPI::test_get_all_products": "PASSED",
+    "TestProductsAPI::test_get_products_by_technology": "PASSED",
+    "TestAuthAndLogin::test_admin_login_success": "PASSED",
+    "TestAuthAndLogin::test_invalid_login": "PASSED",
+    "TestTechnologiesAPI::test_get_technologies": "PASSED",
+    "TestVolumeCalculation::test_aquax_volume_calculation_data": "PASSED",
+    "TestVolumeCalculation::test_non_aquax_volume_calculation_data": "PASSED"
+  }
+}
