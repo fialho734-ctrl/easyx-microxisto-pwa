@@ -25,7 +25,13 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 
 ## O que foi implementado
 
-### Sessão 02-03/04/2026 (final)
+### Sessão 04/04/2026
+- **Planejamento AquaX**: Produtos AquaX (CitroX, TEK-F, Alvo, DTA) usam "Nº de aplicações" em vez de "Estágio", com Volume = Dose × Nº aplicações
+- **Campo Prazo**: Adicionado ao cabeçalho do Planejamento
+- **Label Valor (R$/L)**: Atualizado de "Valor/L(R$)" para "Valor (R$/L)"
+- **Testes iteração 6**: 100% passed (10 backend + 11 frontend)
+
+### Sessão 02-03/04/2026
 - **Planejamento "Outros"**: Opção para culturas além de Soja/Milho com campos condicionais
 - **Segurança admin reforçada**: JWT decoded no frontend, useEffect redireciona não-admins
 - **Bottom nav fix**: pb-44 para conteúdo não ser coberto pela barra inferior
@@ -47,9 +53,9 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 ## Backlog
 
 ### P1
-- Ícones das culturas via links de imagem do Imgur
+- Deploy final para easyx.agr.br (após validação do usuário)
 
 ### P2
-- Refatorar App.js (5580+ linhas) em componentes menores
+- Refatorar App.js (5638+ linhas) em componentes menores
 - Otimização PWA: melhorar cache offline
 - Paginação nas consultas de dados
