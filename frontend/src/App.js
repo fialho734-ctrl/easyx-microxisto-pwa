@@ -749,7 +749,7 @@ const ProductManagement = ({ token, technologies }) => {
             </select>
           </div>
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Densidade (g/mL)</label>
+            <label className="block text-gray-700 font-semibold mb-2">Densidade (g/100mL)</label>
             <input
               type="number"
               step="0.01"
@@ -879,7 +879,7 @@ const ProductManagement = ({ token, technologies }) => {
                 <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">Tecnologia</th>
-                <th className="px-4 py-2 text-left">Densidade (g/mL)</th>
+                <th className="px-4 py-2 text-left">Densidade (g/100mL)</th>
                 <th className="px-4 py-2 text-left">Natureza</th>
                 <th className="px-4 py-2 text-left">Ações</th>
               </tr>
@@ -1633,7 +1633,7 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                           value={row.density}
                           onChange={(e) => updateEditableRow(row.id, 'density', e.target.value)}
                           className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                          placeholder="g/mL"
+                          placeholder="g/100mL"
                           spellCheck="false"
                           autoComplete="off"
                         />
@@ -1801,7 +1801,7 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                 <th className="px-3 py-2 text-left">Empresa</th>
                 <th className="px-3 py-2 text-left">Produto</th>
                 <th className="px-3 py-2 text-left">Natureza</th>
-                <th className="px-3 py-2 text-left">Densidade (g/mL)</th>
+                <th className="px-3 py-2 text-left">Densidade (g/100mL)</th>
                 <th className="px-3 py-2 text-left">Elementos</th>
                 <th className="px-3 py-2 text-left">Ações</th>
               </tr>
@@ -2190,7 +2190,7 @@ const AdminTutorials = () => {
                   <li><strong>Nome:</strong> Nome do produto</li>
                   <li><strong>URL do Logo:</strong> Link da imagem do produto</li>
                   <li><strong>Tecnologia:</strong> Selecione uma das tecnologias cadastradas</li>
-                  <li><strong>Densidade:</strong> Em g/mL (ex: 1.25)</li>
+                  <li><strong>Densidade:</strong> Em g/100mL (ex: 1.25)</li>
                   <li><strong>Natureza:</strong> Líquido ou Sólido</li>
                 </ul>
               </li>
@@ -2298,7 +2298,7 @@ const AdminTutorials = () => {
                 <p><strong>Coluna 1:</strong> Nome da Empresa</p>
                 <p><strong>Coluna 2:</strong> Nome do Produto</p>
                 <p><strong>Coluna 3:</strong> Natureza (líquido/sólido)</p>
-                <p><strong>Coluna 4:</strong> Densidade em g/mL</p>
+                <p><strong>Coluna 4:</strong> Densidade em g/100mL</p>
                 <p><strong>Colunas 5-20:</strong> Elementos químicos na ordem: N, P, K, Ca, Mg, S, Mo, Co, Zn, B, Cu, Mn, Ni, Se, Si, Fe</p>
                 <p><strong>Coluna 21:</strong> Aditivos (opcional)</p>
               </div>
@@ -3686,7 +3686,7 @@ function App() {
                   <div className="text-center lg:text-left">
                     <h3 className="text-xl lg:text-2xl font-bold text-green-800" translate="no">{productDetails.name}</h3>
                     <div className="flex flex-col lg:flex-row lg:space-x-4 text-sm text-gray-600">
-                      <span>Densidade: {productDetails.density} g/mL</span>
+                      <span>Densidade: {productDetails.density} g/100mL</span>
                       <span>Natureza: {productDetails.nature}</span>
                     </div>
                   </div>
@@ -4837,7 +4837,7 @@ function App() {
                     <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
                     <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.competitor.density} g/mL</p>
+                      <p>Densidade: {comparisonData.competitor.density} g/100mL</p>
                       <p>Natureza: {comparisonData.competitor.nature}</p>
                       {comparisonData.competitor.proposito && (
                         <p className="font-bold text-blue-600 mt-2">🎯 Propósito: {comparisonData.competitor.proposito}</p>
@@ -4853,7 +4853,7 @@ function App() {
                       </div>
                       <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.product.name}</h5>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p>Densidade: {comparisonData.product.density} g/mL</p>
+                        <p>Densidade: {comparisonData.product.density} g/100mL</p>
                         <p>Natureza: {comparisonData.product.nature}</p>
                       </div>
                     </div>
