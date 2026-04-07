@@ -4371,7 +4371,7 @@ function App() {
                     </div>
                     
                     {/* Resumo Financeiro */}
-                    <div className={`grid grid-cols-1 ${resumoManejo.valorSacasPorHa > 0 ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+                    <div className={`grid grid-cols-1 ${resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                         <div className="text-sm text-gray-600 mb-1">Custo Total (Área Completa)</div>
                         <div className="text-2xl font-bold text-green-800">
@@ -4386,7 +4386,7 @@ function App() {
                         </div>
                       </div>
                       
-                      {resumoManejo.valorSacasPorHa > 0 && (
+                      {resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros' && (
                         <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                           <div className="text-sm text-gray-600 mb-1">Custo em Sacas/ha</div>
                           <div className="text-2xl font-bold text-yellow-800">
@@ -4557,7 +4557,7 @@ function App() {
                               yFin += 14;
                               doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
                               yFin += 14;
-                              if (resumoManejo.valorSacasPorHa > 0) {
+                              if (resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros') {
                                 doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
                               }
                               
