@@ -25,35 +25,27 @@ PWA multi-plataforma e responsiva para consulta e comparação de produtos Micro
 
 ## O que foi implementado
 
+### Sessão 07/04/2026
+- **Correção cálculo AquaX**: Volume total agora = Nº aplicações × Dose × Área (estava faltando multiplicar pela área)
+- Verificado visualmente: CitroX com 3 aplicações × 2 L/ha × 100 ha = 600.0 L ✅
+
 ### Sessão 04/04/2026
-- **Planejamento AquaX**: Produtos AquaX (CitroX, TEK-F, Alvo, DTA) usam "Nº de aplicações" em vez de "Estágio", com Volume = Dose × Nº aplicações
+- **Planejamento AquaX**: Produtos AquaX (CitroX, TEK-F, Alvo, DTA) usam "Nº de aplicações" em vez de "Estágio"
 - **Campo Prazo**: Adicionado ao cabeçalho do Planejamento
 - **Label Valor (R$/L)**: Atualizado de "Valor/L(R$)" para "Valor (R$/L)"
 - **Testes iteração 6**: 100% passed (10 backend + 11 frontend)
 
 ### Sessão 02-03/04/2026
-- **Planejamento "Outros"**: Opção para culturas além de Soja/Milho com campos condicionais
-- **Segurança admin reforçada**: JWT decoded no frontend, useEffect redireciona não-admins
-- **Bottom nav fix**: pb-44 para conteúdo não ser coberto pela barra inferior
-- **Ícone PWA atualizado**: apple-touch-icon 180px, manifest icons 192/512px
-- **Service Worker v11**: Cache atualizado para forçar refresh em iOS
-- **Ícones SVG personalizados**: Tecnologias (átomo+hexágono) e Comparativo (frascos+régua+setas)
-- **Layout Desktop**: Hero side-by-side, header com navegação, footer com redes sociais
-- **Footer**: microxisto.com.br, Instagram, Facebook, LinkedIn
-- Queries MongoDB limitadas (.to_list(5000))
-- 1000 registros fake removidos
+- Layout Desktop completo, ícones SVG, footer, segurança admin, PWA icons, Service Worker v11
+- Planejamento "Outros", bottom nav fix, queries MongoDB limitadas
 
 ### Sessões anteriores
-- Dashboard Estudo de Mercado (admin: filtros cascata, min/avg/max; user: por estado)
-- PDF com logo HD e cores corretas (jsPDF)
-- Home page mobile redesenhada (hero rock, custom logo, paleta verde)
-- Bottom navigation bar, Service Worker com auto-update
-- Domínio customizado easyx.agr.br
+- Dashboard Estudo de Mercado, PDF com logo HD, Home mobile, bottom nav, domínio customizado
 
 ## Backlog
 
 ### P1
-- Deploy final para easyx.agr.br (após validação do usuário)
+- Deploy final para easyx.agr.br
 
 ### P2
 - Refatorar App.js (5638+ linhas) em componentes menores

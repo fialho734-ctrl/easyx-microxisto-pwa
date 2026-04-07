@@ -4044,7 +4044,7 @@ function App() {
                               <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
                               <div className="text-sm font-semibold text-gray-700">
                                 {isAquaxProduct(item.produto)
-                                  ? (((parseFloat(item.dose_lha) || 0) * (parseFloat(item.num_aplicacoes) || 0)).toFixed(1) + ' L')
+                                  ? (((parseFloat(item.num_aplicacoes) || 0) * (parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1) + ' L')
                                   : (((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1) + ' L')
                                 }
                               </div>
@@ -4145,11 +4145,11 @@ function App() {
                             const dose = parseFloat(item.dose_lha) || 0;
                             const valorLitro = parseFloat(item.valor_litro) || 0;
                             
-                            // Volume total: AquaX = dose × nº aplicações; outros = dose × área
+                            // Volume total: AquaX = nº aplicações × dose × área; outros = dose × área
                             let volumeTotal;
                             if (isAquaxProduct(item.produto)) {
                               const numAplicacoes = parseFloat(item.num_aplicacoes) || 0;
-                              volumeTotal = dose * numAplicacoes;
+                              volumeTotal = numAplicacoes * dose * areaNumero;
                             } else {
                               volumeTotal = dose * areaNumero;
                             }
