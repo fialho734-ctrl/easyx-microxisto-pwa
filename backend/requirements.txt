@@ -18,7 +18,7 @@ fastapi==0.110.1
 flake8==7.3.0
 gitdb==4.0.12
 GitPython==3.1.44
-greenlet==3.3.2
+greenlet==3.4.0
 h11==0.16.0
 idna==3.10
 iniconfig==2.1.0
@@ -53,6 +53,7 @@ pyflakes==3.4.0
 Pygments==2.19.2
 PyJWT==2.10.1
 pymongo==4.5.0
+PyMuPDF==1.27.2.2
 pytest==8.4.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
@@ -62,6 +63,7 @@ pytz==2025.2
 qrcode==8.2
 requests==2.32.4
 requests-oauthlib==2.0.0
+resend==2.29.0
 rich==14.0.0
 rsa==4.9.1
 s3transfer==0.13.0

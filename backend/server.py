@@ -5,6 +5,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 import os
+import asyncio
+import random
 from motor.motor_asyncio import AsyncIOMotorClient
 import jwt
 from datetime import datetime, timedelta, timezone
@@ -12,6 +14,7 @@ import uuid
 import bcrypt
 import csv
 import io
+import resend
 from contextlib import asynccontextmanager
 
 # Database setup
@@ -25,6 +28,10 @@ db = client[DB_NAME]
 SECRET_KEY = os.environ.get('SECRET_KEY', 'microxisto-secret-key-2025-fallback')
 ALGORITHM = "HS256"
 security = HTTPBearer()
+
+# Resend config
+resend.api_key = os.environ.get('RESEND_API_KEY', '')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
 
 # Pydantic models
 class Technology(BaseModel):
@@ -1304,6 +1311,106 @@ async def delete_planejamento_report(report_id: str, credentials: HTTPAuthorizat
         return {"message": "Relatório excluído com sucesso"}
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+# ==================== PASSWORD RESET ====================
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetVerify(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+
+@app.post("/api/auth/forgot-password")
+async def forgot_password(request: PasswordResetRequest):
+    """Send password reset code to user's email"""
+    try:
+        user = await db.users.find_one({"email": request.email}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=404, detail="E-mail não encontrado")
+        
+        # Generate 6-digit code
+        code = str(random.randint(100000, 999999))
+        expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+        
+        # Store reset code
+        await db.password_resets.delete_many({"email": request.email})
+        await db.password_resets.insert_one({
+            "email": request.email,
+            "code": code,
+            "expires_at": expires_at,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Send email via Resend
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #004F27; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">XistoApp</h1>
+            </div>
+            <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 0 0 8px 8px;">
+                <h2 style="color: #333; margin-top: 0;">Recuperação de Senha</h2>
+                <p style="color: #555;">Você solicitou a redefinição de sua senha. Use o código abaixo:</p>
+                <div style="background-color: #004F27; color: white; text-align: center; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px;">{code}</span>
+                </div>
+                <p style="color: #555;">Este código expira em <strong>15 minutos</strong>.</p>
+                <p style="color: #999; font-size: 12px;">Se você não solicitou esta recuperação, ignore este e-mail.</p>
+            </div>
+        </div>
+        """
+        
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [request.email],
+            "subject": "XistoApp - Código de Recuperação de Senha",
+            "html": html_content
+        }
+        
+        await asyncio.to_thread(resend.Emails.send, params)
+        return {"message": "Código enviado para o seu e-mail"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar e-mail: {str(e)}")
+
+@app.post("/api/auth/reset-password")
+async def reset_password(request: PasswordResetVerify):
+    """Verify code and reset password"""
+    try:
+        # Find valid reset code
+        reset_entry = await db.password_resets.find_one(
+            {"email": request.email, "code": request.code}, {"_id": 0}
+        )
+        
+        if not reset_entry:
+            raise HTTPException(status_code=400, detail="Código inválido")
+        
+        # Check expiry
+        expires_at = datetime.fromisoformat(reset_entry["expires_at"])
+        if datetime.now(timezone.utc) > expires_at:
+            await db.password_resets.delete_many({"email": request.email})
+            raise HTTPException(status_code=400, detail="Código expirado. Solicite um novo.")
+        
+        # Update password
+        hashed_password = bcrypt.hashpw(request.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        result = await db.users.update_one(
+            {"email": request.email},
+            {"$set": {"password": hashed_password}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        
+        # Clean up used code
+        await db.password_resets.delete_many({"email": request.email})
+        return {"message": "Senha alterada com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao redefinir senha: {str(e)}")
 
 
 if __name__ == "__main__":

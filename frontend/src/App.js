@@ -2515,6 +2515,13 @@ function App() {
   const [incluirNutrientesPDF, setIncluirNutrientesPDF] = useState(false);
   const [savedReports, setSavedReports] = useState([]);
   const [showSavedReports, setShowSavedReports] = useState(false);
+  const [resetStep, setResetStep] = useState('email');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
 
   // Maintenance mode
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -3388,6 +3395,169 @@ function App() {
     );
   };
 
+  // Password Reset Page
+  if (!isLoggedIn && currentPage === 'forgot-password') {
+
+    const handleSendCode = async (e) => {
+      e.preventDefault();
+      setResetLoading(true);
+      setResetError('');
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: resetEmail })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setResetStep('code');
+          setResetMessage('Código enviado! Verifique seu e-mail.');
+        } else {
+          setResetError(data.detail || 'Erro ao enviar código');
+        }
+      } catch (err) {
+        setResetError('Erro de conexão');
+      }
+      setResetLoading(false);
+    };
+
+    const handleResetPassword = async (e) => {
+      e.preventDefault();
+      if (newPassword.length < 4) {
+        setResetError('A senha deve ter pelo menos 4 caracteres');
+        return;
+      }
+      setResetLoading(true);
+      setResetError('');
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: resetEmail, code: resetCode, new_password: newPassword })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setResetStep('success');
+          setResetMessage('Senha alterada com sucesso!');
+        } else {
+          setResetError(data.detail || 'Erro ao redefinir senha');
+        }
+      } catch (err) {
+        setResetError('Erro de conexão');
+      }
+      setResetLoading(false);
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
+        <div className="bg-white p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md">
+          <div className="text-center mb-6">
+            <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-12 lg:h-16 mx-auto mb-4 object-contain" />
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Recuperar Senha</h2>
+          </div>
+
+          {resetStep === 'email' && (
+            <form onSubmit={handleSendCode}>
+              <p className="text-gray-600 text-sm mb-4">Informe seu e-mail cadastrado para receber o código de recuperação.</p>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">E-mail</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                  placeholder="seu@email.com"
+                  required
+                  data-testid="reset-email-input"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                data-testid="reset-send-code-btn"
+              >
+                {resetLoading ? 'Enviando...' : 'Enviar Código'}
+              </button>
+            </form>
+          )}
+
+          {resetStep === 'code' && (
+            <form onSubmit={handleResetPassword}>
+              <p className="text-gray-600 text-sm mb-4">Digite o código de 6 dígitos enviado para <strong>{resetEmail}</strong> e sua nova senha.</p>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Código</label>
+                <input
+                  type="text"
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  maxLength={6}
+                  required
+                  data-testid="reset-code-input"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Nova Senha</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                  placeholder="Mínimo 4 caracteres"
+                  required
+                  data-testid="reset-new-password-input"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                data-testid="reset-confirm-btn"
+              >
+                {resetLoading ? 'Alterando...' : 'Redefinir Senha'}
+              </button>
+            </form>
+          )}
+
+          {resetStep === 'success' && (
+            <div className="text-center">
+              <div className="text-green-600 text-5xl mb-4">✓</div>
+              <p className="text-green-700 font-semibold text-lg mb-4">{resetMessage}</p>
+              <button
+                onClick={() => setCurrentPage('login')}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+              >
+                Ir para Login
+              </button>
+            </div>
+          )}
+
+          {resetError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm text-center">
+              {resetError}
+            </div>
+          )}
+          {resetMessage && resetStep === 'code' && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm text-center">
+              {resetMessage}
+            </div>
+          )}
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setCurrentPage('login')}
+              className="text-green-600 hover:text-green-800"
+            >
+              Voltar ao Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!isLoggedIn && currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
@@ -3431,8 +3601,15 @@ function App() {
           
           <div className="mt-4 text-center">
             <button
+              onClick={() => setCurrentPage('forgot-password')}
+              className="text-gray-500 hover:text-green-700 text-sm"
+            >
+              Esqueci minha senha
+            </button>
+            <br />
+            <button
               onClick={() => setCurrentPage('register')}
-              className="text-green-600 hover:text-green-800"
+              className="text-green-600 hover:text-green-800 mt-2"
             >
               Não tem conta? Cadastre-se
             </button>
