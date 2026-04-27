@@ -2513,6 +2513,8 @@ function App() {
   const [resumoManejo, setResumoManejo] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [incluirNutrientesPDF, setIncluirNutrientesPDF] = useState(false);
+  const [savedReports, setSavedReports] = useState([]);
+  const [showSavedReports, setShowSavedReports] = useState(false);
 
   // Maintenance mode
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -2521,7 +2523,7 @@ function App() {
   // Estudo de Mercado states
   const [marketStudies, setMarketStudies] = useState([]);
   const [marketForm, setMarketForm] = useState({
-    empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: ''
+    empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: ''
   });
   const [editingStudy, setEditingStudy] = useState(null);
 
@@ -2620,6 +2622,14 @@ function App() {
       fetchDashboard();
     }
   }, [currentPage, isLoggedIn, token]);
+
+  // Fetch saved reports when on planejamento page
+  useEffect(() => {
+    if (isLoggedIn && token && currentPage === 'planejamento') {
+      fetchSavedReports();
+    }
+  }, [currentPage, isLoggedIn, token]);
+
 
   // Fetch dashboard when admin opens market-export tab
   useEffect(() => {
@@ -2765,6 +2775,90 @@ function App() {
       console.error('Error toggling maintenance:', error);
     }
   };
+
+  // Planejamento Reports
+  const fetchSavedReports = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/planejamento-reports`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSavedReports(data);
+      }
+    } catch (error) {
+      console.error('Error fetching saved reports:', error);
+    }
+  };
+
+  const saveCurrentReport = async () => {
+    try {
+      const reportData = {
+        form_data: planejamentoForm,
+        produtos_selecionados: produtosSelecionados.map(p => ({
+          produto_id: p.produto.id,
+          produto_name: p.produto.name,
+          technology_id: p.produto.technology_id,
+          estagio: p.estagio || '',
+          num_aplicacoes: p.num_aplicacoes || '',
+          dose_lha: p.dose_lha || '',
+          valor_litro: p.valor_litro || '',
+          observacao: p.observacao || ''
+        })),
+        resumo: resumoManejo ? {
+          custoTotal: resumoManejo.custoTotal,
+          custoPorHectare: resumoManejo.custoPorHectare,
+          cultura: resumoManejo.cultura
+        } : {}
+      };
+      const response = await fetch(`${API_BASE}/api/planejamento-reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(reportData)
+      });
+      if (response.ok) {
+        alert('Relatório salvo com sucesso! Disponível por 10 dias.');
+        fetchSavedReports();
+      }
+    } catch (error) {
+      console.error('Error saving report:', error);
+    }
+  };
+
+  const loadReport = (report) => {
+    setPlanejamentoForm(report.form_data);
+    // Reconstruct produtosSelecionados from saved data
+    const reconstructed = report.produtos_selecionados.map(saved => ({
+      produto: {
+        id: saved.produto_id,
+        name: saved.produto_name,
+        technology_id: saved.technology_id,
+        composition: (allProducts.find(p => p.id === saved.produto_id) || {}).composition || {}
+      },
+      estagio: saved.estagio,
+      num_aplicacoes: saved.num_aplicacoes,
+      dose_lha: saved.dose_lha,
+      valor_litro: saved.valor_litro,
+      observacao: saved.observacao
+    }));
+    setProdutosSelecionados(reconstructed);
+    setResumoManejo(null);
+    setShowSavedReports(false);
+  };
+
+  const deleteReport = async (reportId) => {
+    if (!window.confirm('Excluir este relatório?')) return;
+    try {
+      await fetch(`${API_BASE}/api/planejamento-reports/${reportId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchSavedReports();
+    } catch (error) {
+      console.error('Error deleting report:', error);
+    }
+  };
+
 
   const fetchDashboard = async () => {
     try {
@@ -3809,7 +3903,62 @@ function App() {
           <>
             {isLoggedIn ? (
               <div className="max-w-6xl mx-auto">
-                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">📊 Planejamento de Aplicação</h2>
+                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Planejamento de Aplicação</h2>
+                
+                {/* Botão Meus Relatórios */}
+                <div className="mb-6 flex justify-center">
+                  <button
+                    onClick={() => { setShowSavedReports(!showSavedReports); if (!showSavedReports) fetchSavedReports(); }}
+                    className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-2"
+                    data-testid="saved-reports-btn"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Meus Relatórios ({savedReports.length})
+                  </button>
+                </div>
+
+                {/* Lista de Relatórios Salvos */}
+                {showSavedReports && (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Relatórios Salvos (últimos 10 dias)</h3>
+                    {savedReports.length > 0 ? (
+                      <div className="space-y-3">
+                        {savedReports.map((report) => (
+                          <div key={report.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border hover:bg-green-50 transition-colors">
+                            <div className="flex-1 cursor-pointer" onClick={() => loadReport(report)}>
+                              <div className="font-semibold text-gray-800">
+                                {report.form_data.nome_produtor || 'Sem nome'} - {report.form_data.fazenda || 'Sem fazenda'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {report.form_data.cultura}{report.form_data.cultura === 'Outros' && report.form_data.cultura_custom ? ` (${report.form_data.cultura_custom})` : ''} | {report.form_data.area_tratada} ha | {report.produtos_selecionados.length} produto(s)
+                                {report.resumo?.custoTotal ? ` | R$ ${report.resumo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : ''}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                Criado em: {new Date(report.created_at).toLocaleDateString('pt-BR')} às {new Date(report.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-3">
+                              <button
+                                onClick={() => loadReport(report)}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                              >
+                                Abrir
+                              </button>
+                              <button
+                                onClick={() => deleteReport(report.id)}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">Nenhum relatório salvo nos últimos 10 dias.</p>
+                    )}
+                  </div>
+                )}
                 
                 <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-4">Dados do Planejamento</h3>
@@ -4373,14 +4522,14 @@ function App() {
                     {/* Resumo Financeiro */}
                     <div className={`grid grid-cols-1 ${resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo Total (Área Completa)</div>
+                        <div className="text-sm text-gray-600 mb-1">Investimento Total (Área Completa)</div>
                         <div className="text-2xl font-bold text-green-800">
                           R$ {resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </div>
                       </div>
                       
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo por Hectare</div>
+                        <div className="text-sm text-gray-600 mb-1">Investimento por Hectare</div>
                         <div className="text-2xl font-bold text-blue-800">
                           R$ {resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </div>
@@ -4388,7 +4537,7 @@ function App() {
                       
                       {resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros' && (
                         <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                          <div className="text-sm text-gray-600 mb-1">Custo em Sacas/ha</div>
+                          <div className="text-sm text-gray-600 mb-1">Investimento em Sacas/ha</div>
                           <div className="text-2xl font-bold text-yellow-800">
                             {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
                           </div>
@@ -4411,8 +4560,16 @@ function App() {
                       </label>
                     </div>
                     
-                    {/* Botão Gerar Recomendação PDF */}
-                    <div className="mt-6">
+                    {/* Botão Salvar Relatório + Gerar Recomendação PDF */}
+                    <div className="mt-6 space-y-3">
+                      <button
+                        onClick={saveCurrentReport}
+                        className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base flex items-center justify-center gap-2"
+                        data-testid="save-report-btn"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                        Salvar Relatório
+                      </button>
                       <button
                         onClick={async () => {
                           try {
@@ -4553,12 +4710,12 @@ function App() {
                               doc.setFontSize(10);
                               doc.setFont('helvetica', 'normal');
                               doc.setTextColor(50, 50, 50);
-                              doc.text(`Custo Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
+                              doc.text(`Investimento Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
                               yFin += 14;
-                              doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
+                              doc.text(`Investimento por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
                               yFin += 14;
                               if (resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros') {
-                                doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
+                                doc.text(`Investimento em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
                               }
                               
                               // Nutrientes Aportados (opcional - formato compacto)
@@ -4980,7 +5137,7 @@ function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Dose/ha</label>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Dose (L/ha)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -4992,7 +5149,7 @@ function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Valor (R$)</label>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Valor (R$/L)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -5002,6 +5159,20 @@ function App() {
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                         data-testid="market-valor-input"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Prazo</label>
+                      <select
+                        value={marketForm.prazo}
+                        onChange={(e) => setMarketForm({...marketForm, prazo: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-prazo-select"
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="A vista">A vista</option>
+                        <option value="Safra">Safra</option>
+                        <option value="Safrinha">Safrinha</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-gray-700 font-semibold mb-1 text-sm">Tipo de Venda</label>
@@ -5054,7 +5225,7 @@ function App() {
                       <button
                         onClick={() => {
                           setEditingStudy(null);
-                          setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '' });
+                          setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: '' });
                         }}
                         className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
                       >
@@ -5074,8 +5245,9 @@ function App() {
                           <tr>
                             <th className="px-3 py-2 text-left">Empresa</th>
                             <th className="px-3 py-2 text-left">Produto</th>
-                            <th className="px-3 py-2 text-center">Dose/ha</th>
-                            <th className="px-3 py-2 text-center">Valor</th>
+                            <th className="px-3 py-2 text-center">Dose (L/ha)</th>
+                            <th className="px-3 py-2 text-center">Valor (R$/L)</th>
+                            <th className="px-3 py-2 text-center">Prazo</th>
                             <th className="px-3 py-2 text-center">R$/ha</th>
                             <th className="px-3 py-2 text-center">Venda</th>
                             <th className="px-3 py-2 text-center">Estado</th>
@@ -5089,6 +5261,7 @@ function App() {
                               <td className="px-3 py-2">{study.produto}</td>
                               <td className="px-3 py-2 text-center">{study.dose_ha}</td>
                               <td className="px-3 py-2 text-center">R$ {parseFloat(study.valor).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{study.prazo || '-'}</td>
                               <td className="px-3 py-2 text-center font-bold text-green-700">R$ {parseFloat(study.rs_ha).toFixed(2)}</td>
                               <td className="px-3 py-2 text-center">{study.venda}</td>
                               <td className="px-3 py-2 text-center">{study.estado}</td>
@@ -5102,6 +5275,7 @@ function App() {
                                         produto: study.produto,
                                         dose_ha: study.dose_ha.toString(),
                                         valor: study.valor.toString(),
+                                        prazo: study.prazo || '',
                                         venda: study.venda,
                                         estado: study.estado
                                       });
@@ -5445,8 +5619,8 @@ function App() {
                           <tr>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Valor (R$)</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Dose/ha</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Valor (R$/L)</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Dose (L/ha)</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Tipo de Venda</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Estado</th>

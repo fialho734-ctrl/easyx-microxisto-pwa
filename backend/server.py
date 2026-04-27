@@ -146,6 +146,7 @@ class MarketStudy(BaseModel):
     produto: str
     dose_ha: float
     valor: float
+    prazo: str = ""
     venda: str
     estado: str
 
@@ -1202,16 +1203,108 @@ async def track_activity(credentials: HTTPAuthorizationCredentials = Depends(sec
 
 @app.get("/api/admin/user-activity")
 async def get_user_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get user activity for admin"""
+    """Get user activity for admin - aggregated per user"""
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         if not payload.get("is_admin"):
             raise HTTPException(status_code=403, detail="Admin access required")
         
-        activities = await db.user_activity.find({}, {"_id": 0}).sort("timestamp", -1).to_list(100)
-        return activities
+        activities = await db.user_activity.find({}, {"_id": 0}).sort("timestamp", -1).to_list(5000)
+        
+        # Aggregate per user
+        user_map = {}
+        for a in activities:
+            email = a.get("email", "unknown")
+            if email not in user_map:
+                user_map[email] = {
+                    "email": email,
+                    "total_accesses": 0,
+                    "days": set(),
+                    "last_access": a.get("timestamp", "")
+                }
+            user_map[email]["total_accesses"] += 1
+            ts = a.get("timestamp", "")
+            if ts:
+                day = ts[:10]
+                user_map[email]["days"].add(day)
+        
+        result = []
+        for u in user_map.values():
+            result.append({
+                "email": u["email"],
+                "total_accesses": u["total_accesses"],
+                "days_active": len(u["days"]),
+                "last_access": u["last_access"][:16].replace("T", " ") if u["last_access"] else "-"
+            })
+        
+        result.sort(key=lambda x: x["total_accesses"], reverse=True)
+        return result
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+# ==================== PLANEJAMENTO REPORTS ====================
+
+class PlanejamentoReport(BaseModel):
+    form_data: dict
+    produtos_selecionados: list
+    resumo: dict = {}
+
+@app.post("/api/planejamento-reports")
+async def save_planejamento_report(report: PlanejamentoReport, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Save a planejamento report (available for 10 days)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        report_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "form_data": report.form_data,
+            "produtos_selecionados": report.produtos_selecionados,
+            "resumo": report.resumo,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.planejamento_reports.insert_one(report_data)
+        result = {k: v for k, v in report_data.items() if k != "_id"}
+        return result
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/planejamento-reports")
+async def get_planejamento_reports(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get user's planejamento reports (last 10 days only)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Calculate 10 days ago
+        ten_days_ago = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+        
+        reports = await db.planejamento_reports.find(
+            {"user_id": user_id, "created_at": {"$gte": ten_days_ago}},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(50)
+        
+        return reports
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/planejamento-reports/{report_id}")
+async def delete_planejamento_report(report_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete a planejamento report"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        result = await db.planejamento_reports.delete_one({"id": report_id, "user_id": user_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Report not found")
+        return {"message": "Relatório excluído com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 if __name__ == "__main__":
     import uvicorn
