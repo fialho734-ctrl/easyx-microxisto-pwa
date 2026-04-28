@@ -18,7 +18,7 @@ import resend
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Database setup
 MONGO_URL = os.environ.get('MONGO_URL', "mongodb://localhost:27017")
@@ -33,8 +33,9 @@ ALGORITHM = "HS256"
 security = HTTPBearer()
 
 # Resend config
-resend.api_key = os.environ.get('RESEND_API_KEY', '')
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', 're_2aNs51cL_Fbvk7fsFCdxkVK4kyt8q9Epc')
+resend.api_key = RESEND_API_KEY
+SENDER_EMAIL = "noreply@easyx.agr.br"
 
 # Pydantic models
 class Technology(BaseModel):
