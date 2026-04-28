@@ -33,8 +33,7 @@ ALGORITHM = "HS256"
 security = HTTPBearer()
 
 # Resend config
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY', 're_2aNs51cL_Fbvk7fsFCdxkVK4kyt8q9Epc')
-resend.api_key = RESEND_API_KEY
+RESEND_API_KEY = "re_2aNs51cL_Fbvk7fsFCdxkVK4kyt8q9Epc"
 SENDER_EMAIL = "noreply@easyx.agr.br"
 
 # Pydantic models
@@ -1373,7 +1372,19 @@ async def forgot_password(request: PasswordResetRequest):
             "html": html_content
         }
         
-        await asyncio.to_thread(resend.Emails.send, params)
+        import httpx
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {RESEND_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json=params
+            )
+            if resp.status_code != 200:
+                raise Exception(resp.text)
+        
         return {"message": "Código enviado para o seu e-mail"}
     except HTTPException:
         raise
