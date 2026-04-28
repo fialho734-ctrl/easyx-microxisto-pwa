@@ -14,7 +14,7 @@ import uuid
 import bcrypt
 import csv
 import io
-import resend
+import httpx
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
@@ -1372,7 +1372,6 @@ async def forgot_password(request: PasswordResetRequest):
             "html": html_content
         }
         
-        import httpx
         async with httpx.AsyncClient() as client:
             resp = await client.post(
                 "https://api.resend.com/emails",
