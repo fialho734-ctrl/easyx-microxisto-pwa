@@ -16,6 +16,9 @@ import csv
 import io
 import resend
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Database setup
 MONGO_URL = os.environ.get('MONGO_URL', "mongodb://localhost:27017")
