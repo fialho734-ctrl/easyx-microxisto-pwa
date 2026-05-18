@@ -1,12 +1,14 @@
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 import os
 import asyncio
 import random
+from pathlib import Path
 from motor.motor_asyncio import AsyncIOMotorClient
 import jwt
 from datetime import datetime, timedelta, timezone
@@ -1425,6 +1427,24 @@ async def reset_password(request: PasswordResetVerify):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao redefinir senha: {str(e)}")
+
+
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok"}
+
+
+# Serve React static files (for Railway/production)
+STATIC_DIR = Path(__file__).parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR / "static")), name="staticfiles")
+
+    @app.get("/{full_path:path}")
+    async def serve_react(full_path: str):
+        file_path = STATIC_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 if __name__ == "__main__":
