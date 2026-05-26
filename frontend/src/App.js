@@ -2530,7 +2530,7 @@ function App() {
   // Estudo de Mercado states
   const [marketStudies, setMarketStudies] = useState([]);
   const [marketForm, setMarketForm] = useState({
-    empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: ''
+    cultura: '', empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: ''
   });
   const [editingStudy, setEditingStudy] = useState(null);
 
@@ -4370,8 +4370,8 @@ function App() {
                               <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
                               <div className="text-sm font-semibold text-gray-700">
                                 {isAquaxProduct(item.produto)
-                                  ? (((parseFloat(item.num_aplicacoes) || 0) * (parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1) + ' L')
-                                  : (((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1) + ' L')
+                                  ? (((parseFloat(item.num_aplicacoes) || 0) * (parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(2) + ' L')
+                                  : (((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(2) + ' L')
                                 }
                               </div>
                             </div>
@@ -4574,13 +4574,13 @@ function App() {
                           .map(([nutriente, valor]) => (
                             <div key={nutriente} className="text-center p-2 bg-white rounded border border-blue-300">
                               <div className="text-xs text-gray-600">{nutriente}</div>
-                              <div className="text-lg font-bold text-blue-800">{valor.toFixed(1)}</div>
+                              <div className="text-lg font-bold text-blue-800">{valor.toFixed(2)}</div>
                             </div>
                           ))
                         }
                       </div>
                       <div className="mt-3 text-sm text-blue-800">
-                        <strong>Total geral:</strong> {Object.values(resumoManejo.totalNutrientes).reduce((a, b) => a + b, 0).toFixed(1)} g/ha
+                        <strong>Total geral:</strong> {Object.values(resumoManejo.totalNutrientes).reduce((a, b) => a + b, 0).toFixed(2)} g/ha
                       </div>
                     </div>
                     
@@ -4606,7 +4606,7 @@ function App() {
                                   .filter(([, valor]) => valor > 0)
                                   .map(([nutriente, valor]) => {
                                     const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
-                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
+                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(2);
                                     const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
                                     
                                     return (
@@ -4642,7 +4642,7 @@ function App() {
                                   .filter(([, valor]) => valor > 0)
                                   .map(([nutriente, valor]) => {
                                     const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
-                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
+                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(2);
                                     const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
                                     
                                     return (
@@ -4685,8 +4685,8 @@ function App() {
                             <tr key={index} className="border-t">
                               <td className="px-3 py-2" translate="no">{produto.nome}</td>
                               <td className="px-3 py-2 text-center">{produto.estagio}</td>
-                              <td className="px-3 py-2 text-center">{produto.dose_lha.toFixed(1)}</td>
-                              <td className="px-3 py-2 text-center">{produto.volumeTotal.toFixed(1)}</td>
+                              <td className="px-3 py-2 text-center">{produto.dose_lha.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{produto.volumeTotal.toFixed(2)}</td>
                               <td className="px-3 py-2 text-right">
                                 R$ {produto.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                               </td>
@@ -4839,8 +4839,8 @@ function App() {
                               const tableData = resumoManejo.produtos.map(p => [
                                 p.nome,
                                 p.isAquax ? (p.num_aplicacoes ? `${p.num_aplicacoes}x` : '-') : (p.estagio || '-'),
-                                p.dose_lha.toFixed(1),
-                                p.volumeTotal.toFixed(1),
+                                p.dose_lha.toFixed(2),
+                                p.volumeTotal.toFixed(2),
                                 `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`,
                                 p.observacao || ''
                               ]);
@@ -4934,7 +4934,7 @@ function App() {
                                     doc.setFontSize(9);
                                     doc.setTextColor(10, 79, 46);
                                     doc.setFont('helvetica', 'bold');
-                                    doc.text(valor.toFixed(1), x + boxW / 2, yBox + 22, { align: 'center' });
+                                    doc.text(valor.toFixed(2), x + boxW / 2, yBox + 22, { align: 'center' });
                                   });
                                 }
                               }
@@ -5292,6 +5292,52 @@ function App() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                     <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Cultura</label>
+                      <select
+                        value={marketForm.cultura}
+                        onChange={(e) => setMarketForm({...marketForm, cultura: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-cultura-select"
+                      >
+                        <option value="">Selecione a cultura...</option>
+                        <option value="Soja">Soja</option>
+                        <option value="Milho">Milho</option>
+                        <option value="Algodão">Algodão</option>
+                        <option value="Abacate">Abacate</option>
+                        <option value="Abacaxi">Abacaxi</option>
+                        <option value="Alho">Alho</option>
+                        <option value="Amendoim">Amendoim</option>
+                        <option value="Arroz">Arroz</option>
+                        <option value="Aveia">Aveia</option>
+                        <option value="Banana">Banana</option>
+                        <option value="Batata">Batata</option>
+                        <option value="Batata-doce">Batata-doce</option>
+                        <option value="Borracha (seringueira)">Borracha (seringueira)</option>
+                        <option value="Café">Café</option>
+                        <option value="Cacau">Cacau</option>
+                        <option value="Cana-de-açúcar">Cana-de-açúcar</option>
+                        <option value="Cebola">Cebola</option>
+                        <option value="Cevada">Cevada</option>
+                        <option value="Citros">Citros</option>
+                        <option value="Coco">Coco</option>
+                        <option value="Feijão">Feijão</option>
+                        <option value="Fumo (tabaco)">Fumo (tabaco)</option>
+                        <option value="Girassol">Girassol</option>
+                        <option value="Gergelim">Gergelim</option>
+                        <option value="Maçã">Maçã</option>
+                        <option value="Mandioca">Mandioca</option>
+                        <option value="Mamão">Mamão</option>
+                        <option value="Manga">Manga</option>
+                        <option value="Melancia">Melancia</option>
+                        <option value="Melão">Melão</option>
+                        <option value="Milheto">Milheto</option>
+                        <option value="Sorgo">Sorgo</option>
+                        <option value="Tomate">Tomate</option>
+                        <option value="Trigo">Trigo</option>
+                        <option value="Uva">Uva</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-gray-700 font-semibold mb-1 text-sm">Empresa</label>
                       <input
                         type="text"
@@ -5402,7 +5448,7 @@ function App() {
                       <button
                         onClick={() => {
                           setEditingStudy(null);
-                          setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: '' });
+                          setMarketForm({ cultura: '', empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: '' });
                         }}
                         className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
                       >
@@ -5420,6 +5466,7 @@ function App() {
                       <table className="w-full text-sm">
                         <thead className="bg-gray-100">
                           <tr>
+                            <th className="px-3 py-2 text-left">Cultura</th>
                             <th className="px-3 py-2 text-left">Empresa</th>
                             <th className="px-3 py-2 text-left">Produto</th>
                             <th className="px-3 py-2 text-center">Dose (L/ha)</th>
@@ -5434,6 +5481,7 @@ function App() {
                         <tbody>
                           {marketStudies.map(study => (
                             <tr key={study.id} className="border-t hover:bg-gray-50">
+                              <td className="px-3 py-2">{study.cultura || '-'}</td>
                               <td className="px-3 py-2">{study.empresa}</td>
                               <td className="px-3 py-2">{study.produto}</td>
                               <td className="px-3 py-2 text-center">{study.dose_ha}</td>
@@ -5448,6 +5496,7 @@ function App() {
                                     onClick={() => {
                                       setEditingStudy(study);
                                       setMarketForm({
+                                        cultura: study.cultura || '',
                                         empresa: study.empresa,
                                         produto: study.produto,
                                         dose_ha: study.dose_ha.toString(),

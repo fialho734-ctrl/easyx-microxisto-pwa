@@ -154,6 +154,7 @@ class CompetitorUpdate(BaseModel):
     proposito: Optional[str] = ""  # NOVO CAMPO
 
 class MarketStudy(BaseModel):
+    cultura: str = ""
     empresa: str
     produto: str
     dose_ha: float
