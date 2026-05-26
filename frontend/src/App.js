@@ -5843,11 +5843,13 @@ function App() {
                       <table className="w-full text-sm">
                         <thead className="bg-green-50 sticky top-0">
                           <tr>
+                            <th className="px-3 py-2 text-left font-semibold text-green-800">Cultura</th>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Valor (R$/L)</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Dose (L/ha)</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Prazo</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Tipo de Venda</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Estado</th>
                           </tr>
@@ -5855,11 +5857,13 @@ function App() {
                         <tbody>
                           {dashboardData.records.map((rec, i) => (
                             <tr key={i} className="border-t hover:bg-gray-50">
+                              <td className="px-3 py-1.5">{rec.cultura || 'Soja'}</td>
                               <td className="px-3 py-1.5">{rec.empresa}</td>
                               <td className="px-3 py-1.5 font-semibold">{rec.produto}</td>
                               <td className="px-3 py-1.5 text-center">R$ {(rec.valor || 0).toFixed(2)}</td>
                               <td className="px-3 py-1.5 text-center">{(rec.dose_ha || 0).toFixed(2)}</td>
                               <td className="px-3 py-1.5 text-center font-bold text-green-700">R$ {(rec.rs_ha || 0).toFixed(2)}</td>
+                              <td className="px-3 py-1.5 text-center">{rec.prazo || '-'}</td>
                               <td className="px-3 py-1.5 text-center">
                                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                                   rec.venda === 'Venda direta' ? 'bg-blue-100 text-blue-800' :

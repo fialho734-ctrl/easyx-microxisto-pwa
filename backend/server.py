@@ -168,6 +168,11 @@ class MarketStudy(BaseModel):
 async def lifespan(app: FastAPI):
     # Initialize default data
     await initialize_default_data()
+    # Migrate old market studies: add cultura='Soja' where missing
+    await db.market_studies.update_many(
+        {"$or": [{"cultura": {"$exists": False}}, {"cultura": ""}, {"cultura": None}]},
+        {"$set": {"cultura": "Soja"}}
+    )
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -1213,6 +1218,24 @@ async def track_activity(credentials: HTTPAuthorizationCredentials = Depends(sec
         return {"message": "Activity tracked"}
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+@app.post("/api/admin/migrate-market-cultura")
+async def migrate_market_cultura(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Set cultura='Soja' for all market studies that don't have a cultura field"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = await db.market_studies.update_many(
+            {"$or": [{"cultura": {"$exists": False}}, {"cultura": ""}, {"cultura": None}]},
+            {"$set": {"cultura": "Soja"}}
+        )
+        return {"message": f"Atualizados {result.modified_count} registros com cultura='Soja'"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 @app.get("/api/admin/user-activity")
 async def get_user_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
