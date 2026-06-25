@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { PDF_ASSETS, EUROSTILE_FONT } from './pdfAssets';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -2529,6 +2530,8 @@ function App() {
   const [selectedMicroxistoProduct, setSelectedMicroxistoProduct] = useState('');
   const [selectedDashEstado, setSelectedDashEstado] = useState('');
   const [selectedDashVenda, setSelectedDashVenda] = useState('');
+  const [selectedDashEmpresa, setSelectedDashEmpresa] = useState('');
+  const [selectedDashProduto, setSelectedDashProduto] = useState('');
 
   // Estágio options
   const ESTAGIO_OPTIONS = ['TS', 'Sulco', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'R1', 'R2', 'R3', 'R4', 'R5', 'R5.1', 'R5.2', 'R5.3', 'R5.4', 'R6'];
@@ -2840,6 +2843,8 @@ function App() {
       if (selectedMicroxistoProduct) params.append('produto_microxisto', selectedMicroxistoProduct);
       if (selectedDashEstado) params.append('estado', selectedDashEstado);
       if (selectedDashVenda) params.append('venda', selectedDashVenda);
+      if (selectedDashEmpresa) params.append('empresa', selectedDashEmpresa);
+      if (selectedDashProduto) params.append('produto_concorrente', selectedDashProduto);
       const url = `${API_BASE}/api/admin/market-studies/dashboard-by-microxisto${params.toString() ? '?' + params.toString() : ''}`;
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -4735,81 +4740,6 @@ function App() {
                 {dashboardData && (dashboardData.national.length > 0 || dashboardData.by_state.length > 0) && (
                   <div className="mb-6 space-y-4">
                     
-                    {/* Admin Filters */}
-                    {isAdmin && (
-                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-3">Filtros (Admin)</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Estado</label>
-                            <select
-                              value={dashboardFilters.estado}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, estado: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-estado"
-                            >
-                              <option value="">Todos</option>
-                              {filterOptions.estados.map(uf => (
-                                <option key={uf} value={uf}>{uf}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Empresa</label>
-                            <select
-                              value={dashboardFilters.empresa}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, empresa: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-empresa"
-                            >
-                              <option value="">Todas</option>
-                              {filterOptions.empresas.map(emp => (
-                                <option key={emp} value={emp}>{emp}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Data Início</label>
-                            <input
-                              type="date"
-                              value={dashboardFilters.data_inicio}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, data_inicio: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-data-inicio"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">Data Fim</label>
-                            <input
-                              type="date"
-                              value={dashboardFilters.data_fim}
-                              onChange={(e) => setDashboardFilters({...dashboardFilters, data_fim: e.target.value})}
-                              className="w-full px-2 py-1.5 border rounded text-sm"
-                              data-testid="filter-data-fim"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={fetchDashboard}
-                            className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 font-semibold"
-                            data-testid="apply-filters-btn"
-                          >
-                            Aplicar Filtros
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDashboardFilters({ estado: '', empresa: '', data_inicio: '', data_fim: '' });
-                              setTimeout(fetchDashboard, 100);
-                            }}
-                            className="px-4 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
-                          >
-                            Limpar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    
                     {/* Product Averages */}
                     {dashboardData.national.length > 0 && (
                       <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
@@ -5209,142 +5139,142 @@ function App() {
             
             {adminTab === 'market-export' && (
               <div className="space-y-6">
-                {/* Dashboard por Produto MicroXisto */}
+                {/* Dashboard Visual */}
                 <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Análise por Produto MicroXisto</h3>
-                  <div className="flex flex-wrap gap-3 mb-4 items-end">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Dashboard - Análise de Concorrentes</h3>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Produto MicroXisto</label>
-                      <select
-                        value={selectedMicroxistoProduct}
-                        onChange={(e) => setSelectedMicroxistoProduct(e.target.value)}
-                        className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500"
-                        data-testid="admin-microxisto-filter"
-                      >
-                        <option value="">Todos os Produtos</option>
-                        {MICROXISTO_PRODUCTS.map(p => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1">Estado</label>
-                      <select
-                        value={selectedDashEstado}
-                        onChange={(e) => setSelectedDashEstado(e.target.value)}
-                        className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500"
-                        data-testid="admin-dash-estado-filter"
-                      >
+                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Produto MicroXisto</label>
+                      <select value={selectedMicroxistoProduct} onChange={(e) => setSelectedMicroxistoProduct(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-microxisto-filter">
                         <option value="">Todos</option>
-                        {ESTADOS_BRASIL.map(uf => (
-                          <option key={uf} value={uf}>{uf}</option>
-                        ))}
+                        {MICROXISTO_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Tipo de Venda</label>
-                      <select
-                        value={selectedDashVenda}
-                        onChange={(e) => setSelectedDashVenda(e.target.value)}
-                        className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500"
-                        data-testid="admin-dash-venda-filter"
-                      >
+                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Estado</label>
+                      <select value={selectedDashEstado} onChange={(e) => setSelectedDashEstado(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-estado-filter">
                         <option value="">Todos</option>
-                        {VENDA_OPTIONS.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
+                        {(microxistoDashboard?.estados || ESTADOS_BRASIL).map(uf => <option key={uf} value={uf}>{uf}</option>)}
                       </select>
                     </div>
-                    <button
-                      onClick={fetchMicroxistoDashboard}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold"
-                      data-testid="admin-microxisto-search-btn"
-                    >
-                      Buscar
-                    </button>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Tipo de Venda</label>
+                      <select value={selectedDashVenda} onChange={(e) => setSelectedDashVenda(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-venda-filter">
+                        <option value="">Todos</option>
+                        {VENDA_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Empresa Concorrente</label>
+                      <select value={selectedDashEmpresa} onChange={(e) => setSelectedDashEmpresa(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-empresa-filter">
+                        <option value="">Todas</option>
+                        {(microxistoDashboard?.empresas || []).map(emp => <option key={emp} value={emp}>{emp}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Produto Concorrente</label>
+                      <select value={selectedDashProduto} onChange={(e) => setSelectedDashProduto(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-produto-filter">
+                        <option value="">Todos</option>
+                        {(microxistoDashboard?.produtos || []).map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <button onClick={fetchMicroxistoDashboard} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold" data-testid="admin-microxisto-search-btn">Buscar</button>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <button onClick={() => { setSelectedMicroxistoProduct(''); setSelectedDashEstado(''); setSelectedDashVenda(''); setSelectedDashEmpresa(''); setSelectedDashProduto(''); }} className="text-sm text-gray-500 hover:text-green-700 underline">Limpar todos os filtros</button>
                   </div>
                   
                   {microxistoDashboard && microxistoDashboard.competitors.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead className="bg-green-50">
-                          <tr>
-                            <th className="px-3 py-2 text-left font-semibold text-green-800">Produto MicroXisto</th>
-                            <th className="px-3 py-2 text-left font-semibold text-green-800">Concorrente (Empresa)</th>
-                            <th className="px-3 py-2 text-left font-semibold text-green-800">Produto Concorrente</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Estado</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Tipo Venda</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Menor Valor</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Maior Valor</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Valor Médio</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
-                            <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {microxistoDashboard.competitors.map((item, i) => (
-                            <tr key={i} className="border-t hover:bg-gray-50">
-                              <td className="px-3 py-2 font-bold text-green-700">{item.produto_microxisto}</td>
-                              <td className="px-3 py-2">{item.empresa}</td>
-                              <td className="px-3 py-2 font-semibold">{item.produto}</td>
-                              <td className="px-3 py-2 text-center">{item.estado}</td>
-                              <td className="px-3 py-2 text-center text-xs">{item.venda}</td>
-                              <td className="px-3 py-2 text-center text-blue-700 font-medium">R$ {item.min_valor.toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center text-red-700 font-medium">R$ {item.max_valor.toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center font-bold">R$ {item.avg_valor.toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
-                              <td className="px-3 py-2 text-center">{item.count}</td>
+                    <>
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-green-800 mb-3">Comparativo de R$/ha</h4>
+                        <div style={{width: '100%', height: 350}}>
+                          <ResponsiveContainer>
+                            <BarChart data={microxistoDashboard.competitors.map(c => ({ name: `${c.empresa} - ${c.produto}`, 'Menor': c.min_rs_ha, 'Médio': c.avg_rs_ha, 'Maior': c.max_rs_ha }))} margin={{top: 5, right: 30, left: 20, bottom: 80}}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" angle={-35} textAnchor="end" height={90} tick={{fontSize: 11}} />
+                              <YAxis tick={{fontSize: 12}} />
+                              <Tooltip formatter={(v) => `R$ ${v.toFixed(2)}`} />
+                              <Legend />
+                              <Bar dataKey="Menor" fill="#3b82f6" radius={[4,4,0,0]} />
+                              <Bar dataKey="Médio" fill="#004F27" radius={[4,4,0,0]} />
+                              <Bar dataKey="Maior" fill="#ef4444" radius={[4,4,0,0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      <div className="mb-6">
+                        <h4 className="text-lg font-semibold text-green-800 mb-3">Comparativo de Preço (R$/L ou R$/Kg)</h4>
+                        <div style={{width: '100%', height: 350}}>
+                          <ResponsiveContainer>
+                            <BarChart data={microxistoDashboard.competitors.map(c => ({ name: `${c.empresa} - ${c.produto}`, 'Menor': c.min_valor, 'Médio': c.avg_valor, 'Maior': c.max_valor }))} margin={{top: 5, right: 30, left: 20, bottom: 80}}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" angle={-35} textAnchor="end" height={90} tick={{fontSize: 11}} />
+                              <YAxis tick={{fontSize: 12}} />
+                              <Tooltip formatter={(v) => `R$ ${v.toFixed(2)}`} />
+                              <Legend />
+                              <Bar dataKey="Menor" fill="#22c55e" radius={[4,4,0,0]} />
+                              <Bar dataKey="Médio" fill="#f59e0b" radius={[4,4,0,0]} />
+                              <Bar dataKey="Maior" fill="#ef4444" radius={[4,4,0,0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <h4 className="text-lg font-semibold text-green-800 mb-3">Detalhamento</h4>
+                        <table className="w-full text-sm">
+                          <thead className="bg-green-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-semibold text-green-800">Produto MicroXisto</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Estado</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Tipo Venda</th>
+                              <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
+                              <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Menor Valor</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Maior Valor</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Valor Médio</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody>
+                            {microxistoDashboard.competitors.map((item, i) => (
+                              <tr key={i} className="border-t hover:bg-gray-50">
+                                <td className="px-3 py-2 font-bold text-green-700">{item.produto_microxisto}</td>
+                                <td className="px-3 py-2 text-center">{item.estado}</td>
+                                <td className="px-3 py-2 text-center text-xs">{item.venda}</td>
+                                <td className="px-3 py-2">{item.empresa}</td>
+                                <td className="px-3 py-2 font-semibold">{item.produto}</td>
+                                <td className="px-3 py-2 text-center text-blue-700 font-medium">R$ {item.min_valor.toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center text-red-700 font-medium">R$ {item.max_valor.toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center font-bold">R$ {item.avg_valor.toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center">{item.count}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   ) : microxistoDashboard ? (
-                    <p className="text-gray-500 text-center py-4">Nenhum dado encontrado para este filtro.</p>
+                    <p className="text-gray-500 text-center py-8">Nenhum dado encontrado para estes filtros.</p>
                   ) : (
-                    <p className="text-gray-500 text-center py-4">Clique em "Buscar" para carregar os dados.</p>
+                    <p className="text-gray-500 text-center py-8">Clique em "Buscar" para carregar o dashboard.</p>
                   )}
                 </div>
 
-                {/* Tabela editável de todos os registros */}
+                {/* Tabela editável */}
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Todos os Registros ({adminAllStudies.length})</h3>
                     <div className="flex gap-2">
-                      <button
-                        onClick={fetchAdminAllStudies}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold"
-                        data-testid="admin-load-studies-btn"
-                      >
-                        Carregar Registros
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
-                              headers: { 'Authorization': `Bearer ${token}` }
-                            });
-                            if (response.ok) {
-                              const blob = await response.blob();
-                              const url = window.URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = 'estudo_mercado.xlsx';
-                              a.click();
-                              window.URL.revokeObjectURL(url);
-                            }
-                          } catch (error) {
-                            console.error('Error exporting:', error);
-                          }
-                        }}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 font-semibold"
-                        data-testid="export-market-btn"
-                      >
-                        Baixar Excel
-                      </button>
+                      <button onClick={fetchAdminAllStudies} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold" data-testid="admin-load-studies-btn">Carregar Registros</button>
+                      <button onClick={async () => { try { const r = await fetch(`${API_BASE}/api/admin/market-studies/export`, { headers: { 'Authorization': `Bearer ${token}` } }); if (r.ok) { const b = await r.blob(); const u = window.URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'estudo_mercado.xlsx'; a.click(); window.URL.revokeObjectURL(u); } } catch (e) { console.error(e); } }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 font-semibold" data-testid="export-market-btn">Baixar Excel</button>
                     </div>
                   </div>
-                  
                   {adminAllStudies.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
@@ -5368,33 +5298,15 @@ function App() {
                               {adminEditingRow === study.id ? (
                                 <>
                                   <td className="px-2 py-1 text-xs text-gray-500">{study.user_email}</td>
-                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.empresa || ''} onChange={(e) => setAdminEditForm({...adminEditForm, empresa: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
-                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.produto || ''} onChange={(e) => setAdminEditForm({...adminEditForm, produto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
-                                  <td className="px-2 py-1">
-                                    <select value={adminEditForm.concorre_microxisto || ''} onChange={(e) => setAdminEditForm({...adminEditForm, concorre_microxisto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">
-                                      <option value="">-</option>
-                                      {MICROXISTO_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
-                                    </select>
-                                  </td>
-                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.dose_ha || ''} onChange={(e) => setAdminEditForm({...adminEditForm, dose_ha: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
-                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.valor || ''} onChange={(e) => setAdminEditForm({...adminEditForm, valor: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
-                                  <td className="px-2 py-1 text-center text-xs font-bold text-green-700">R$ {(parseFloat(adminEditForm.dose_ha || 0) * parseFloat(adminEditForm.valor || 0)).toFixed(2)}</td>
-                                  <td className="px-2 py-1">
-                                    <select value={adminEditForm.venda || ''} onChange={(e) => setAdminEditForm({...adminEditForm, venda: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">
-                                      {VENDA_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                    </select>
-                                  </td>
-                                  <td className="px-2 py-1">
-                                    <select value={adminEditForm.estado || ''} onChange={(e) => setAdminEditForm({...adminEditForm, estado: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">
-                                      {ESTADOS_BRASIL.map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                                    </select>
-                                  </td>
-                                  <td className="px-2 py-1 text-center">
-                                    <div className="flex gap-1 justify-center">
-                                      <button onClick={() => handleAdminUpdateStudy(study.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700" data-testid={`admin-save-${study.id}`}>Salvar</button>
-                                      <button onClick={() => { setAdminEditingRow(null); setAdminEditForm({}); }} className="px-2 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500">X</button>
-                                    </div>
-                                  </td>
+                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.empresa||''} onChange={(e) => setAdminEditForm({...adminEditForm, empresa: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.produto||''} onChange={(e) => setAdminEditForm({...adminEditForm, produto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1"><select value={adminEditForm.concorre_microxisto||''} onChange={(e) => setAdminEditForm({...adminEditForm, concorre_microxisto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs"><option value="">-</option>{MICROXISTO_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}</select></td>
+                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.dose_ha||''} onChange={(e) => setAdminEditForm({...adminEditForm, dose_ha: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
+                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.valor||''} onChange={(e) => setAdminEditForm({...adminEditForm, valor: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
+                                  <td className="px-2 py-1 text-center text-xs font-bold text-green-700">R$ {(parseFloat(adminEditForm.dose_ha||0)*parseFloat(adminEditForm.valor||0)).toFixed(2)}</td>
+                                  <td className="px-2 py-1"><select value={adminEditForm.venda||''} onChange={(e) => setAdminEditForm({...adminEditForm, venda: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">{VENDA_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></td>
+                                  <td className="px-2 py-1"><select value={adminEditForm.estado||''} onChange={(e) => setAdminEditForm({...adminEditForm, estado: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">{ESTADOS_BRASIL.map(uf => <option key={uf} value={uf}>{uf}</option>)}</select></td>
+                                  <td className="px-2 py-1 text-center"><div className="flex gap-1 justify-center"><button onClick={() => handleAdminUpdateStudy(study.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">Salvar</button><button onClick={() => { setAdminEditingRow(null); setAdminEditForm({}); }} className="px-2 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500">X</button></div></td>
                                 </>
                               ) : (
                                 <>
@@ -5407,35 +5319,10 @@ function App() {
                                   <td className="px-2 py-2 text-center font-bold text-green-700">R$ {parseFloat(study.rs_ha).toFixed(2)}</td>
                                   <td className="px-2 py-2 text-center">{study.venda}</td>
                                   <td className="px-2 py-2 text-center">{study.estado}</td>
-                                  <td className="px-2 py-2 text-center">
-                                    <div className="flex gap-1 justify-center">
-                                      <button
-                                        onClick={() => {
-                                          setAdminEditingRow(study.id);
-                                          setAdminEditForm({
-                                            empresa: study.empresa,
-                                            produto: study.produto,
-                                            dose_ha: study.dose_ha?.toString() || '',
-                                            valor: study.valor?.toString() || '',
-                                            venda: study.venda,
-                                            estado: study.estado,
-                                            concorre_microxisto: study.concorre_microxisto || ''
-                                          });
-                                        }}
-                                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                                        data-testid={`admin-edit-${study.id}`}
-                                      >
-                                        Editar
-                                      </button>
-                                      <button
-                                        onClick={() => handleAdminDeleteStudy(study.id)}
-                                        className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                                        data-testid={`admin-delete-${study.id}`}
-                                      >
-                                        Excluir
-                                      </button>
-                                    </div>
-                                  </td>
+                                  <td className="px-2 py-2 text-center"><div className="flex gap-1 justify-center">
+                                    <button onClick={() => { setAdminEditingRow(study.id); setAdminEditForm({ empresa: study.empresa, produto: study.produto, dose_ha: study.dose_ha?.toString()||'', valor: study.valor?.toString()||'', venda: study.venda, estado: study.estado, concorre_microxisto: study.concorre_microxisto||'' }); }} className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700" data-testid={`admin-edit-${study.id}`}>Editar</button>
+                                    <button onClick={() => handleAdminDeleteStudy(study.id)} className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700" data-testid={`admin-delete-${study.id}`}>Excluir</button>
+                                  </div></td>
                                 </>
                               )}
                             </tr>

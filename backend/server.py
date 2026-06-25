@@ -1033,6 +1033,8 @@ async def get_dashboard_by_microxisto(
     produto_microxisto: Optional[str] = None,
     estado: Optional[str] = None,
     venda: Optional[str] = None,
+    empresa: Optional[str] = None,
+    produto_concorrente: Optional[str] = None,
     admin_user: dict = Depends(get_admin_user)
 ):
     """Get competitor analysis grouped by MicroXisto product (admin only)"""
@@ -1045,6 +1047,10 @@ async def get_dashboard_by_microxisto(
         match_filter["estado"] = estado
     if venda:
         match_filter["venda"] = venda
+    if empresa:
+        match_filter["empresa"] = empresa
+    if produto_concorrente:
+        match_filter["produto"] = produto_concorrente
     
     pipeline_base = [{"$match": match_filter}] if match_filter else []
     
@@ -1077,6 +1083,8 @@ async def get_dashboard_by_microxisto(
     all_microxisto = [p for p in all_microxisto if p]
     all_estados = await db.market_studies.distinct("estado")
     all_vendas = await db.market_studies.distinct("venda")
+    all_empresas = await db.market_studies.distinct("empresa")
+    all_produtos = await db.market_studies.distinct("produto")
     
     return {
         "competitors": [{
@@ -1096,7 +1104,9 @@ async def get_dashboard_by_microxisto(
         } for r in results],
         "microxisto_products": sorted(all_microxisto),
         "estados": sorted([e for e in all_estados if e]),
-        "vendas": sorted([v for v in all_vendas if v])
+        "vendas": sorted([v for v in all_vendas if v]),
+        "empresas": sorted([e for e in all_empresas if e]),
+        "produtos": sorted([p for p in all_produtos if p])
     }
 
 # ==========================================
