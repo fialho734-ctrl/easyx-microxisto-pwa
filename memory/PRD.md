@@ -53,10 +53,16 @@ Build and expand a Progressive Web App (PWA) for MicroXisto, a company focused o
 - Dashboard with national averages by company and regional averages by state
 - Admin Excel export
 
+### Phase 4.1 - Estudo de Mercado Enhancements (Completed 2026-06-25)
+- **New field**: "Concorre com qual produto MicroXisto?" dropdown with 17 products (Magnus, Pullseed Ni, Pullseed G, Active, One-Max, Complex, MN-MAX, ZINMAX, S-MAX, Guardian, TRUCKER, CA-ULTRA, MG-ULTRA, Citro-X, Tek-F, Alvo, DTA)
+- **Admin inline editing**: Admin can view ALL users' records in a single table and edit any record inline (click Editar to convert row to inputs, click Salvar to save)
+- **Admin can delete** any user's market study record
+- **New Dashboard**: "Análise por Produto MicroXisto" - filter by MicroXisto product to see competitor min/max/avg values and R$/ha
+
 ### Admin Tools (Completed)
 - Maintenance Mode toggle
 - User Activity tracking (total accesses, days active, last access)
-- Market Study Excel export
+- Market Study Excel export (includes new concorre_microxisto field)
 
 ### PWA Updates (Completed)
 - App icon updated to EasyX logo
@@ -66,7 +72,10 @@ Build and expand a Progressive Web App (PWA) for MicroXisto, a company focused o
 ## Key API Endpoints
 - POST /api/auth/login, /api/auth/register
 - GET /api/technologies, /api/products, /api/competitors
-- GET/POST/PUT/DELETE /api/market-studies
+- GET/POST/PUT/DELETE /api/market-studies (user's own)
+- GET /api/admin/market-studies/all (admin: all users)
+- PUT/DELETE /api/admin/market-studies/{id} (admin: edit/delete any)
+- GET /api/admin/market-studies/dashboard-by-microxisto (admin: competitor analysis)
 - GET /api/maintenance-status
 - POST /api/admin/maintenance
 - GET /api/admin/market-studies/export
@@ -74,12 +83,12 @@ Build and expand a Progressive Web App (PWA) for MicroXisto, a company focused o
 ## Database Collections
 - users, technologies, products, competitors, cultures
 - home_content, planejamentos, settings (maintenance mode)
-- market_studies
+- market_studies (now includes concorre_microxisto field)
 
 ## Current App Version
-- SW Cache: easyx-offline-v12
-- App Version: 3.2.0
+- SW Cache: easyx-offline-v13
+- App Version: 3.3.0
 
 ## Remaining/Future Tasks
 - P2: Remove maintenance mode after user approves all features (currently OFF)
-- P3: Refactoring - App.js is ~5000+ lines; modularize into components
+- P3: Refactoring - App.js is ~5300+ lines; modularize into components
