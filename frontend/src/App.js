@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { PDF_ASSETS, EUROSTILE_FONT } from './pdfAssets';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL;
 
@@ -4736,67 +4735,6 @@ function App() {
               <div className="max-w-6xl mx-auto" data-testid="market-study-page">
                 <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Estudo de Mercado</h2>
                 
-                {/* Dashboard */}
-                {dashboardData && (dashboardData.national.length > 0 || dashboardData.by_state.length > 0) && (
-                  <div className="mb-6 space-y-4">
-                    
-                    {/* Product Averages */}
-                    {dashboardData.national.length > 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-4">Preço Médio por Produto</h3>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead className="bg-green-50">
-                              <tr>
-                                <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
-                                <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Preço Médio (R$)</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Dose Média</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
-                                <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {dashboardData.national.map((item, i) => (
-                                <tr key={i} className="border-t hover:bg-gray-50">
-                                  <td className="px-3 py-2">{item.empresa}</td>
-                                  <td className="px-3 py-2 font-semibold">{item.produto}</td>
-                                  <td className="px-3 py-2 text-center">R$ {item.avg_valor.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center">{item.avg_dose.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
-                                  <td className="px-3 py-2 text-center">{item.count}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* By State */}
-                    {dashboardData.by_state.length > 0 && (
-                      <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
-                        <h3 className="text-lg font-bold text-green-800 mb-4">Média por Região (Estado)</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {dashboardData.by_state.map((item, i) => (
-                            <div key={i} className="bg-green-50 p-3 rounded-lg border border-green-200">
-                              <div className="text-lg font-bold text-green-800">{item.estado}</div>
-                              <div className="text-sm text-gray-600 mt-1">R$/ha médio:</div>
-                              <div className="text-xl font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                Preço médio: R$ {item.avg_valor.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {item.count} registro{item.count > 1 ? 's' : ''} | {item.empresas.length} empresa{item.empresas.length > 1 ? 's' : ''}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
                 {/* Form */}
                 <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">
@@ -5189,42 +5127,40 @@ function App() {
                   
                   {microxistoDashboard && microxistoDashboard.competitors.length > 0 ? (
                     <>
-                      <div className="mb-6">
-                        <h4 className="text-lg font-semibold text-green-800 mb-3">Comparativo de R$/ha</h4>
-                        <div style={{width: '100%', height: 350}}>
-                          <ResponsiveContainer>
-                            <BarChart data={microxistoDashboard.competitors.map(c => ({ name: `${c.empresa} - ${c.produto}`, 'Menor': c.min_rs_ha, 'Médio': c.avg_rs_ha, 'Maior': c.max_rs_ha }))} margin={{top: 5, right: 30, left: 20, bottom: 80}}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" angle={-35} textAnchor="end" height={90} tick={{fontSize: 11}} />
-                              <YAxis tick={{fontSize: 12}} />
-                              <Tooltip formatter={(v) => `R$ ${v.toFixed(2)}`} />
-                              <Legend />
-                              <Bar dataKey="Menor" fill="#3b82f6" radius={[4,4,0,0]} />
-                              <Bar dataKey="Médio" fill="#004F27" radius={[4,4,0,0]} />
-                              <Bar dataKey="Maior" fill="#ef4444" radius={[4,4,0,0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
+                      {/* Caixas visuais por concorrente */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        {microxistoDashboard.competitors.map((item, i) => (
+                          <div key={i} className="border border-green-200 rounded-xl p-4 bg-gradient-to-br from-white to-green-50 hover:shadow-lg transition-shadow">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-xs font-bold text-white bg-green-700 px-2 py-1 rounded">{item.produto_microxisto}</span>
+                              <span className="text-xs text-gray-500">{item.estado} | {item.venda}</span>
+                            </div>
+                            <div className="text-base font-bold text-gray-800">{item.empresa}</div>
+                            <div className="text-sm text-gray-600 mb-3">{item.produto}</div>
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                              <div className="bg-blue-50 rounded-lg p-2">
+                                <div className="text-xs text-blue-600 font-semibold">Menor</div>
+                                <div className="text-sm font-bold text-blue-800">R$ {item.min_valor.toFixed(2)}</div>
+                              </div>
+                              <div className="bg-yellow-50 rounded-lg p-2">
+                                <div className="text-xs text-yellow-700 font-semibold">Médio</div>
+                                <div className="text-sm font-bold text-yellow-800">R$ {item.avg_valor.toFixed(2)}</div>
+                              </div>
+                              <div className="bg-red-50 rounded-lg p-2">
+                                <div className="text-xs text-red-600 font-semibold">Maior</div>
+                                <div className="text-sm font-bold text-red-800">R$ {item.max_valor.toFixed(2)}</div>
+                              </div>
+                            </div>
+                            <div className="mt-3 flex justify-between items-center border-t border-green-100 pt-2">
+                              <span className="text-lg font-bold text-green-700">R$/ha {item.avg_rs_ha.toFixed(2)}</span>
+                              <span className="text-xs text-gray-500">{item.count} registro{item.count > 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="mb-6">
-                        <h4 className="text-lg font-semibold text-green-800 mb-3">Comparativo de Preço (R$/L ou R$/Kg)</h4>
-                        <div style={{width: '100%', height: 350}}>
-                          <ResponsiveContainer>
-                            <BarChart data={microxistoDashboard.competitors.map(c => ({ name: `${c.empresa} - ${c.produto}`, 'Menor': c.min_valor, 'Médio': c.avg_valor, 'Maior': c.max_valor }))} margin={{top: 5, right: 30, left: 20, bottom: 80}}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="name" angle={-35} textAnchor="end" height={90} tick={{fontSize: 11}} />
-                              <YAxis tick={{fontSize: 12}} />
-                              <Tooltip formatter={(v) => `R$ ${v.toFixed(2)}`} />
-                              <Legend />
-                              <Bar dataKey="Menor" fill="#22c55e" radius={[4,4,0,0]} />
-                              <Bar dataKey="Médio" fill="#f59e0b" radius={[4,4,0,0]} />
-                              <Bar dataKey="Maior" fill="#ef4444" radius={[4,4,0,0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
+
+                      {/* Tabela de Detalhamento */}
                       <div className="overflow-x-auto">
-                        <h4 className="text-lg font-semibold text-green-800 mb-3">Detalhamento</h4>
                         <table className="w-full text-sm">
                           <thead className="bg-green-50">
                             <tr>
