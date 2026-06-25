@@ -2633,6 +2633,14 @@ function App() {
     }
   }, [currentPage, isAdmin, token]);
 
+  // Auto-load admin market data when tab is selected
+  useEffect(() => {
+    if (isAdmin && token && currentPage === 'admin' && adminTab === 'market-export') {
+      fetchAdminAllStudies();
+      fetchMicroxistoDashboard();
+    }
+  }, [currentPage, isAdmin, token, adminTab]);
+
   const checkMaintenanceMode = async () => {
     try {
       const response = await fetch(`${API_BASE}/api/maintenance-status`, {
