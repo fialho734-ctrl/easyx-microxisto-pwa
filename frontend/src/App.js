@@ -2527,6 +2527,8 @@ function App() {
   const [adminEditForm, setAdminEditForm] = useState({});
   const [microxistoDashboard, setMicroxistoDashboard] = useState(null);
   const [selectedMicroxistoProduct, setSelectedMicroxistoProduct] = useState('');
+  const [selectedDashEstado, setSelectedDashEstado] = useState('');
+  const [selectedDashVenda, setSelectedDashVenda] = useState('');
 
   // Estágio options
   const ESTAGIO_OPTIONS = ['TS', 'Sulco', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'R1', 'R2', 'R3', 'R4', 'R5', 'R5.1', 'R5.2', 'R5.3', 'R5.4', 'R6'];
@@ -2836,6 +2838,8 @@ function App() {
     try {
       const params = new URLSearchParams();
       if (selectedMicroxistoProduct) params.append('produto_microxisto', selectedMicroxistoProduct);
+      if (selectedDashEstado) params.append('estado', selectedDashEstado);
+      if (selectedDashVenda) params.append('venda', selectedDashVenda);
       const url = `${API_BASE}/api/admin/market-studies/dashboard-by-microxisto${params.toString() ? '?' + params.toString() : ''}`;
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -5223,6 +5227,34 @@ function App() {
                         ))}
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Estado</label>
+                      <select
+                        value={selectedDashEstado}
+                        onChange={(e) => setSelectedDashEstado(e.target.value)}
+                        className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500"
+                        data-testid="admin-dash-estado-filter"
+                      >
+                        <option value="">Todos</option>
+                        {ESTADOS_BRASIL.map(uf => (
+                          <option key={uf} value={uf}>{uf}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Tipo de Venda</label>
+                      <select
+                        value={selectedDashVenda}
+                        onChange={(e) => setSelectedDashVenda(e.target.value)}
+                        className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500"
+                        data-testid="admin-dash-venda-filter"
+                      >
+                        <option value="">Todos</option>
+                        {VENDA_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    </div>
                     <button
                       onClick={fetchMicroxistoDashboard}
                       className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold"
@@ -5240,6 +5272,8 @@ function App() {
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Produto MicroXisto</th>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Concorrente (Empresa)</th>
                             <th className="px-3 py-2 text-left font-semibold text-green-800">Produto Concorrente</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Estado</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Tipo Venda</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Menor Valor</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Maior Valor</th>
                             <th className="px-3 py-2 text-center font-semibold text-green-800">Valor Médio</th>
@@ -5253,6 +5287,8 @@ function App() {
                               <td className="px-3 py-2 font-bold text-green-700">{item.produto_microxisto}</td>
                               <td className="px-3 py-2">{item.empresa}</td>
                               <td className="px-3 py-2 font-semibold">{item.produto}</td>
+                              <td className="px-3 py-2 text-center">{item.estado}</td>
+                              <td className="px-3 py-2 text-center text-xs">{item.venda}</td>
                               <td className="px-3 py-2 text-center text-blue-700 font-medium">R$ {item.min_valor.toFixed(2)}</td>
                               <td className="px-3 py-2 text-center text-red-700 font-medium">R$ {item.max_valor.toFixed(2)}</td>
                               <td className="px-3 py-2 text-center font-bold">R$ {item.avg_valor.toFixed(2)}</td>

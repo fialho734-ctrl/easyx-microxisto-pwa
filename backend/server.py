@@ -1031,6 +1031,8 @@ async def admin_delete_market_study(study_id: str, admin_user: dict = Depends(ge
 @app.get("/api/admin/market-studies/dashboard-by-microxisto")
 async def get_dashboard_by_microxisto(
     produto_microxisto: Optional[str] = None,
+    estado: Optional[str] = None,
+    venda: Optional[str] = None,
     admin_user: dict = Depends(get_admin_user)
 ):
     """Get competitor analysis grouped by MicroXisto product (admin only)"""
@@ -1039,6 +1041,10 @@ async def get_dashboard_by_microxisto(
         match_filter["concorre_microxisto"] = produto_microxisto
     else:
         match_filter["concorre_microxisto"] = {"$exists": True, "$nin": ["", None]}
+    if estado:
+        match_filter["estado"] = estado
+    if venda:
+        match_filter["venda"] = venda
     
     pipeline_base = [{"$match": match_filter}] if match_filter else []
     
@@ -1048,7 +1054,9 @@ async def get_dashboard_by_microxisto(
             "_id": {
                 "microxisto": "$concorre_microxisto",
                 "empresa": "$empresa",
-                "produto": "$produto"
+                "produto": "$produto",
+                "venda": "$venda",
+                "estado": "$estado"
             },
             "min_valor": {"$min": "$valor"},
             "max_valor": {"$max": "$valor"},
@@ -1064,15 +1072,19 @@ async def get_dashboard_by_microxisto(
     
     results = await db.market_studies.aggregate(pipeline).to_list(None)
     
-    # Get distinct MicroXisto products that have been used
+    # Get distinct values for filters
     all_microxisto = await db.market_studies.distinct("concorre_microxisto")
     all_microxisto = [p for p in all_microxisto if p]
+    all_estados = await db.market_studies.distinct("estado")
+    all_vendas = await db.market_studies.distinct("venda")
     
     return {
         "competitors": [{
             "produto_microxisto": r["_id"]["microxisto"],
             "empresa": r["_id"]["empresa"],
             "produto": r["_id"]["produto"],
+            "venda": r["_id"].get("venda", ""),
+            "estado": r["_id"].get("estado", ""),
             "min_valor": round(r["min_valor"], 2),
             "max_valor": round(r["max_valor"], 2),
             "avg_valor": round(r["avg_valor"], 2),
@@ -1082,7 +1094,9 @@ async def get_dashboard_by_microxisto(
             "avg_dose": round(r["avg_dose"], 2),
             "count": r["count"]
         } for r in results],
-        "microxisto_products": sorted(all_microxisto)
+        "microxisto_products": sorted(all_microxisto),
+        "estados": sorted([e for e in all_estados if e]),
+        "vendas": sorted([v for v in all_vendas if v])
     }
 
 # ==========================================
