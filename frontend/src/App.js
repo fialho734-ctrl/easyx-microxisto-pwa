@@ -2519,9 +2519,14 @@ function App() {
   // Estudo de Mercado states
   const [marketStudies, setMarketStudies] = useState([]);
   const [marketForm, setMarketForm] = useState({
-    empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: ''
+    empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '', concorre_microxisto: ''
   });
   const [editingStudy, setEditingStudy] = useState(null);
+  const [adminAllStudies, setAdminAllStudies] = useState([]);
+  const [adminEditingRow, setAdminEditingRow] = useState(null);
+  const [adminEditForm, setAdminEditForm] = useState({});
+  const [microxistoDashboard, setMicroxistoDashboard] = useState(null);
+  const [selectedMicroxistoProduct, setSelectedMicroxistoProduct] = useState('');
 
   // Estágio options
   const ESTAGIO_OPTIONS = ['TS', 'Sulco', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'R1', 'R2', 'R3', 'R4', 'R5', 'R5.1', 'R5.2', 'R5.3', 'R5.4', 'R6'];
@@ -2529,6 +2534,8 @@ function App() {
   const ESTADOS_BRASIL = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','PY'];
 
   const VENDA_OPTIONS = ['Venda direta', 'Distribuição', 'Cooperativa'];
+
+  const MICROXISTO_PRODUCTS = ['Magnus', 'Pullseed Ni', 'Pullseed G', 'Active', 'One-Max', 'Complex', 'MN-MAX', 'ZINMAX', 'S-MAX', 'Guardian', 'TRUCKER', 'CA-ULTRA', 'MG-ULTRA', 'Citro-X', 'Tek-F', 'Alvo', 'DTA'];
 
   // Dashboard data
   const [dashboardData, setDashboardData] = useState(null);
@@ -2654,7 +2661,7 @@ function App() {
 
   const handleCreateMarketStudy = async () => {
     if (!marketForm.empresa || !marketForm.produto || !marketForm.dose_ha || !marketForm.valor || !marketForm.venda || !marketForm.estado) {
-      alert('Preencha todos os campos');
+      alert('Preencha todos os campos obrigatórios');
       return;
     }
     try {
@@ -2667,11 +2674,12 @@ function App() {
           dose_ha: parseFloat(marketForm.dose_ha),
           valor: parseFloat(marketForm.valor),
           venda: marketForm.venda,
-          estado: marketForm.estado
+          estado: marketForm.estado,
+          concorre_microxisto: marketForm.concorre_microxisto || null
         })
       });
       if (response.ok) {
-        setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '' });
+        setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '', concorre_microxisto: '' });
         fetchMarketStudies();
       }
     } catch (error) {
@@ -2691,12 +2699,13 @@ function App() {
           dose_ha: parseFloat(marketForm.dose_ha),
           valor: parseFloat(marketForm.valor),
           venda: marketForm.venda,
-          estado: marketForm.estado
+          estado: marketForm.estado,
+          concorre_microxisto: marketForm.concorre_microxisto || null
         })
       });
       if (response.ok) {
         setEditingStudy(null);
-        setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '' });
+        setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '', concorre_microxisto: '' });
         fetchMarketStudies();
       }
     } catch (error) {
@@ -2764,6 +2773,79 @@ function App() {
       }
     } catch (error) {
       console.error('Error fetching dashboard:', error);
+    }
+  };
+
+  const fetchAdminAllStudies = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/market-studies/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAdminAllStudies(data);
+      }
+    } catch (error) {
+      console.error('Error fetching admin studies:', error);
+    }
+  };
+
+  const handleAdminUpdateStudy = async (studyId) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/market-studies/${studyId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          empresa: adminEditForm.empresa,
+          produto: adminEditForm.produto,
+          dose_ha: parseFloat(adminEditForm.dose_ha),
+          valor: parseFloat(adminEditForm.valor),
+          venda: adminEditForm.venda,
+          estado: adminEditForm.estado,
+          concorre_microxisto: adminEditForm.concorre_microxisto || null
+        })
+      });
+      if (response.ok) {
+        setAdminEditingRow(null);
+        setAdminEditForm({});
+        fetchAdminAllStudies();
+        fetchMicroxistoDashboard();
+      }
+    } catch (error) {
+      console.error('Error admin updating study:', error);
+    }
+  };
+
+  const handleAdminDeleteStudy = async (studyId) => {
+    if (!window.confirm('Tem certeza que deseja remover este registro?')) return;
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/market-studies/${studyId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        fetchAdminAllStudies();
+        fetchMicroxistoDashboard();
+      }
+    } catch (error) {
+      console.error('Error admin deleting study:', error);
+    }
+  };
+
+  const fetchMicroxistoDashboard = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedMicroxistoProduct) params.append('produto_microxisto', selectedMicroxistoProduct);
+      const url = `${API_BASE}/api/admin/market-studies/dashboard-by-microxisto${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMicroxistoDashboard(data);
+      }
+    } catch (error) {
+      console.error('Error fetching microxisto dashboard:', error);
     }
   };
 
@@ -4861,6 +4943,20 @@ function App() {
                         ))}
                       </select>
                     </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Concorre com qual produto MicroXisto?</label>
+                      <select
+                        value={marketForm.concorre_microxisto}
+                        onChange={(e) => setMarketForm({...marketForm, concorre_microxisto: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-concorre-select"
+                      >
+                        <option value="">Selecione...</option>
+                        {MICROXISTO_PRODUCTS.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   
                   {/* Calculated R$/ha preview */}
@@ -4884,7 +4980,7 @@ function App() {
                       <button
                         onClick={() => {
                           setEditingStudy(null);
-                          setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '' });
+                          setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '', concorre_microxisto: '' });
                         }}
                         className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
                       >
@@ -4904,6 +5000,7 @@ function App() {
                           <tr>
                             <th className="px-3 py-2 text-left">Empresa</th>
                             <th className="px-3 py-2 text-left">Produto</th>
+                            <th className="px-3 py-2 text-left">Concorre c/ MicroXisto</th>
                             <th className="px-3 py-2 text-center">Dose/ha</th>
                             <th className="px-3 py-2 text-center">Valor</th>
                             <th className="px-3 py-2 text-center">R$/ha</th>
@@ -4917,6 +5014,7 @@ function App() {
                             <tr key={study.id} className="border-t hover:bg-gray-50">
                               <td className="px-3 py-2">{study.empresa}</td>
                               <td className="px-3 py-2">{study.produto}</td>
+                              <td className="px-3 py-2 text-green-700 font-medium">{study.concorre_microxisto || '-'}</td>
                               <td className="px-3 py-2 text-center">{study.dose_ha}</td>
                               <td className="px-3 py-2 text-center">R$ {parseFloat(study.valor).toFixed(2)}</td>
                               <td className="px-3 py-2 text-center font-bold text-green-700">R$ {parseFloat(study.rs_ha).toFixed(2)}</td>
@@ -4933,7 +5031,8 @@ function App() {
                                         dose_ha: study.dose_ha.toString(),
                                         valor: study.valor.toString(),
                                         venda: study.venda,
-                                        estado: study.estado
+                                        estado: study.estado,
+                                        concorre_microxisto: study.concorre_microxisto || ''
                                       });
                                     }}
                                     className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
@@ -5105,38 +5204,213 @@ function App() {
             )}
             
             {adminTab === 'market-export' && (
-              <div className="card bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Exportar Estudo de Mercado</h3>
-                <p className="text-gray-600 mb-4">
-                  Exporte todos os dados de estudo de mercado de todos os usuários em formato Excel.
-                </p>
-                <button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                      });
-                      if (response.ok) {
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'estudo_mercado.xlsx';
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                      } else {
-                        alert('Erro ao exportar dados');
-                      }
-                    } catch (error) {
-                      console.error('Error exporting:', error);
-                      alert('Erro ao exportar');
-                    }
-                  }}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-                  data-testid="export-market-btn"
-                >
-                  📥 Baixar Excel
-                </button>
+              <div className="space-y-6">
+                {/* Dashboard por Produto MicroXisto */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Análise por Produto MicroXisto</h3>
+                  <div className="flex flex-wrap gap-3 mb-4 items-end">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Produto MicroXisto</label>
+                      <select
+                        value={selectedMicroxistoProduct}
+                        onChange={(e) => setSelectedMicroxistoProduct(e.target.value)}
+                        className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500"
+                        data-testid="admin-microxisto-filter"
+                      >
+                        <option value="">Todos os Produtos</option>
+                        {MICROXISTO_PRODUCTS.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      onClick={fetchMicroxistoDashboard}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold"
+                      data-testid="admin-microxisto-search-btn"
+                    >
+                      Buscar
+                    </button>
+                  </div>
+                  
+                  {microxistoDashboard && microxistoDashboard.competitors.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-green-50">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-semibold text-green-800">Produto MicroXisto</th>
+                            <th className="px-3 py-2 text-left font-semibold text-green-800">Concorrente (Empresa)</th>
+                            <th className="px-3 py-2 text-left font-semibold text-green-800">Produto Concorrente</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Menor Valor</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Maior Valor</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Valor Médio</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
+                            <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {microxistoDashboard.competitors.map((item, i) => (
+                            <tr key={i} className="border-t hover:bg-gray-50">
+                              <td className="px-3 py-2 font-bold text-green-700">{item.produto_microxisto}</td>
+                              <td className="px-3 py-2">{item.empresa}</td>
+                              <td className="px-3 py-2 font-semibold">{item.produto}</td>
+                              <td className="px-3 py-2 text-center text-blue-700 font-medium">R$ {item.min_valor.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center text-red-700 font-medium">R$ {item.max_valor.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center font-bold">R$ {item.avg_valor.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{item.count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : microxistoDashboard ? (
+                    <p className="text-gray-500 text-center py-4">Nenhum dado encontrado para este filtro.</p>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">Clique em "Buscar" para carregar os dados.</p>
+                  )}
+                </div>
+
+                {/* Tabela editável de todos os registros */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">Todos os Registros ({adminAllStudies.length})</h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={fetchAdminAllStudies}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold"
+                        data-testid="admin-load-studies-btn"
+                      >
+                        Carregar Registros
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
+                              headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            if (response.ok) {
+                              const blob = await response.blob();
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = 'estudo_mercado.xlsx';
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                            }
+                          } catch (error) {
+                            console.error('Error exporting:', error);
+                          }
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 font-semibold"
+                        data-testid="export-market-btn"
+                      >
+                        Baixar Excel
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {adminAllStudies.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-2 py-2 text-left">Usuário</th>
+                            <th className="px-2 py-2 text-left">Empresa</th>
+                            <th className="px-2 py-2 text-left">Produto</th>
+                            <th className="px-2 py-2 text-left">Concorre c/ MX</th>
+                            <th className="px-2 py-2 text-center">Dose/ha</th>
+                            <th className="px-2 py-2 text-center">Valor</th>
+                            <th className="px-2 py-2 text-center">R$/ha</th>
+                            <th className="px-2 py-2 text-center">Venda</th>
+                            <th className="px-2 py-2 text-center">Estado</th>
+                            <th className="px-2 py-2 text-center">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {adminAllStudies.map(study => (
+                            <tr key={study.id} className="border-t hover:bg-gray-50">
+                              {adminEditingRow === study.id ? (
+                                <>
+                                  <td className="px-2 py-1 text-xs text-gray-500">{study.user_email}</td>
+                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.empresa || ''} onChange={(e) => setAdminEditForm({...adminEditForm, empresa: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.produto || ''} onChange={(e) => setAdminEditForm({...adminEditForm, produto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1">
+                                    <select value={adminEditForm.concorre_microxisto || ''} onChange={(e) => setAdminEditForm({...adminEditForm, concorre_microxisto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">
+                                      <option value="">-</option>
+                                      {MICROXISTO_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
+                                    </select>
+                                  </td>
+                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.dose_ha || ''} onChange={(e) => setAdminEditForm({...adminEditForm, dose_ha: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
+                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.valor || ''} onChange={(e) => setAdminEditForm({...adminEditForm, valor: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
+                                  <td className="px-2 py-1 text-center text-xs font-bold text-green-700">R$ {(parseFloat(adminEditForm.dose_ha || 0) * parseFloat(adminEditForm.valor || 0)).toFixed(2)}</td>
+                                  <td className="px-2 py-1">
+                                    <select value={adminEditForm.venda || ''} onChange={(e) => setAdminEditForm({...adminEditForm, venda: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">
+                                      {VENDA_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                    </select>
+                                  </td>
+                                  <td className="px-2 py-1">
+                                    <select value={adminEditForm.estado || ''} onChange={(e) => setAdminEditForm({...adminEditForm, estado: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">
+                                      {ESTADOS_BRASIL.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                                    </select>
+                                  </td>
+                                  <td className="px-2 py-1 text-center">
+                                    <div className="flex gap-1 justify-center">
+                                      <button onClick={() => handleAdminUpdateStudy(study.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700" data-testid={`admin-save-${study.id}`}>Salvar</button>
+                                      <button onClick={() => { setAdminEditingRow(null); setAdminEditForm({}); }} className="px-2 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500">X</button>
+                                    </div>
+                                  </td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="px-2 py-2 text-xs text-gray-500">{study.user_email}</td>
+                                  <td className="px-2 py-2">{study.empresa}</td>
+                                  <td className="px-2 py-2">{study.produto}</td>
+                                  <td className="px-2 py-2 text-green-700 font-medium">{study.concorre_microxisto || '-'}</td>
+                                  <td className="px-2 py-2 text-center">{study.dose_ha}</td>
+                                  <td className="px-2 py-2 text-center">R$ {parseFloat(study.valor).toFixed(2)}</td>
+                                  <td className="px-2 py-2 text-center font-bold text-green-700">R$ {parseFloat(study.rs_ha).toFixed(2)}</td>
+                                  <td className="px-2 py-2 text-center">{study.venda}</td>
+                                  <td className="px-2 py-2 text-center">{study.estado}</td>
+                                  <td className="px-2 py-2 text-center">
+                                    <div className="flex gap-1 justify-center">
+                                      <button
+                                        onClick={() => {
+                                          setAdminEditingRow(study.id);
+                                          setAdminEditForm({
+                                            empresa: study.empresa,
+                                            produto: study.produto,
+                                            dose_ha: study.dose_ha?.toString() || '',
+                                            valor: study.valor?.toString() || '',
+                                            venda: study.venda,
+                                            estado: study.estado,
+                                            concorre_microxisto: study.concorre_microxisto || ''
+                                          });
+                                        }}
+                                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                        data-testid={`admin-edit-${study.id}`}
+                                      >
+                                        Editar
+                                      </button>
+                                      <button
+                                        onClick={() => handleAdminDeleteStudy(study.id)}
+                                        className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                        data-testid={`admin-delete-${study.id}`}
+                                      >
+                                        Excluir
+                                      </button>
+                                    </div>
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">Clique em "Carregar Registros" para visualizar todos os dados.</p>
+                  )}
+                </div>
               </div>
             )}
             

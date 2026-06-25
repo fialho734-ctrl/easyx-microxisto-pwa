@@ -150,6 +150,7 @@ class MarketStudyCreate(BaseModel):
     valor: float
     venda: str  # "Venda direta", "Distribuição", "Cooperativa"
     estado: str  # Brazilian states + PY
+    concorre_microxisto: Optional[str] = None  # MicroXisto product it competes with
 
 class MarketStudyUpdate(BaseModel):
     empresa: Optional[str] = None
@@ -158,6 +159,7 @@ class MarketStudyUpdate(BaseModel):
     valor: Optional[float] = None
     venda: Optional[str] = None
     estado: Optional[str] = None
+    concorre_microxisto: Optional[str] = None
 
 # Lifespan manager
 @asynccontextmanager
@@ -902,6 +904,7 @@ async def create_market_study(study: MarketStudyCreate, current_user: dict = Dep
         "valor": study.valor,
         "venda": study.venda,
         "estado": study.estado,
+        "concorre_microxisto": study.concorre_microxisto or "",
         "rs_ha": rs_ha,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -948,7 +951,7 @@ async def export_market_studies_excel(admin_user: dict = Depends(get_admin_user)
     ws.title = "Estudo de Mercado"
     
     # Headers
-    headers = ["Usuário", "Empresa", "Produto", "Dose/ha", "Valor", "R$/ha", "Venda", "Estado", "Data"]
+    headers = ["Usuário", "Empresa", "Produto", "Concorre c/ MicroXisto", "Dose/ha", "Valor", "R$/ha", "Venda", "Estado", "Data"]
     ws.append(headers)
     
     # Style headers
@@ -962,6 +965,7 @@ async def export_market_studies_excel(admin_user: dict = Depends(get_admin_user)
             s.get("user_email", ""),
             s.get("empresa", ""),
             s.get("produto", ""),
+            s.get("concorre_microxisto", ""),
             s.get("dose_ha", 0),
             s.get("valor", 0),
             s.get("rs_ha", 0),
@@ -985,6 +989,101 @@ async def get_all_competitors_public():
     """Get all competitors (public, for search)"""
     competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
     return competitors
+
+# ==========================================
+# ADMIN MARKET STUDIES MANAGEMENT
+# ==========================================
+
+@app.get("/api/admin/market-studies/all")
+async def get_all_market_studies(admin_user: dict = Depends(get_admin_user)):
+    """Get ALL market studies from ALL users (admin only)"""
+    studies = await db.market_studies.find({}, {"_id": 0}).sort("created_at", -1).to_list(None)
+    return studies
+
+@app.put("/api/admin/market-studies/{study_id}")
+async def admin_update_market_study(study_id: str, study: MarketStudyUpdate, admin_user: dict = Depends(get_admin_user)):
+    """Admin can update any market study entry"""
+    existing = await db.market_studies.find_one({"id": study_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Estudo não encontrado")
+    
+    update_data = {k: v for k, v in study.dict().items() if v is not None}
+    
+    # Recalculate rs_ha
+    dose = update_data.get("dose_ha", existing.get("dose_ha", 0))
+    valor = update_data.get("valor", existing.get("valor", 0))
+    update_data["rs_ha"] = dose * valor
+    
+    await db.market_studies.update_one(
+        {"id": study_id},
+        {"$set": update_data}
+    )
+    return {"message": "Estudo atualizado com sucesso"}
+
+@app.delete("/api/admin/market-studies/{study_id}")
+async def admin_delete_market_study(study_id: str, admin_user: dict = Depends(get_admin_user)):
+    """Admin can delete any market study entry"""
+    result = await db.market_studies.delete_one({"id": study_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Estudo não encontrado")
+    return {"message": "Estudo removido com sucesso"}
+
+@app.get("/api/admin/market-studies/dashboard-by-microxisto")
+async def get_dashboard_by_microxisto(
+    produto_microxisto: Optional[str] = None,
+    admin_user: dict = Depends(get_admin_user)
+):
+    """Get competitor analysis grouped by MicroXisto product (admin only)"""
+    match_filter = {}
+    if produto_microxisto:
+        match_filter["concorre_microxisto"] = produto_microxisto
+    else:
+        match_filter["concorre_microxisto"] = {"$exists": True, "$nin": ["", None]}
+    
+    pipeline_base = [{"$match": match_filter}] if match_filter else []
+    
+    # Group by MicroXisto product, showing competitor stats
+    pipeline = pipeline_base + [
+        {"$group": {
+            "_id": {
+                "microxisto": "$concorre_microxisto",
+                "empresa": "$empresa",
+                "produto": "$produto"
+            },
+            "min_valor": {"$min": "$valor"},
+            "max_valor": {"$max": "$valor"},
+            "avg_valor": {"$avg": "$valor"},
+            "min_rs_ha": {"$min": "$rs_ha"},
+            "max_rs_ha": {"$max": "$rs_ha"},
+            "avg_rs_ha": {"$avg": "$rs_ha"},
+            "avg_dose": {"$avg": "$dose_ha"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.microxisto": 1, "avg_rs_ha": 1}}
+    ]
+    
+    results = await db.market_studies.aggregate(pipeline).to_list(None)
+    
+    # Get distinct MicroXisto products that have been used
+    all_microxisto = await db.market_studies.distinct("concorre_microxisto")
+    all_microxisto = [p for p in all_microxisto if p]
+    
+    return {
+        "competitors": [{
+            "produto_microxisto": r["_id"]["microxisto"],
+            "empresa": r["_id"]["empresa"],
+            "produto": r["_id"]["produto"],
+            "min_valor": round(r["min_valor"], 2),
+            "max_valor": round(r["max_valor"], 2),
+            "avg_valor": round(r["avg_valor"], 2),
+            "min_rs_ha": round(r["min_rs_ha"], 2),
+            "max_rs_ha": round(r["max_rs_ha"], 2),
+            "avg_rs_ha": round(r["avg_rs_ha"], 2),
+            "avg_dose": round(r["avg_dose"], 2),
+            "count": r["count"]
+        } for r in results],
+        "microxisto_products": sorted(all_microxisto)
+    }
 
 # ==========================================
 # USER ACTIVITY TRACKING
