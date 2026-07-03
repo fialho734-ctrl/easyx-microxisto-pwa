@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
@@ -186,6 +186,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Middleware to prevent caching of sw.js and index.html
+@app.middleware("http")
+async def no_cache_sw(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path in ("/sw.js", "/", "/index.html") or "sw.js" in request.url.path:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 # Auth helpers
 def create_access_token(data: dict):

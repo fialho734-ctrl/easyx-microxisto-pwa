@@ -46,47 +46,42 @@
         <noscript>Você precisa habilitar JavaScript para usar este app.</noscript>
         <div id="root"></div>
         
-        <!-- Service Worker SIMPLES V6 -->
+        <!-- Service Worker V14 - Network First -->
         <script>
-            console.log('🚀 Loading Service Worker v6...');
+            console.log('🚀 Loading Service Worker v14...');
             
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                    // Limpar tudo primeiro
-                    navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                        registrations.forEach(function(registration) {
-                            registration.unregister();
-                        });
-                        
-                        // Registrar novo SW após limpar
-                        setTimeout(function() {
-                            navigator.serviceWorker.register('/sw.js?v=6')
-                                .then(function(registration) {
-                                    console.log('✅ SW v6 registered successfully');
-                                    
-                                    // Aguardar ativação
-                                    if (registration.active) {
-                                        // Cachear dados essenciais após 3 segundos
-                                        setTimeout(function() {
-                                            registration.active.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
-                                            console.log('📦 Starting essential data cache...');
-                                        }, 3000);
+                    // Registrar/atualizar SW com cache-busting
+                    navigator.serviceWorker.register('/sw.js?v=14', { updateViaCache: 'none' })
+                        .then(function(registration) {
+                            console.log('✅ SW v14 registered successfully');
+                            
+                            // Forçar verificação de atualização
+                            registration.update();
+                            
+                            // Aguardar ativação para cachear dados
+                            if (registration.active) {
+                                setTimeout(function() {
+                                    registration.active.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
+                                    console.log('📦 Starting essential data cache...');
+                                }, 3000);
+                            }
+                            
+                            registration.addEventListener('updatefound', function() {
+                                var newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', function() {
+                                    if (newWorker.state === 'activated') {
+                                        console.log('🔄 New SW activated - reloading for fresh content');
+                                        // Recarregar a página para usar o novo SW
+                                        window.location.reload();
                                     }
-                                    
-                                    registration.addEventListener('updatefound', function() {
-                                        const newWorker = registration.installing;
-                                        newWorker.addEventListener('statechange', function() {
-                                            if (newWorker.state === 'activated') {
-                                                setTimeout(function() {
-                                                    newWorker.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
-                                                }, 1000);
-                                            }
-                                        });
-                                    });
-                                })
-                                .catch(function(error) {
-                                    console.error('❌ SW registration failed:', error);
                                 });
+                            });
+                        })
+                        .catch(function(error) {
+                            console.error('❌ SW registration failed:', error);
+                        });
                         }, 500);
                     });
                 });

@@ -4,7 +4,7 @@ const APP_VERSION = '3.5.0'; // Network-first + Concorre MicroXisto + Admin Inli
 
 // INSTALAR - Cache TUDO que é essencial
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v7 (App v' + APP_VERSION + ')...');
+  console.log('🚀 SW: Installing v14 (App v' + APP_VERSION + ')...');
   
   // Pular waiting imediatamente para atualizar mais rápido
   self.skipWaiting();
@@ -41,9 +41,9 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// ATIVAR - Limpar cache antigo e assumir controle
+// ATIVAR - Limpar TODOS caches antigos e assumir controle
 self.addEventListener('activate', (event) => {
-  console.log('⚡ SW: Activating v7 (App v' + APP_VERSION + ')...');
+  console.log('⚡ SW: Activating v14 (App v' + APP_VERSION + ')...');
   
   event.waitUntil(
     caches.keys()
@@ -58,13 +58,10 @@ self.addEventListener('activate', (event) => {
         );
       })
       .then(() => {
-        console.log('✅ SW: Activated, claiming clients');
+        console.log('✅ SW: Activated, claiming ALL clients');
         return self.clients.claim();
       })
-      .then(() => {
-        // Notificar todos os clientes sobre ativação
-        return self.clients.matchAll();
-      })
+      .then(() => self.clients.matchAll())
       .then(clients => {
         clients.forEach(client => {
           client.postMessage({
@@ -399,10 +396,19 @@ function getOfflinePage() {
   });
 }
 
-// MESSAGE HANDLER - Cache dinâmico
+// MESSAGE HANDLER - Cache dinâmico e force clear
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CACHE_DYNAMIC_DATA') {
     cacheEssentialData();
+  }
+  if (event.data && event.data.type === 'FORCE_CLEAR_ALL') {
+    console.log('🗑️ SW: Force clearing ALL caches');
+    caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => {
+      console.log('✅ All caches cleared');
+      self.clients.matchAll().then(clients => {
+        clients.forEach(c => c.postMessage({ type: 'CACHES_CLEARED' }));
+      });
+    });
   }
 });
 
