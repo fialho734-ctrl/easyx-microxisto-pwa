@@ -4,7 +4,7 @@
 Progressive Web App for MicroXisto agricultural products. Features include product comparison, agricultural planning with PDF generation, market study tracking, culture management, and admin panel.
 
 ## Architecture
-- **Frontend**: React SPA (single App.js ~6100+ lines)
+- **Frontend**: React SPA (single App.js ~6200+ lines)
 - **Backend**: FastAPI (Python)
 - **Database**: MongoDB (test_database)
 - **PWA**: Service Worker with network-first strategy (v14/3.5.0)
@@ -14,27 +14,27 @@ Progressive Web App for MicroXisto agricultural products. Features include produ
 - Technology and product management
 - Culture management with icons and material links
 - Agricultural planning calculator with PDF export (jsPDF)
-- Market Study CRUD with "Concorre com qual produto MicroXisto?" dropdown
-- Admin panel: users, technologies, products, competitors, cultures, tutorials, maintenance
-- Admin Market Study dashboard with filters, summary boxes, state breakdown, inline editing, Excel export
 - Saved reports (Relatórios) feature
+- Market Study CRUD with "Concorre com qual produto MicroXisto?" dropdown (17 products)
+- Admin Market Study dashboard with filters, summary boxes, state breakdown, inline editing, Excel export
+- **Bulk Import from Excel** - Admin can paste tab-separated data from Excel to import multiple records at once
 - Desktop responsive layout with button grid homepage
 - Service Worker network-first for auto-updates (80+ active users)
+- No-cache headers for sw.js to prevent stale caching
 
 ## Completed Work (July 2026)
 - Restored code from GitHub (user's version with Relatórios, improved layout)
-- Merged features from previous session:
-  - Added "Concorre com qual produto MicroXisto?" dropdown (17 products)
-  - Admin inline editing of any user's market study records
-  - Admin dashboard with 4 filters + visual summary boxes
-  - Admin delete endpoint for market studies
-  - Service Worker updated to network-first (v14)
-- Fixed Maintenance Mode issue on production (was blocking entire app)
+- Merged features: concorre_microxisto dropdown, admin inline editing, admin dashboard with filters, admin delete, SW network-first
+- Fixed Maintenance Mode issue on production
+- Fixed Service Worker caching: updated registration from ?v=6 to ?v=14 with updateViaCache: 'none', auto-reload on new SW activation, no-cache headers middleware
+- Added Bulk Import feature for admin to paste Excel data and import market studies in bulk
 
 ## Known Issues
-- Production database has 0 market study records (user's 165 records lost during session migrations)
-- App.js is 6100+ lines - needs refactoring into modular components
+- Production database has 0 real market study records (user's 165 records lost during migrations)
+- App.js is 6200+ lines - needs refactoring
+- Production URL (product-compass-2.emergent.host) needs redeployment from this session
 
 ## Backlog
-- P2: Refactor App.js into modular components (Planejamento, EstudoMercado, AdminDashboard, etc.)
-- P3: User may need to re-add features from a version between GitHub save and current state
+- P1: User to redeploy and use bulk import to restore lost market study data
+- P2: Refactor App.js into modular components
+- P3: Additional features user may request from their "intermediary" version
