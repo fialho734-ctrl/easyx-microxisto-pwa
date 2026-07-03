@@ -9,8 +9,11 @@ Test suite for Market Study (Estudo de Mercado) features:
 import pytest
 import requests
 import os
+from dotenv import load_dotenv
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL')
+# Load frontend .env to get the backend URL
+load_dotenv('/app/frontend/.env')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://homolog-features.preview.emergentagent.com')
 
 # Test credentials
 ADMIN_EMAIL = "agrofialho@gmail.com"
@@ -146,10 +149,18 @@ class TestMarketStudyCRUD:
         assert create_response.status_code == 200
         study_id = create_response.json()["id"]
         
-        # Update the concorre_microxisto field
+        # Update the study - API requires all fields (not partial update)
         update_response = requests.put(
             f"{BASE_URL}/api/market-studies/{study_id}",
-            json={"concorre_microxisto": "Pullseed Ni"},
+            json={
+                "empresa": "TEST_Update_Empresa",
+                "produto": "TEST_Update_Produto",
+                "dose_ha": 3.0,
+                "valor": 200.00,
+                "venda": "Cooperativa",
+                "estado": "PR",
+                "concorre_microxisto": "Pullseed Ni"  # Changed value
+            },
             headers={"Authorization": f"Bearer {auth_token}"}
         )
         
@@ -223,39 +234,33 @@ class TestAdminMarketStudies:
     
     def test_admin_update_any_market_study(self, auth_token):
         """Test admin can update any market study (inline editing)"""
-        # First get all studies
-        get_response = requests.get(
-            f"{BASE_URL}/api/admin/market-studies/all",
+        # Create a test study first
+        create_response = requests.post(
+            f"{BASE_URL}/api/market-studies",
+            json={
+                "empresa": "TEST_Admin_Edit",
+                "produto": "TEST_Admin_Product",
+                "dose_ha": 2.0,
+                "valor": 100.00,
+                "venda": "Venda direta",
+                "estado": "GO",
+                "concorre_microxisto": "Complex"
+            },
             headers={"Authorization": f"Bearer {auth_token}"}
         )
-        assert get_response.status_code == 200
-        studies = get_response.json()
+        assert create_response.status_code == 200
+        study_id = create_response.json()["id"]
         
-        if len(studies) == 0:
-            # Create a test study first
-            create_response = requests.post(
-                f"{BASE_URL}/api/market-studies",
-                json={
-                    "empresa": "TEST_Admin_Edit",
-                    "produto": "TEST_Admin_Product",
-                    "dose_ha": 2.0,
-                    "valor": 100.00,
-                    "venda": "Venda direta",
-                    "estado": "GO",
-                    "concorre_microxisto": "Complex"
-                },
-                headers={"Authorization": f"Bearer {auth_token}"}
-            )
-            assert create_response.status_code == 200
-            study_id = create_response.json()["id"]
-        else:
-            study_id = studies[0]["id"]
-        
-        # Admin updates the study
+        # Admin updates the study - API requires all fields
         update_response = requests.put(
             f"{BASE_URL}/api/admin/market-studies/{study_id}",
             json={
                 "empresa": "TEST_Admin_Updated_Empresa",
+                "produto": "TEST_Admin_Product_Updated",
+                "dose_ha": 2.5,
+                "valor": 120.00,
+                "venda": "Venda direta",
+                "estado": "GO",
                 "concorre_microxisto": "Guardian"
             },
             headers={"Authorization": f"Bearer {auth_token}"}
@@ -317,39 +322,43 @@ class TestAdminMarketStudies:
         assert response.status_code == 200, f"Dashboard failed: {response.text}"
         data = response.json()
         
-        assert "competitors" in data, "Should have 'competitors' key"
-        assert "microxisto_products" in data, "Should have 'microxisto_products' key"
+        # Verify response structure
+        assert "records" in data, "Should have 'records' key"
+        assert "summary" in data, "Should have 'summary' key"
+        assert "filter_options" in data, "Should have 'filter_options' key"
         
-        # Verify competitor data structure
-        if len(data["competitors"]) > 0:
-            competitor = data["competitors"][0]
-            assert "produto_microxisto" in competitor
-            assert "empresa" in competitor
-            assert "produto" in competitor
-            assert "min_valor" in competitor
-            assert "max_valor" in competitor
-            assert "avg_valor" in competitor
-            assert "avg_rs_ha" in competitor
-            assert "count" in competitor
+        # Verify filter_options structure
+        filter_opts = data["filter_options"]
+        assert "microxisto_products" in filter_opts, "filter_options should have microxisto_products"
+        assert "estados" in filter_opts, "filter_options should have estados"
+        assert "empresas" in filter_opts, "filter_options should have empresas"
         
-        print(f"✅ Dashboard returned {len(data['competitors'])} competitor entries")
-        print(f"   MicroXisto products with data: {data['microxisto_products']}")
+        # Verify summary structure
+        if data["summary"]:
+            summary = data["summary"]
+            assert "total" in summary
+            assert "min_valor" in summary
+            assert "max_valor" in summary
+            assert "avg_valor" in summary
+        
+        print(f"✅ Dashboard returned {len(data['records'])} records")
+        print(f"   MicroXisto products available: {filter_opts['microxisto_products']}")
     
     def test_admin_dashboard_filtered_by_product(self, auth_token):
         """Test admin dashboard filtered by specific MicroXisto product"""
         response = requests.get(
-            f"{BASE_URL}/api/admin/market-studies/dashboard-by-microxisto?produto_microxisto=Active",
+            f"{BASE_URL}/api/admin/market-studies/dashboard-by-microxisto?microxisto_product=Active",
             headers={"Authorization": f"Bearer {auth_token}"}
         )
         
         assert response.status_code == 200, f"Filtered dashboard failed: {response.text}"
         data = response.json()
         
-        # All competitors should be for 'Active' product
-        for competitor in data["competitors"]:
-            assert competitor["produto_microxisto"] == "Active", "Should only show Active product competitors"
+        # All records should be for 'Active' product
+        for record in data["records"]:
+            assert record.get("concorre_microxisto") == "Active", f"Should only show Active product records, got: {record.get('concorre_microxisto')}"
         
-        print(f"✅ Filtered dashboard returned {len(data['competitors'])} entries for 'Active'")
+        print(f"✅ Filtered dashboard returned {len(data['records'])} entries for 'Active'")
     
     def test_admin_export_excel(self, auth_token):
         """Test admin Excel export endpoint"""

@@ -135,27 +135,21 @@ const UpdateNotification = () => {
 const InstallPWAButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
-  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Detectar iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     
-    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
-                              window.navigator.standalone === true;
+    const inStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
+                            window.navigator.standalone === true;
     
     setIsIOS(isIOSDevice);
-    
-    // Se é iOS e não está instalado, mostra instruções APENAS depois de um tempo
-    if (isIOSDevice && !isInStandaloneMode) {
-      // Aguarda 5 segundos para não interferir com autenticação
-      setTimeout(() => {
-        setShowIOSInstructions(true);
-      }, 5000);
-    }
+    setIsStandalone(inStandaloneMode);
 
+    // Android/Chrome: capture the install prompt
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -164,20 +158,24 @@ const InstallPWAButton = () => {
 
     const handleAppInstalled = () => {
       setShowInstallButton(false);
-      setShowIOSInstructions(false);
+      setShowInstructions(false);
       setDeferredPrompt(null);
+      setIsStandalone(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
+    // Show install button for iOS if not already installed
+    if (isIOSDevice && !inStandaloneMode) {
+      setShowInstallButton(true);
+    }
+
     // Trigger cache dinâmico após carregamento
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        // Aguarda 3 segundos para não atrapalhar carregamento inicial
         setTimeout(() => {
           registration.active?.postMessage({ type: 'CACHE_DYNAMIC_DATA' });
-          console.log('🔄 Iniciando cache offline dos dados essenciais...');
         }, 3000);
       });
     }
@@ -190,112 +188,114 @@ const InstallPWAButton = () => {
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
+      // Android/Chrome: trigger native install prompt
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(`PWA install result: ${outcome}`);
-      setDeferredPrompt(null);
-      setShowInstallButton(false);
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setShowInstallButton(false);
+      }
+    } else if (isIOS) {
+      // iOS: show manual instructions
+      setShowInstructions(true);
     }
   };
 
-  const handleIOSInstallClick = () => {
-    setShowIOSInstructions(!showIOSInstructions);
-  };
+  // Don't show if already installed
+  if (isStandalone || !showInstallButton) return null;
 
-  // Botão Android/Chrome (automático)
-  if (showInstallButton && !isIOS) {
-    return (
-      <div className="fixed bottom-4 right-4 z-50">
+  return (
+    <>
+      <div className="fixed bottom-20 right-4 z-50 lg:bottom-4">
         <button
           onClick={handleInstallClick}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-700 text-sm flex items-center space-x-2"
+          className="text-white px-4 py-2.5 rounded-xl shadow-lg text-sm flex items-center gap-2 font-semibold"
+          style={{backgroundColor: '#004F27'}}
+          data-testid="install-pwa-btn"
         >
-          <span>📱</span>
-          <span>Instalar App</span>
+          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/><path d="M12 15l4-4h-3V8h-2v3H8l4 4z"/></svg>
+          Instalar App
         </button>
       </div>
-    );
-  }
-
-  // Botão iOS (manual com instruções)
-  if (showIOSInstructions && isIOS) {
-    return (
-      <>
-        <div className="fixed bottom-4 right-4 z-50">
-          <button
-            onClick={handleIOSInstallClick}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-700 text-sm flex items-center space-x-2"
-          >
-            <span>🍎</span>
-            <span>Instalar iOS</span>
-          </button>
-        </div>
-        
-        {showIOSInstructions && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-              <div className="text-center mb-4">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">📱 Instalar no iPhone</h3>
-                <p className="text-sm text-gray-600">Para usar como app nativo:</p>
+      
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] p-4" onClick={() => setShowInstructions(false)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{backgroundColor: '#EFF8EF'}}>
+                <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#004F27"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
               </div>
-              
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <span className="text-blue-600 font-bold">1</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Toque no botão Compartilhar</p>
-                    <p className="text-gray-500">📤 Na barra inferior do Safari</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <span className="text-blue-600 font-bold">2</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Role para baixo</p>
-                    <p className="text-gray-500">Encontre "Adicionar à Tela de Início"</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 p-2 rounded-full">
-                    <span className="text-blue-600 font-bold">3</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">Toque "Adicionar"</p>
-                    <p className="text-gray-500">O EasyX aparecerá na sua tela inicial!</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6 flex space-x-3">
-                <button
-                  onClick={() => setShowIOSInstructions(false)}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => {
-                    setShowIOSInstructions(false);
-                    alert('Use o botão Compartilhar 📤 do Safari para instalar!');
-                  }}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
-                >
-                  Entendi
-                </button>
-              </div>
+              <h3 className="text-lg font-bold" style={{color: '#004F27'}}>Instalar XistoApp</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {isIOS ? 'Siga os passos abaixo no Safari:' : 'Siga os passos abaixo:'}
+              </p>
             </div>
+            
+            {isIOS ? (
+              /* iOS Instructions */
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>1</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Toque no botão Compartilhar</p>
+                    <p className="text-gray-500">O quadrado com a seta para cima na barra do Safari</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>2</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Selecione "Adicionar à Tela de Início"</p>
+                    <p className="text-gray-500">Role o menu até encontrar esta opção</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>3</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Toque em "Adicionar"</p>
+                    <p className="text-gray-500">O XistoApp vai aparecer na sua tela inicial como um app!</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Android Instructions */
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>1</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Abra o menu do navegador</p>
+                    <p className="text-gray-500">Toque nos 3 pontos no canto superior direito do Chrome</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>2</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Selecione "Instalar aplicativo"</p>
+                    <p className="text-gray-500">Ou "Adicionar à tela inicial"</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold" style={{backgroundColor: '#004F27'}}>3</div>
+                  <div>
+                    <p className="font-semibold text-gray-800">Confirme a instalação</p>
+                    <p className="text-gray-500">O XistoApp vai aparecer na sua tela inicial como um app!</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <button
+              onClick={() => setShowInstructions(false)}
+              className="w-full mt-6 py-2.5 rounded-xl text-white font-semibold text-sm"
+              style={{backgroundColor: '#004F27'}}
+            >
+              Entendi!
+            </button>
           </div>
-        )}
-      </>
-    );
-  }
-
-  return null;
+        </div>
+      )}
+    </>
+  );
 };
 
 // Admin Components
@@ -749,7 +749,7 @@ const ProductManagement = ({ token, technologies }) => {
             </select>
           </div>
           <div>
-            <label className="block text-gray-700 font-semibold mb-2">Densidade (g/mL)</label>
+            <label className="block text-gray-700 font-semibold mb-2">Densidade (g/100mL)</label>
             <input
               type="number"
               step="0.01"
@@ -879,7 +879,7 @@ const ProductManagement = ({ token, technologies }) => {
                 <th className="px-4 py-2 text-left">Logo</th>
                 <th className="px-4 py-2 text-left">Nome</th>
                 <th className="px-4 py-2 text-left">Tecnologia</th>
-                <th className="px-4 py-2 text-left">Densidade (g/mL)</th>
+                <th className="px-4 py-2 text-left">Densidade (g/100mL)</th>
                 <th className="px-4 py-2 text-left">Natureza</th>
                 <th className="px-4 py-2 text-left">Ações</th>
               </tr>
@@ -1633,7 +1633,7 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                           value={row.density}
                           onChange={(e) => updateEditableRow(row.id, 'density', e.target.value)}
                           className="w-full px-1 py-1 text-xs border-0 focus:ring-1 focus:ring-green-500"
-                          placeholder="g/mL"
+                          placeholder="g/100mL"
                           spellCheck="false"
                           autoComplete="off"
                         />
@@ -1801,7 +1801,7 @@ DICA: Copie DIRETAMENTE do Excel com Ctrl+C e cole aqui com Ctrl+V"
                 <th className="px-3 py-2 text-left">Empresa</th>
                 <th className="px-3 py-2 text-left">Produto</th>
                 <th className="px-3 py-2 text-left">Natureza</th>
-                <th className="px-3 py-2 text-left">Densidade (g/mL)</th>
+                <th className="px-3 py-2 text-left">Densidade (g/100mL)</th>
                 <th className="px-3 py-2 text-left">Elementos</th>
                 <th className="px-3 py-2 text-left">Ações</th>
               </tr>
@@ -2190,7 +2190,7 @@ const AdminTutorials = () => {
                   <li><strong>Nome:</strong> Nome do produto</li>
                   <li><strong>URL do Logo:</strong> Link da imagem do produto</li>
                   <li><strong>Tecnologia:</strong> Selecione uma das tecnologias cadastradas</li>
-                  <li><strong>Densidade:</strong> Em g/mL (ex: 1.25)</li>
+                  <li><strong>Densidade:</strong> Em g/100mL (ex: 1.25)</li>
                   <li><strong>Natureza:</strong> Líquido ou Sólido</li>
                 </ul>
               </li>
@@ -2298,7 +2298,7 @@ const AdminTutorials = () => {
                 <p><strong>Coluna 1:</strong> Nome da Empresa</p>
                 <p><strong>Coluna 2:</strong> Nome do Produto</p>
                 <p><strong>Coluna 3:</strong> Natureza (líquido/sólido)</p>
-                <p><strong>Coluna 4:</strong> Densidade em g/mL</p>
+                <p><strong>Coluna 4:</strong> Densidade em g/100mL</p>
                 <p><strong>Colunas 5-20:</strong> Elementos químicos na ordem: N, P, K, Ca, Mg, S, Mo, Co, Zn, B, Cu, Mn, Ni, Se, Si, Fe</p>
                 <p><strong>Coluna 21:</strong> Aditivos (opcional)</p>
               </div>
@@ -2498,11 +2498,13 @@ function App() {
     nome_produtor: '',
     nome_fazenda: '',
     cultura: '',
+    cultura_custom: '',
     colheita_esperada: '',
     area_tratada: '',
     valor_saca: '',
     representante: '',
     telefone: '',
+    prazo: '',
     produtos_selecionados: []
   });
   const [calculoResultado, setCalculoResultado] = useState(null);
@@ -2511,6 +2513,15 @@ function App() {
   const [resumoManejo, setResumoManejo] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
   const [incluirNutrientesPDF, setIncluirNutrientesPDF] = useState(false);
+  const [savedReports, setSavedReports] = useState([]);
+  const [showSavedReports, setShowSavedReports] = useState(false);
+  const [resetStep, setResetStep] = useState('email');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
 
   // Maintenance mode
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -2519,33 +2530,36 @@ function App() {
   // Estudo de Mercado states
   const [marketStudies, setMarketStudies] = useState([]);
   const [marketForm, setMarketForm] = useState({
-    empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '', concorre_microxisto: ''
+    cultura: '', empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: '', concorre_microxisto: ''
   });
   const [editingStudy, setEditingStudy] = useState(null);
-  const [adminAllStudies, setAdminAllStudies] = useState([]);
+
+  // Admin Market Study states
+  const [adminMarketStudies, setAdminMarketStudies] = useState([]);
   const [adminEditingRow, setAdminEditingRow] = useState(null);
   const [adminEditForm, setAdminEditForm] = useState({});
-  const [microxistoDashboard, setMicroxistoDashboard] = useState(null);
-  const [selectedMicroxistoProduct, setSelectedMicroxistoProduct] = useState('');
-  const [selectedDashEstado, setSelectedDashEstado] = useState('');
-  const [selectedDashVenda, setSelectedDashVenda] = useState('');
-  const [selectedDashEmpresa, setSelectedDashEmpresa] = useState('');
-  const [selectedDashProduto, setSelectedDashProduto] = useState('');
+  const [adminMxFilters, setAdminMxFilters] = useState({ microxisto_product: '', estado: '', tipo_venda: '', empresa: '', produto: '' });
+  const [adminMxDashboard, setAdminMxDashboard] = useState(null);
+  const [adminMxFilterOptions, setAdminMxFilterOptions] = useState({});
+
+  const MICROXISTO_PRODUCTS = ['Magnus', 'Pullseed Ni', 'Pullseed G', 'Active', 'One-Max', 'Complex', 'MN-MAX', 'ZINMAX', 'S-MAX', 'Guardian', 'TRUCKER', 'CA-ULTRA', 'MG-ULTRA', 'Citro-X', 'Tek-F', 'Alvo', 'DTA'];
 
   // Estágio options
   const ESTAGIO_OPTIONS = ['TS', 'Sulco', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'R1', 'R2', 'R3', 'R4', 'R5', 'R5.1', 'R5.2', 'R5.3', 'R5.4', 'R6'];
+  
+  // AquaX technology ID - products: CitroX, TEK-F, Alvo, DTA
+  const AQUAX_TECH_ID = 'c1e0d560-297f-4879-9c1f-e732342558aa';
+  const isAquaxProduct = (produto) => produto?.technology_id === AQUAX_TECH_ID;
 
   const ESTADOS_BRASIL = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','PY'];
 
-  const VENDA_OPTIONS = ['Venda direta', 'Distribuição', 'Cooperativa'];
-
-  const MICROXISTO_PRODUCTS = ['Magnus', 'Pullseed Ni', 'Pullseed G', 'Active', 'One-Max', 'Complex', 'MN-MAX', 'ZINMAX', 'S-MAX', 'Guardian', 'TRUCKER', 'CA-ULTRA', 'MG-ULTRA', 'Citro-X', 'Tek-F', 'Alvo', 'DTA'];
+  const VENDA_OPTIONS = ['Venda direta', 'Distribuicao', 'Cooperativa', 'Pool de compras'];
 
   // Dashboard data
   const [dashboardData, setDashboardData] = useState(null);
   const [userActivity, setUserActivity] = useState([]);
-  const [dashboardFilters, setDashboardFilters] = useState({ estado: '', empresa: '', data_inicio: '', data_fim: '' });
-  const [filterOptions, setFilterOptions] = useState({ empresas: [], estados: [] });
+  const [dashboardFilters, setDashboardFilters] = useState({ estado: '', empresa: '', produto: '', venda: '' });
+  const [filterOptions, setFilterOptions] = useState({ empresas: [], estados: [], produtos: [], vendas: [], produtos_by_empresa: {} });
 
 
   // Propósito options - NOVA FUNCIONALIDADE
@@ -2619,12 +2633,29 @@ function App() {
     }
   }, [isLoggedIn, token]);
 
-  // Fetch dashboard when on estudo-mercado page
+  // Fetch dashboard when on estudo-mercado page or admin market tab
   useEffect(() => {
     if (isLoggedIn && token && currentPage === 'estudo-mercado') {
       fetchDashboard();
     }
   }, [currentPage, isLoggedIn, token]);
+
+  // Fetch saved reports when on planejamento page
+  useEffect(() => {
+    if (isLoggedIn && token && currentPage === 'planejamento') {
+      fetchSavedReports();
+    }
+  }, [currentPage, isLoggedIn, token]);
+
+
+  // Fetch dashboard when admin opens market-export tab
+  useEffect(() => {
+    if (isAdmin && token && adminTab === 'market-export') {
+      fetchDashboard();
+      fetchAdminMarketStudies();
+      fetchAdminMxDashboard();
+    }
+  }, [adminTab, isAdmin, token]);
 
   // Fetch user activity when on admin page
   useEffect(() => {
@@ -2633,13 +2664,23 @@ function App() {
     }
   }, [currentPage, isAdmin, token]);
 
-  // Auto-load admin market data when tab is selected
+  // Security: prevent non-admin users from accessing admin page
   useEffect(() => {
-    if (isAdmin && token && currentPage === 'admin' && adminTab === 'market-export') {
-      fetchAdminAllStudies();
-      fetchMicroxistoDashboard();
+    if (currentPage === 'admin') {
+      if (!token) {
+        setCurrentPage('home');
+        return;
+      }
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.is_admin !== true) {
+          setCurrentPage('home');
+        }
+      } catch {
+        setCurrentPage('home');
+      }
     }
-  }, [currentPage, isAdmin, token, adminTab]);
+  }, [currentPage, token]);
 
   const checkMaintenanceMode = async () => {
     try {
@@ -2673,7 +2714,7 @@ function App() {
 
   const handleCreateMarketStudy = async () => {
     if (!marketForm.empresa || !marketForm.produto || !marketForm.dose_ha || !marketForm.valor || !marketForm.venda || !marketForm.estado) {
-      alert('Preencha todos os campos obrigatórios');
+      alert('Preencha todos os campos');
       return;
     }
     try {
@@ -2740,69 +2781,43 @@ function App() {
     }
   };
 
-  const toggleMaintenanceMode = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/admin/maintenance`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMaintenanceMode(data.active);
-        alert(data.message);
-      }
-    } catch (error) {
-      console.error('Error toggling maintenance:', error);
-    }
-  };
-
-  const fetchDashboard = async () => {
-    try {
-      if (isAdmin) {
-        // Admin gets filtered dashboard
-        const params = new URLSearchParams();
-        if (dashboardFilters.estado) params.append('estado', dashboardFilters.estado);
-        if (dashboardFilters.empresa) params.append('empresa', dashboardFilters.empresa);
-        if (dashboardFilters.data_inicio) params.append('data_inicio', dashboardFilters.data_inicio);
-        if (dashboardFilters.data_fim) params.append('data_fim', dashboardFilters.data_fim);
-        const url = `${API_BASE}/api/admin/market-studies/dashboard-filtered${params.toString() ? '?' + params.toString() : ''}`;
-        const response = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setDashboardData({ national: data.products, by_state: data.by_state });
-          setFilterOptions(data.filter_options);
-        }
-      } else {
-        const response = await fetch(`${API_BASE}/api/market-studies/dashboard`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setDashboardData(data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard:', error);
-    }
-  };
-
-  const fetchAdminAllStudies = async () => {
+  // Admin Market Study functions
+  const fetchAdminMarketStudies = async () => {
     try {
       const response = await fetch(`${API_BASE}/api/admin/market-studies/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
-        setAdminAllStudies(data);
+        setAdminMarketStudies(data);
       }
     } catch (error) {
-      console.error('Error fetching admin studies:', error);
+      console.error('Error fetching admin market studies:', error);
     }
   };
 
-  const handleAdminUpdateStudy = async (studyId) => {
+  const fetchAdminMxDashboard = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (adminMxFilters.microxisto_product) params.append('microxisto_product', adminMxFilters.microxisto_product);
+      if (adminMxFilters.estado) params.append('estado', adminMxFilters.estado);
+      if (adminMxFilters.tipo_venda) params.append('tipo_venda', adminMxFilters.tipo_venda);
+      if (adminMxFilters.empresa) params.append('empresa', adminMxFilters.empresa);
+      if (adminMxFilters.produto) params.append('produto', adminMxFilters.produto);
+      const response = await fetch(`${API_BASE}/api/admin/market-studies/dashboard-by-microxisto?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAdminMxDashboard(data);
+        setAdminMxFilterOptions(data.filter_options || {});
+      }
+    } catch (error) {
+      console.error('Error fetching admin MX dashboard:', error);
+    }
+  };
+
+  const handleAdminSaveEdit = async (studyId) => {
     try {
       const response = await fetch(`${API_BASE}/api/admin/market-studies/${studyId}`, {
         method: 'PUT',
@@ -2819,12 +2834,11 @@ function App() {
       });
       if (response.ok) {
         setAdminEditingRow(null);
-        setAdminEditForm({});
-        fetchAdminAllStudies();
-        fetchMicroxistoDashboard();
+        fetchAdminMarketStudies();
+        fetchAdminMxDashboard();
       }
     } catch (error) {
-      console.error('Error admin updating study:', error);
+      console.error('Error saving admin edit:', error);
     }
   };
 
@@ -2836,32 +2850,143 @@ function App() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
-        fetchAdminAllStudies();
-        fetchMicroxistoDashboard();
+        fetchAdminMarketStudies();
+        fetchAdminMxDashboard();
       }
     } catch (error) {
-      console.error('Error admin deleting study:', error);
+      console.error('Error deleting admin market study:', error);
     }
   };
 
-  const fetchMicroxistoDashboard = async () => {
+  const toggleMaintenanceMode = async () => {
     try {
-      const params = new URLSearchParams();
-      if (selectedMicroxistoProduct) params.append('produto_microxisto', selectedMicroxistoProduct);
-      if (selectedDashEstado) params.append('estado', selectedDashEstado);
-      if (selectedDashVenda) params.append('venda', selectedDashVenda);
-      if (selectedDashEmpresa) params.append('empresa', selectedDashEmpresa);
-      if (selectedDashProduto) params.append('produto_concorrente', selectedDashProduto);
-      const url = `${API_BASE}/api/admin/market-studies/dashboard-by-microxisto${params.toString() ? '?' + params.toString() : ''}`;
-      const response = await fetch(url, {
+      const response = await fetch(`${API_BASE}/api/admin/maintenance`, {
+        method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const data = await response.json();
-        setMicroxistoDashboard(data);
+        setMaintenanceMode(data.active);
+        alert(data.message);
       }
     } catch (error) {
-      console.error('Error fetching microxisto dashboard:', error);
+      console.error('Error toggling maintenance:', error);
+    }
+  };
+
+  // Planejamento Reports
+  const fetchSavedReports = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/planejamento-reports`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSavedReports(data);
+      }
+    } catch (error) {
+      console.error('Error fetching saved reports:', error);
+    }
+  };
+
+  const saveCurrentReport = async () => {
+    try {
+      const reportData = {
+        form_data: planejamentoForm,
+        produtos_selecionados: produtosSelecionados.map(p => ({
+          produto_id: p.produto.id,
+          produto_name: p.produto.name,
+          technology_id: p.produto.technology_id,
+          estagio: p.estagio || '',
+          num_aplicacoes: p.num_aplicacoes || '',
+          dose_lha: p.dose_lha || '',
+          valor_litro: p.valor_litro || '',
+          observacao: p.observacao || ''
+        })),
+        resumo: resumoManejo ? {
+          custoTotal: resumoManejo.custoTotal,
+          custoPorHectare: resumoManejo.custoPorHectare,
+          cultura: resumoManejo.cultura
+        } : {}
+      };
+      const response = await fetch(`${API_BASE}/api/planejamento-reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(reportData)
+      });
+      if (response.ok) {
+        alert('Relatório salvo com sucesso! Disponível por 10 dias.');
+        fetchSavedReports();
+      }
+    } catch (error) {
+      console.error('Error saving report:', error);
+    }
+  };
+
+  const loadReport = (report) => {
+    setPlanejamentoForm(report.form_data);
+    // Reconstruct produtosSelecionados from saved data
+    const reconstructed = report.produtos_selecionados.map(saved => ({
+      produto: {
+        id: saved.produto_id,
+        name: saved.produto_name,
+        technology_id: saved.technology_id,
+        composition: (allProducts.find(p => p.id === saved.produto_id) || {}).composition || {}
+      },
+      estagio: saved.estagio,
+      num_aplicacoes: saved.num_aplicacoes,
+      dose_lha: saved.dose_lha,
+      valor_litro: saved.valor_litro,
+      observacao: saved.observacao
+    }));
+    setProdutosSelecionados(reconstructed);
+    setResumoManejo(null);
+    setShowSavedReports(false);
+  };
+
+  const deleteReport = async (reportId) => {
+    if (!window.confirm('Excluir este relatório?')) return;
+    try {
+      await fetch(`${API_BASE}/api/planejamento-reports/${reportId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchSavedReports();
+    } catch (error) {
+      console.error('Error deleting report:', error);
+    }
+  };
+
+
+  const fetchDashboard = async () => {
+    try {
+      if (isAdmin) {
+        // Admin gets filtered dashboard
+        const params = new URLSearchParams();
+        if (dashboardFilters.estado) params.append('estado', dashboardFilters.estado);
+        if (dashboardFilters.empresa) params.append('empresa', dashboardFilters.empresa);
+        if (dashboardFilters.produto) params.append('produto', dashboardFilters.produto);
+        if (dashboardFilters.venda) params.append('venda', dashboardFilters.venda);
+        const url = `${API_BASE}/api/admin/market-studies/dashboard-filtered${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+          setFilterOptions(data.filter_options);
+        }
+      } else {
+        const response = await fetch(`${API_BASE}/api/market-studies/dashboard`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard:', error);
     }
   };
 
@@ -2881,11 +3006,25 @@ function App() {
 
   const checkAuthStatus = () => {
     const storedToken = localStorage.getItem('token');
-    const adminStatus = localStorage.getItem('isAdmin') === 'true';
     if (storedToken) {
-      setToken(storedToken);
-      setIsLoggedIn(true);
-      setIsAdmin(adminStatus);
+      try {
+        // Decode JWT to verify is_admin from the SIGNED token, not localStorage
+        const payload = JSON.parse(atob(storedToken.split('.')[1]));
+        // Check token expiration
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          // Token expired - force logout
+          localStorage.removeItem('token');
+          localStorage.removeItem('isAdmin');
+          return;
+        }
+        setToken(storedToken);
+        setIsLoggedIn(true);
+        setIsAdmin(payload.is_admin === true);
+      } catch (e) {
+        // Invalid token - force logout
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAdmin');
+      }
     }
   };
 
@@ -3347,6 +3486,169 @@ function App() {
     );
   };
 
+  // Password Reset Page
+  if (!isLoggedIn && currentPage === 'forgot-password') {
+
+    const handleSendCode = async (e) => {
+      e.preventDefault();
+      setResetLoading(true);
+      setResetError('');
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: resetEmail })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setResetStep('code');
+          setResetMessage('Código enviado! Verifique seu e-mail.');
+        } else {
+          setResetError(data.detail || 'Erro ao enviar código');
+        }
+      } catch (err) {
+        setResetError('Erro de conexão');
+      }
+      setResetLoading(false);
+    };
+
+    const handleResetPassword = async (e) => {
+      e.preventDefault();
+      if (newPassword.length < 4) {
+        setResetError('A senha deve ter pelo menos 4 caracteres');
+        return;
+      }
+      setResetLoading(true);
+      setResetError('');
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: resetEmail, code: resetCode, new_password: newPassword })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setResetStep('success');
+          setResetMessage('Senha alterada com sucesso!');
+        } else {
+          setResetError(data.detail || 'Erro ao redefinir senha');
+        }
+      } catch (err) {
+        setResetError('Erro de conexão');
+      }
+      setResetLoading(false);
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
+        <div className="bg-white p-6 lg:p-8 rounded-lg shadow-xl w-full max-w-md">
+          <div className="text-center mb-6">
+            <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-12 lg:h-16 mx-auto mb-4 object-contain" />
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Recuperar Senha</h2>
+          </div>
+
+          {resetStep === 'email' && (
+            <form onSubmit={handleSendCode}>
+              <p className="text-gray-600 text-sm mb-4">Informe seu e-mail cadastrado para receber o código de recuperação.</p>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">E-mail</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                  placeholder="seu@email.com"
+                  required
+                  data-testid="reset-email-input"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                data-testid="reset-send-code-btn"
+              >
+                {resetLoading ? 'Enviando...' : 'Enviar Código'}
+              </button>
+            </form>
+          )}
+
+          {resetStep === 'code' && (
+            <form onSubmit={handleResetPassword}>
+              <p className="text-gray-600 text-sm mb-4">Digite o código de 6 dígitos enviado para <strong>{resetEmail}</strong> e sua nova senha.</p>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Código</label>
+                <input
+                  type="text"
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500 text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  maxLength={6}
+                  required
+                  data-testid="reset-code-input"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Nova Senha</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                  placeholder="Mínimo 4 caracteres"
+                  required
+                  data-testid="reset-new-password-input"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                data-testid="reset-confirm-btn"
+              >
+                {resetLoading ? 'Alterando...' : 'Redefinir Senha'}
+              </button>
+            </form>
+          )}
+
+          {resetStep === 'success' && (
+            <div className="text-center">
+              <div className="text-green-600 text-5xl mb-4">✓</div>
+              <p className="text-green-700 font-semibold text-lg mb-4">{resetMessage}</p>
+              <button
+                onClick={() => setCurrentPage('login')}
+                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+              >
+                Ir para Login
+              </button>
+            </div>
+          )}
+
+          {resetError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm text-center">
+              {resetError}
+            </div>
+          )}
+          {resetMessage && resetStep === 'code' && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm text-center">
+              {resetMessage}
+            </div>
+          )}
+
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setCurrentPage('login')}
+              className="text-green-600 hover:text-green-800"
+            >
+              Voltar ao Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!isLoggedIn && currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-900 to-green-700 flex items-center justify-center">
@@ -3390,8 +3692,15 @@ function App() {
           
           <div className="mt-4 text-center">
             <button
+              onClick={() => setCurrentPage('forgot-password')}
+              className="text-gray-500 hover:text-green-700 text-sm"
+            >
+              Esqueci minha senha
+            </button>
+            <br />
+            <button
               onClick={() => setCurrentPage('register')}
-              className="text-green-600 hover:text-green-800"
+              className="text-green-600 hover:text-green-800 mt-2"
             >
               Não tem conta? Cadastre-se
             </button>
@@ -3409,125 +3718,262 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen flex flex-col" style={{backgroundColor: '#EFF8EF'}}>
       {/* Componentes PWA */}
       <UpdateNotification />
       <OfflineIndicator />
       <InstallPWAButton />
       
-      {/* Header */}
-      <header className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            {/* Logo e Título */}
-            <div className="flex items-center justify-center lg:justify-start mb-4 lg:mb-0 pt-2">
-              <img src="https://i.imgur.com/lwNbD0G.png" alt="MicroXisto" className="h-10 lg:h-12" />
-            </div>
-            
-            {/* Navigation */}
-            <nav className="flex flex-col lg:flex-row items-center lg:space-x-4 space-y-2 lg:space-y-0">
-              <div className="flex flex-wrap justify-center lg:justify-start gap-2 lg:gap-4">
-                <button
-                  onClick={() => setCurrentPage('home')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'home' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  Início
-                </button>
-                <button
-                  onClick={() => setCurrentPage('technologies')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'technologies' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  Tecnologias
-                </button>
-                <button
-                  onClick={() => setCurrentPage('cultures')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'cultures' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  🌾 Culturas
-                </button>
-                <button
-                  onClick={() => setCurrentPage('planejamento')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'planejamento' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                >
-                  📊 Planejamento
-                </button>
-                <button
-                  onClick={() => setCurrentPage('comparison')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'comparison' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                  data-testid="nav-comparison"
-                >
-                  Comparativo
-                </button>
-                <button
-                  onClick={() => setCurrentPage('estudo-mercado')}
-                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm lg:text-base ${currentPage === 'estudo-mercado' ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-100'}`}
-                  data-testid="nav-market-study"
-                >
-                  Estudo de Mercado
-                </button>
-                {isLoggedIn && (
+      {/* Header - mobile: hidden on home. desktop: always visible */}
+      <header className={`bg-white shadow-sm sticky top-0 z-50 ${currentPage === 'home' ? 'hidden lg:block' : ''}`}>
+        <div className="container mx-auto px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setCurrentPage('home')}>
+            <img src="/xistoapp-icon.png" alt="XistoApp" className="h-8 w-8 rounded-lg object-cover" />
+            <span className="text-lg font-bold tracking-tight">
+              <span style={{color: '#004F27'}}>Xisto</span><span style={{color: '#9BE178'}}>App</span>
+            </span>
+          </div>
+          
+          {/* Desktop nav links */}
+          <nav className="desktop-only flex items-center gap-2">
+            {isLoggedIn && (
+              <>
+                {[
+                  { page: 'home', label: 'Início' },
+                  { page: 'technologies', label: 'Tecnologias' },
+                  { page: 'cultures', label: 'Culturas' },
+                  { page: 'planejamento', label: 'Planejamento' },
+                  { page: 'comparison', label: 'Comparativo' },
+                  { page: 'estudo-mercado', label: 'Estudo de Mercado' },
+                ].map(item => (
                   <button
-                    onClick={handleLogout}
-                    className="px-3 lg:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm lg:text-base"
+                    key={item.page}
+                    onClick={() => setCurrentPage(item.page)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === item.page ? 'text-white' : 'hover:bg-green-50'}`}
+                    style={currentPage === item.page ? {backgroundColor: '#004F27', color: '#fff'} : {color: '#004F27'}}
                   >
-                    Sair
+                    {item.label}
+                  </button>
+                ))}
+                {isAdmin && (
+                  <button onClick={() => setCurrentPage('admin')} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${currentPage === 'admin' ? 'text-white' : 'hover:bg-green-100'}`}
+                    style={currentPage === 'admin' ? {backgroundColor: '#004F27', color: '#fff'} : {color: '#004F27'}}
+                  >
+                    Admin
                   </button>
                 )}
-              </div>
-              
-              {/* Auth buttons */}
-              <div className="flex items-center space-x-2 mt-2 lg:mt-0">
-                {isLoggedIn ? (
-                  <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-2">
-                    {isAdmin && (
-                      <button
-                        onClick={() => setCurrentPage('admin')}
-                        className="px-3 lg:px-4 py-2 bg-green-800 text-white rounded-lg hover:bg-green-900 text-sm lg:text-base"
-                      >
-                        Admin
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col lg:flex-row gap-2">
-                    <button
-                      onClick={() => setCurrentPage('login')}
-                      className="px-3 lg:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm lg:text-base"
-                    >
-                      Login
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage('register')}
-                      className="px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm lg:text-base"
-                    >
-                      Cadastro
-                    </button>
-                  </div>
-                )}
-              </div>
-            </nav>
-          </div>
+                <button onClick={handleLogout} className="px-3 py-1.5 rounded-lg text-sm font-medium transition ml-2" style={{backgroundColor: '#004F27', color: '#fff'}}>
+                  Sair
+                </button>
+              </>
+            )}
+            {!isLoggedIn && (
+              <>
+                <button onClick={() => setCurrentPage('login')} className="px-4 py-1.5 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition" style={{backgroundColor: '#004F27'}}>Login</button>
+                <button onClick={() => setCurrentPage('register')} className="px-4 py-1.5 rounded-lg text-sm font-semibold border-2 hover:opacity-90 transition" style={{borderColor: '#004F27', color: '#004F27'}}>Cadastro</button>
+              </>
+            )}
+          </nav>
+          
+          {/* Mobile auth buttons */}
+          {!isLoggedIn && (
+            <div className="mobile-only flex items-center gap-2">
+              <button onClick={() => setCurrentPage('login')} className="px-3 py-1.5 rounded-lg text-sm font-medium text-white" style={{backgroundColor: '#004F27'}}>Login</button>
+              <button onClick={() => setCurrentPage('register')} className="px-3 py-1.5 rounded-lg text-sm font-medium border-2" style={{borderColor: '#004F27', color: '#004F27'}}>Cadastro</button>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className={`flex-1 pb-32 lg:pb-8 ${currentPage !== 'home' ? 'container mx-auto px-4 py-4' : ''}`}>
         {currentPage === 'home' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-lg shadow-md p-6 lg:p-8 text-center">
-              <img src="https://i.imgur.com/rJRL0ca.png" alt="EasyX" className="h-16 lg:h-20 mx-auto mb-6 object-contain" />
-              <div className="prose max-w-none">
-                <p className="text-base lg:text-lg text-gray-700 mb-6">{homeContent.text}</p>
-                {homeContent.pdf_url && (
-                  <a
-                    href={homeContent.pdf_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
-                  >
-                    Baixar Portfólio
-                  </a>
-                )}
+          <div>
+            {/* === MOBILE HOME === */}
+            <div className="lg:hidden">
+              {/* Login/Register buttons when not logged in */}
+              {!isLoggedIn && (
+                <div className="flex justify-center gap-3 pt-3 mb-2">
+                  <button onClick={() => setCurrentPage('login')} className="px-5 py-2 rounded-lg text-sm font-semibold text-white" style={{backgroundColor: '#004F27'}}>Login</button>
+                  <button onClick={() => setCurrentPage('register')} className="px-5 py-2 rounded-lg text-sm font-semibold border-2" style={{borderColor: '#004F27', color: '#004F27'}}>Cadastro</button>
+                </div>
+              )}
+              
+              {/* Logo + XistoApp */}
+              <div className="flex items-center justify-center gap-1 pt-3 mb-2">
+                <img src="/xistoapp-icon.png" alt="XistoApp" className="h-24 w-24 rounded-3xl object-cover shadow-lg" />
+                <span className="text-5xl font-bold tracking-tight flex items-center">
+                  <img src="/x-logo.png" alt="X" className="h-14 inline-block" style={{marginRight: '-3px'}} />
+                  <span style={{color: '#004F27'}}>isto</span><span style={{color: '#9BE178'}}>App</span>
+                </span>
+              </div>
+              
+              {/* Welcome */}
+              <h2 className="text-xl font-semibold text-center mb-3" style={{color: '#004F27'}}>
+                Bem-vindo ao XistoApp
+              </h2>
+              
+              {/* Rock image */}
+              <div className="w-full overflow-hidden mb-4" style={{backgroundColor: '#EFF8EF'}}>
+                <img src="/xisto-rock.png" alt="Xisto" className="w-full object-contain max-h-52 mx-auto" style={{mixBlendMode: 'multiply'}} />
+              </div>
+              
+              {/* Button Grid 2 cols mobile */}
+              <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto px-4 pt-5 pb-4">
+                {/* Planejamento */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('planejamento'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-planejamento">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><rect x="6" y="28" width="10" height="16" rx="2" fill="#9BE178"/><rect x="19" y="18" width="10" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="6" width="10" height="38" rx="2" fill="#004F27"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Planejamento</span>
+                </button>
+                {/* Culturas */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('cultures'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-culturas">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><ellipse cx="24" cy="42" rx="14" ry="4" fill="#8B6914"/><path d="M24 38V22" stroke="#004F27" strokeWidth="3" strokeLinecap="round"/><path d="M24 28C18 28 15 22 15 18C18 18 22 20 24 24C26 20 30 18 33 18C33 22 30 28 24 28Z" fill="#9BE178"/><path d="M24 22C20 16 22 10 26 8C28 12 28 18 24 22Z" fill="#004F27"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Culturas</span>
+                </button>
+                {/* Mercado */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('estudo-mercado'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-mercado">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><rect x="8" y="26" width="8" height="16" rx="2" fill="#9BE178"/><rect x="20" y="16" width="8" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="8" width="8" height="34" rx="2" fill="#004F27"/><circle cx="38" cy="6" r="4" fill="#9BE178"/><text x="38" y="9" textAnchor="middle" fill="#004F27" fontSize="8" fontWeight="bold">+</text></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Mercado</span>
+                </button>
+                {/* Tecnologias */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-tecnologias">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12">
+                    {/* Atom with orbits + hexagonal molecule */}
+                    {/* 3 orbital ellipses */}
+                    <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(0 24 16)"/>
+                    <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(60 24 16)"/>
+                    <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(120 24 16)"/>
+                    {/* Nucleus */}
+                    <circle cx="24" cy="16" r="3.5" fill="#004F27"/>
+                    {/* Electrons on orbits */}
+                    <circle cx="38" cy="16" r="2" fill="#9BE178"/>
+                    <circle cx="17" cy="6" r="2" fill="#9BE178"/>
+                    <circle cx="17" cy="26" r="2" fill="#9BE178"/>
+                    {/* Connecting line */}
+                    <line x1="24" y1="23" x2="24" y2="32" stroke="#004F27" strokeWidth="1.5" strokeLinecap="round"/>
+                    {/* Hexagonal ring */}
+                    <polygon points="24,32 29,35 29,40 24,43 19,40 19,35" fill="none" stroke="#004F27" strokeWidth="1.5" strokeLinejoin="round"/>
+                  </svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
+                </button>
+                {/* Portfolio */}
+                <button onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-portfolio">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12"><rect x="8" y="6" width="32" height="36" rx="4" fill="none" stroke="#004F27" strokeWidth="3"/><path d="M16 16H32M16 24H32M16 32H26" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/><circle cx="36" cy="36" r="8" fill="#9BE178"/><path d="M33 36H39M36 33V39" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/></svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Portfolio</span>
+                </button>
+                {/* Comparativo */}
+                <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg transition active:scale-95 border border-gray-100" data-testid="home-btn-comparativo">
+                  <svg viewBox="0 0 48 48" className="w-12 h-12">
+                    {/* Comparison/Exchange icon - two bottles with ruler and arrows */}
+                    <rect x="4" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                    <rect x="7" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                    <rect x="32" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                    <rect x="35" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                    {/* Ruler */}
+                    <line x1="24" y1="12" x2="24" y2="40" stroke="#004F27" strokeWidth="1.5"/>
+                    <line x1="22" y1="16" x2="26" y2="16" stroke="#004F27" strokeWidth="1.2"/>
+                    <line x1="23" y1="20" x2="25" y2="20" stroke="#004F27" strokeWidth="1"/>
+                    <line x1="22" y1="24" x2="26" y2="24" stroke="#004F27" strokeWidth="1.2"/>
+                    <line x1="23" y1="28" x2="25" y2="28" stroke="#004F27" strokeWidth="1"/>
+                    <line x1="22" y1="32" x2="26" y2="32" stroke="#004F27" strokeWidth="1.2"/>
+                    <line x1="23" y1="36" x2="25" y2="36" stroke="#004F27" strokeWidth="1"/>
+                    {/* Exchange arrows */}
+                    <path d="M16 20 Q24 14 32 20" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                    <polygon points="30,18 34,20 30,22" fill="#9BE178"/>
+                    <path d="M32 32 Q24 38 16 32" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                    <polygon points="18,30 14,32 18,34" fill="#9BE178"/>
+                  </svg>
+                  <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* === DESKTOP HOME === */}
+            <div className="hidden lg:block">
+              {/* Hero Section */}
+              <div className="max-w-6xl mx-auto px-8 py-10">
+                <div className="flex items-stretch gap-10">
+                  {/* Left: Branding & Feature Buttons */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    {/* Logo + XistoApp */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <img src="/xistoapp-icon.png" alt="XistoApp" className="h-28 w-28 rounded-3xl object-cover shadow-lg" />
+                        <span className="text-6xl font-bold tracking-tight flex items-center">
+                          <img src="/x-logo.png" alt="X" className="h-16 inline-block" style={{marginRight: '-3px'}} />
+                          <span style={{color: '#004F27'}}>isto</span><span style={{color: '#9BE178'}}>App</span>
+                        </span>
+                      </div>
+                      
+                      <h2 className="text-2xl font-semibold mb-1" style={{color: '#004F27'}}>
+                        Bem-vindo ao XistoApp
+                      </h2>
+                      <p className="text-base mb-6" style={{color: '#4a7c59'}}>
+                        Consulta e comparação de produtos MicroXisto para o agronegócio
+                      </p>
+                    </div>
+                    
+                    {/* Desktop Feature Grid - 3 columns */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('planejamento'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-planejamento">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><rect x="6" y="28" width="10" height="16" rx="2" fill="#9BE178"/><rect x="19" y="18" width="10" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="6" width="10" height="38" rx="2" fill="#004F27"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Planejamento</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('cultures'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-culturas">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><ellipse cx="24" cy="42" rx="14" ry="4" fill="#8B6914"/><path d="M24 38V22" stroke="#004F27" strokeWidth="3" strokeLinecap="round"/><path d="M24 28C18 28 15 22 15 18C18 18 22 20 24 24C26 20 30 18 33 18C33 22 30 28 24 28Z" fill="#9BE178"/><path d="M24 22C20 16 22 10 26 8C28 12 28 18 24 22Z" fill="#004F27"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Culturas</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('estudo-mercado'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-mercado">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><rect x="8" y="26" width="8" height="16" rx="2" fill="#9BE178"/><rect x="20" y="16" width="8" height="26" rx="2" fill="#6BBF4E"/><rect x="32" y="8" width="8" height="34" rx="2" fill="#004F27"/><circle cx="38" cy="6" r="4" fill="#9BE178"/><text x="38" y="9" textAnchor="middle" fill="#004F27" fontSize="8" fontWeight="bold">+</text></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Mercado</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('technologies'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-tecnologias">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11">
+                          <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(0 24 16)"/>
+                          <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(60 24 16)"/>
+                          <ellipse cx="24" cy="16" rx="14" ry="6" fill="none" stroke="#004F27" strokeWidth="1.5" transform="rotate(120 24 16)"/>
+                          <circle cx="24" cy="16" r="3.5" fill="#004F27"/>
+                          <circle cx="38" cy="16" r="2" fill="#9BE178"/>
+                          <circle cx="17" cy="6" r="2" fill="#9BE178"/>
+                          <circle cx="17" cy="26" r="2" fill="#9BE178"/>
+                          <line x1="24" y1="23" x2="24" y2="32" stroke="#004F27" strokeWidth="1.5" strokeLinecap="round"/>
+                          <polygon points="24,32 29,35 29,40 24,43 19,40 19,35" fill="none" stroke="#004F27" strokeWidth="1.5" strokeLinejoin="round"/>
+                        </svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Tecnologias</span>
+                      </button>
+                      <button onClick={() => { if (homeContent.pdf_url) window.open(homeContent.pdf_url, '_blank'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-portfolio">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11"><rect x="8" y="6" width="32" height="36" rx="4" fill="none" stroke="#004F27" strokeWidth="3"/><path d="M16 16H32M16 24H32M16 32H26" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/><circle cx="36" cy="36" r="8" fill="#9BE178"/><path d="M33 36H39M36 33V39" stroke="#004F27" strokeWidth="2" strokeLinecap="round"/></svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Portfolio</span>
+                      </button>
+                      <button onClick={() => { if (isLoggedIn) setCurrentPage('comparison'); else setCurrentPage('login'); }} className="bg-white rounded-xl shadow-md p-5 flex flex-col items-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-gray-100 cursor-pointer" data-testid="desktop-btn-comparativo">
+                        <svg viewBox="0 0 48 48" className="w-11 h-11">
+                          <rect x="4" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                          <rect x="7" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                          <rect x="32" y="14" width="12" height="24" rx="2" fill="none" stroke="#004F27" strokeWidth="1.8"/>
+                          <rect x="35" y="10" width="6" height="6" rx="1" fill="none" stroke="#004F27" strokeWidth="1.5"/>
+                          <line x1="24" y1="12" x2="24" y2="40" stroke="#004F27" strokeWidth="1.5"/>
+                          <line x1="22" y1="16" x2="26" y2="16" stroke="#004F27" strokeWidth="1.2"/>
+                          <line x1="23" y1="20" x2="25" y2="20" stroke="#004F27" strokeWidth="1"/>
+                          <line x1="22" y1="24" x2="26" y2="24" stroke="#004F27" strokeWidth="1.2"/>
+                          <line x1="23" y1="28" x2="25" y2="28" stroke="#004F27" strokeWidth="1"/>
+                          <line x1="22" y1="32" x2="26" y2="32" stroke="#004F27" strokeWidth="1.2"/>
+                          <path d="M16 20 Q24 14 32 20" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                          <polygon points="30,18 34,20 30,22" fill="#9BE178"/>
+                          <path d="M32 32 Q24 38 16 32" fill="none" stroke="#9BE178" strokeWidth="2" strokeLinecap="round"/>
+                          <polygon points="18,30 14,32 18,34" fill="#9BE178"/>
+                        </svg>
+                        <span className="text-sm font-semibold" style={{color: '#004F27'}}>Comparativo</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Right: Rock Image */}
+                  <div className="flex-shrink-0 w-[440px] flex items-center">
+                    <div className="w-full rounded-2xl overflow-hidden p-4" style={{backgroundColor: '#EFF8EF'}}>
+                      <img src="/xisto-rock.png" alt="Xisto" className="w-full object-contain" style={{mixBlendMode: 'multiply', maxHeight: '480px'}} />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3602,7 +4048,7 @@ function App() {
                   <div className="text-center lg:text-left">
                     <h3 className="text-xl lg:text-2xl font-bold text-green-800" translate="no">{productDetails.name}</h3>
                     <div className="flex flex-col lg:flex-row lg:space-x-4 text-sm text-gray-600">
-                      <span>Densidade: {productDetails.density} g/mL</span>
+                      <span>Densidade: {productDetails.density} g/100mL</span>
                       <span>Natureza: {productDetails.nature}</span>
                     </div>
                   </div>
@@ -3725,7 +4171,62 @@ function App() {
           <>
             {isLoggedIn ? (
               <div className="max-w-6xl mx-auto">
-                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">📊 Planejamento de Aplicação</h2>
+                <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Planejamento de Aplicação</h2>
+                
+                {/* Botão Meus Relatórios */}
+                <div className="mb-6 flex justify-center">
+                  <button
+                    onClick={() => { setShowSavedReports(!showSavedReports); if (!showSavedReports) fetchSavedReports(); }}
+                    className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-2"
+                    data-testid="saved-reports-btn"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Meus Relatórios ({savedReports.length})
+                  </button>
+                </div>
+
+                {/* Lista de Relatórios Salvos */}
+                {showSavedReports && (
+                  <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Relatórios Salvos (últimos 10 dias)</h3>
+                    {savedReports.length > 0 ? (
+                      <div className="space-y-3">
+                        {savedReports.map((report) => (
+                          <div key={report.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border hover:bg-green-50 transition-colors">
+                            <div className="flex-1 cursor-pointer" onClick={() => loadReport(report)}>
+                              <div className="font-semibold text-gray-800">
+                                {report.form_data.nome_produtor || 'Sem nome'} - {report.form_data.fazenda || 'Sem fazenda'}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {report.form_data.cultura}{report.form_data.cultura === 'Outros' && report.form_data.cultura_custom ? ` (${report.form_data.cultura_custom})` : ''} | {report.form_data.area_tratada} ha | {report.produtos_selecionados.length} produto(s)
+                                {report.resumo?.custoTotal ? ` | R$ ${report.resumo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : ''}
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                Criado em: {new Date(report.created_at).toLocaleDateString('pt-BR')} às {new Date(report.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-3">
+                              <button
+                                onClick={() => loadReport(report)}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                              >
+                                Abrir
+                              </button>
+                              <button
+                                onClick={() => deleteReport(report.id)}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">Nenhum relatório salvo nos últimos 10 dias.</p>
+                    )}
+                  </div>
+                )}
                 
                 <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-4">Dados do Planejamento</h3>
@@ -3760,25 +4261,42 @@ function App() {
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Cultura</label>
                       <select
                         value={planejamentoForm.cultura}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura: e.target.value})}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura: e.target.value, cultura_custom: ''})}
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                       >
                         <option value="">Selecione a cultura...</option>
                         <option value="Soja">Soja</option>
                         <option value="Milho">Milho</option>
+                        <option value="Outros">Outros</option>
                       </select>
                     </div>
                     
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sc/ha)</label>
-                      <input
-                        type="number"
-                        value={planejamentoForm.colheita_esperada}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: e.target.value})}
-                        placeholder="Ex: 60"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
+                    {planejamentoForm.cultura === 'Outros' && (
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Nome da Cultura</label>
+                        <input
+                          type="text"
+                          value={planejamentoForm.cultura_custom || ''}
+                          onChange={(e) => setPlanejamentoForm({...planejamentoForm, cultura_custom: e.target.value})}
+                          placeholder="Ex: Algodão, Café, Trigo..."
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                          data-testid="cultura-custom-input"
+                        />
+                      </div>
+                    )}
+                    
+                    {planejamentoForm.cultura !== 'Outros' && (
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Colheita Esperada (sc/ha)</label>
+                        <input
+                          type="number"
+                          value={planejamentoForm.colheita_esperada}
+                          onChange={(e) => setPlanejamentoForm({...planejamentoForm, colheita_esperada: e.target.value})}
+                          placeholder="Ex: 60"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        />
+                      </div>
+                    )}
                     
                     <div>
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Área Tratada (hectares)</label>
@@ -3792,20 +4310,22 @@ function App() {
                       />
                     </div>
                     
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor da Saca (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={planejamentoForm.valor_saca}
-                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: e.target.value})}
-                        placeholder="Ex: 120.00"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
-                      />
-                    </div>
+                    {planejamentoForm.cultura !== 'Outros' && (
+                      <div>
+                        <label className="block text-gray-700 font-semibold mb-2 text-sm">Valor da Saca (R$)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={planejamentoForm.valor_saca}
+                          onChange={(e) => setPlanejamentoForm({...planejamentoForm, valor_saca: e.target.value})}
+                          placeholder="Ex: 120.00"
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        />
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <label className="block text-gray-700 font-semibold mb-2 text-sm">Representante</label>
                       <input
@@ -3826,6 +4346,17 @@ function App() {
                         placeholder="Ex: (11) 99999-9999"
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                         data-testid="telefone-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-2 text-sm">Prazo</label>
+                      <input
+                        type="text"
+                        value={planejamentoForm.prazo}
+                        onChange={(e) => setPlanejamentoForm({...planejamentoForm, prazo: e.target.value})}
+                        placeholder="Ex: 30/06/2026 ou 90 dias"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="prazo-input"
                       />
                     </div>
                   </div>
@@ -3855,22 +4386,43 @@ function App() {
                             </div>
                             
                             <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-600 mb-1">Estágio</label>
-                              <select
-                                value={item.estagio || ''}
-                                onChange={(e) => {
-                                  const novosProdutos = [...produtosSelecionados];
-                                  novosProdutos[index].estagio = e.target.value;
-                                  setProdutosSelecionados(novosProdutos);
-                                }}
-                                className="w-full px-2 py-1 border rounded text-sm"
-                                data-testid={`estagio-select-${index}`}
-                              >
-                                <option value="">Selecione...</option>
-                                {ESTAGIO_OPTIONS.map(opt => (
-                                  <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                              </select>
+                              {isAquaxProduct(item.produto) ? (
+                                <>
+                                  <label className="block text-xs text-gray-600 mb-1">Nº Aplicações</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={item.num_aplicacoes || ''}
+                                    onChange={(e) => {
+                                      const novosProdutos = [...produtosSelecionados];
+                                      novosProdutos[index].num_aplicacoes = e.target.value;
+                                      setProdutosSelecionados(novosProdutos);
+                                    }}
+                                    placeholder="Ex: 3"
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                    data-testid={`num-aplicacoes-${index}`}
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <label className="block text-xs text-gray-600 mb-1">Estágio</label>
+                                  <select
+                                    value={item.estagio || ''}
+                                    onChange={(e) => {
+                                      const novosProdutos = [...produtosSelecionados];
+                                      novosProdutos[index].estagio = e.target.value;
+                                      setProdutosSelecionados(novosProdutos);
+                                    }}
+                                    className="w-full px-2 py-1 border rounded text-sm"
+                                    data-testid={`estagio-select-${index}`}
+                                  >
+                                    <option value="">Selecione...</option>
+                                    {ESTAGIO_OPTIONS.map(opt => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                  </select>
+                                </>
+                              )}
                             </div>
                             
                             <div className="md:col-span-2">
@@ -3890,7 +4442,7 @@ function App() {
                             </div>
                             
                             <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-600 mb-1">Valor/L (R$)</label>
+                              <label className="block text-xs text-gray-600 mb-1">Valor (R$/L)</label>
                               <input
                                 type="number"
                                 step="0.01"
@@ -3908,7 +4460,10 @@ function App() {
                             <div className="md:col-span-2">
                               <label className="block text-xs text-gray-600 mb-1">Volume Total (L)</label>
                               <div className="text-sm font-semibold text-gray-700">
-                                {((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(1)} L
+                                {isAquaxProduct(item.produto)
+                                  ? (((parseFloat(item.num_aplicacoes) || 0) * (parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(2) + ' L')
+                                  : (((parseFloat(item.dose_lha) || 0) * (parseFloat(planejamentoForm.area_tratada) || 0)).toFixed(2) + ' L')
+                                }
                               </div>
                             </div>
                             
@@ -4007,8 +4562,14 @@ function App() {
                             const dose = parseFloat(item.dose_lha) || 0;
                             const valorLitro = parseFloat(item.valor_litro) || 0;
                             
-                            // Volume total = dose * área
-                            const volumeTotal = dose * areaNumero;
+                            // Volume total: AquaX = nº aplicações × dose × área; outros = dose × área
+                            let volumeTotal;
+                            if (isAquaxProduct(item.produto)) {
+                              const numAplicacoes = parseFloat(item.num_aplicacoes) || 0;
+                              volumeTotal = numAplicacoes * dose * areaNumero;
+                            } else {
+                              volumeTotal = dose * areaNumero;
+                            }
                             // Valor total = volume total * valor do litro
                             const valorTotal = volumeTotal * valorLitro;
                             custoTotal += valorTotal;
@@ -4023,6 +4584,8 @@ function App() {
                             resumoProdutos.push({
                               nome: item.produto.name,
                               estagio: item.estagio || '-',
+                              isAquax: isAquaxProduct(item.produto),
+                              num_aplicacoes: item.num_aplicacoes || '',
                               dose_lha: dose,
                               volumeTotal: volumeTotal,
                               valorTotal: valorTotal,
@@ -4035,8 +4598,11 @@ function App() {
                             ? custoPorHectare / valorSacaNumero 
                             : 0;
                           
-                          // Calcular extração e exportação baseado na cultura
-                          const culturaNormalizada = planejamentoForm.cultura.toLowerCase();
+                          // Calcular extração e exportação baseado na cultura (apenas Soja e Milho)
+                          const culturaNome = planejamentoForm.cultura === 'Outros' 
+                            ? (planejamentoForm.cultura_custom || 'Outros') 
+                            : planejamentoForm.cultura;
+                          const culturaNormalizada = culturaNome.toLowerCase();
                           let extracao = {};
                           let exportacao = {};
                           
@@ -4074,7 +4640,7 @@ function App() {
                             valorSacasPorHa,
                             extracao,
                             exportacao,
-                            cultura: planejamentoForm.cultura
+                            cultura: culturaNome
                           });
                         }}
                         className="mt-4 w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base"
@@ -4099,13 +4665,13 @@ function App() {
                           .map(([nutriente, valor]) => (
                             <div key={nutriente} className="text-center p-2 bg-white rounded border border-blue-300">
                               <div className="text-xs text-gray-600">{nutriente}</div>
-                              <div className="text-lg font-bold text-blue-800">{valor.toFixed(1)}</div>
+                              <div className="text-lg font-bold text-blue-800">{valor.toFixed(2)}</div>
                             </div>
                           ))
                         }
                       </div>
                       <div className="mt-3 text-sm text-blue-800">
-                        <strong>Total geral:</strong> {Object.values(resumoManejo.totalNutrientes).reduce((a, b) => a + b, 0).toFixed(1)} g/ha
+                        <strong>Total geral:</strong> {Object.values(resumoManejo.totalNutrientes).reduce((a, b) => a + b, 0).toFixed(2)} g/ha
                       </div>
                     </div>
                     
@@ -4131,7 +4697,7 @@ function App() {
                                   .filter(([, valor]) => valor > 0)
                                   .map(([nutriente, valor]) => {
                                     const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
-                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
+                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(2);
                                     const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
                                     
                                     return (
@@ -4167,7 +4733,7 @@ function App() {
                                   .filter(([, valor]) => valor > 0)
                                   .map(([nutriente, valor]) => {
                                     const isKgHa = ['N', 'P', 'K', 'Ca', 'Mg', 'S'].includes(nutriente);
-                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(1);
+                                    const valorExibicao = isKgHa ? (valor / 1000).toFixed(2) : valor.toFixed(2);
                                     const unidade = isKgHa ? 'Kg/ha' : 'g/ha';
                                     
                                     return (
@@ -4210,8 +4776,8 @@ function App() {
                             <tr key={index} className="border-t">
                               <td className="px-3 py-2" translate="no">{produto.nome}</td>
                               <td className="px-3 py-2 text-center">{produto.estagio}</td>
-                              <td className="px-3 py-2 text-center">{produto.dose_lha.toFixed(1)}</td>
-                              <td className="px-3 py-2 text-center">{produto.volumeTotal.toFixed(1)}</td>
+                              <td className="px-3 py-2 text-center">{produto.dose_lha.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{produto.volumeTotal.toFixed(2)}</td>
                               <td className="px-3 py-2 text-right">
                                 R$ {produto.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                               </td>
@@ -4222,27 +4788,29 @@ function App() {
                     </div>
                     
                     {/* Resumo Financeiro */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`grid grid-cols-1 ${resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo Total (Área Completa)</div>
+                        <div className="text-sm text-gray-600 mb-1">Investimento Total (Área Completa)</div>
                         <div className="text-2xl font-bold text-green-800">
                           R$ {resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </div>
                       </div>
                       
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo por Hectare</div>
+                        <div className="text-sm text-gray-600 mb-1">Investimento por Hectare</div>
                         <div className="text-2xl font-bold text-blue-800">
                           R$ {resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </div>
                       </div>
                       
-                      <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                        <div className="text-sm text-gray-600 mb-1">Custo em Sacas/ha</div>
-                        <div className="text-2xl font-bold text-yellow-800">
-                          {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
+                      {resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros' && (
+                        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                          <div className="text-sm text-gray-600 mb-1">Investimento em Sacas/ha</div>
+                          <div className="text-2xl font-bold text-yellow-800">
+                            {resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                     
                     {/* Opção de incluir nutrientes no PDF */}
@@ -4260,8 +4828,16 @@ function App() {
                       </label>
                     </div>
                     
-                    {/* Botão Gerar Recomendação PDF */}
-                    <div className="mt-6">
+                    {/* Botão Salvar Relatório + Gerar Recomendação PDF */}
+                    <div className="mt-6 space-y-3">
+                      <button
+                        onClick={saveCurrentReport}
+                        className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-semibold text-base flex items-center justify-center gap-2"
+                        data-testid="save-report-btn"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                        Salvar Relatório
+                      </button>
                       <button
                         onClick={async () => {
                           try {
@@ -4281,14 +4857,22 @@ function App() {
                                 doc.addImage(PDF_ASSETS.topDecoration, 'PNG', 210, 0, 330, 273);
                               } catch(e) {}
                               
-                              // Register EurostileEF Black font (TTF)
-                              doc.addFileToVFS('EurostileEF-Black.ttf', EUROSTILE_FONT);
-                              doc.addFont('EurostileEF-Black.ttf', 'EurostileEF', 'normal');
+                              // Register EurostileEF Black font (TTF) - fallback to helvetica if not available
+                              let titleFont = 'helvetica';
+                              let titleStyle = 'bold';
+                              if (EUROSTILE_FONT && EUROSTILE_FONT.length > 100) {
+                                try {
+                                  doc.addFileToVFS('EurostileEF-Black.ttf', EUROSTILE_FONT);
+                                  doc.addFont('EurostileEF-Black.ttf', 'EurostileEF', 'normal');
+                                  titleFont = 'EurostileEF';
+                                  titleStyle = 'normal';
+                                } catch(e) {}
+                              }
                               
-                              // Title - cor #002F17 com EurostileEF Black
-                              doc.setFont('EurostileEF', 'normal');
+                              // Title - cor verde escuro #002F17
+                              doc.setFont(titleFont, titleStyle);
                               doc.setFontSize(20);
-                              doc.setTextColor(0, 47, 23); // #002F17
+                              doc.setTextColor(0, 47, 23);
                               doc.text('Plano de manejo MicroXisto', 145, 52);
                               
                               // Planning info
@@ -4310,21 +4894,30 @@ function App() {
                                 doc.text(`Fazenda: ${planejamentoForm.nome_fazenda}`, 40, y);
                                 y += 14;
                               }
-                              doc.text(`Cultura: ${planejamentoForm.cultura}`, 40, y);
-                              doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 200, y);
+                              const culturaNomePDF = planejamentoForm.cultura === 'Outros' 
+                                ? (planejamentoForm.cultura_custom || 'Outros') 
+                                : planejamentoForm.cultura;
+                              doc.text(`Cultura: ${culturaNomePDF}`, 40, y);
+                              if (planejamentoForm.cultura !== 'Outros' && planejamentoForm.colheita_esperada) {
+                                doc.text(`Colheita Esperada: ${planejamentoForm.colheita_esperada} sc/ha`, 290, y);
+                              }
                               y += 14;
                               doc.text(`Área Tratada: ${planejamentoForm.area_tratada} ha`, 40, y);
                               if (planejamentoForm.valor_saca) {
-                                doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, 200, y);
+                                doc.text(`Valor da Saca: R$ ${parseFloat(planejamentoForm.valor_saca).toFixed(2)}`, 290, y);
                               }
                               y += 14;
                               if (planejamentoForm.representante) {
                                 doc.text(`Representante: ${planejamentoForm.representante}`, 40, y);
                               }
                               if (planejamentoForm.telefone) {
-                                doc.text(`Telefone: ${planejamentoForm.telefone}`, 200, y);
+                                doc.text(`Telefone: ${planejamentoForm.telefone}`, 290, y);
                               }
                               if (planejamentoForm.representante || planejamentoForm.telefone) {
+                                y += 14;
+                              }
+                              if (planejamentoForm.prazo) {
+                                doc.text(`Prazo: ${planejamentoForm.prazo}`, 40, y);
                                 y += 14;
                               }
                               y += 10;
@@ -4336,9 +4929,9 @@ function App() {
                               y += 15;
                               const tableData = resumoManejo.produtos.map(p => [
                                 p.nome,
-                                p.estagio || '-',
-                                p.dose_lha.toFixed(1),
-                                p.volumeTotal.toFixed(1),
+                                p.isAquax ? (p.num_aplicacoes ? `${p.num_aplicacoes}x` : '-') : (p.estagio || '-'),
+                                p.dose_lha.toFixed(2),
+                                p.volumeTotal.toFixed(2),
                                 `R$ ${p.valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`,
                                 p.observacao || ''
                               ]);
@@ -4346,7 +4939,7 @@ function App() {
                               if (typeof autoTable === 'function') {
                                 autoTable(doc, {
                                   startY: y,
-                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
+                                  head: [['Produto', 'Estágio/Aplic.', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
                                   body: tableData,
                                   theme: 'grid',
                                   headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
@@ -4358,7 +4951,7 @@ function App() {
                               } else {
                                 doc.autoTable({
                                   startY: y,
-                                  head: [['Produto', 'Estágio', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
+                                  head: [['Produto', 'Estágio/Aplic.', 'Dose (L/ha)', 'Volume (L)', 'Valor (R$)', 'Obs.']],
                                   body: tableData,
                                   theme: 'grid',
                                   headStyles: { fillColor: [10, 79, 46], textColor: [255, 255, 255], fontSize: 9, font: 'helvetica', fontStyle: 'bold', cellPadding: 4 },
@@ -4385,11 +4978,13 @@ function App() {
                               doc.setFontSize(10);
                               doc.setFont('helvetica', 'normal');
                               doc.setTextColor(50, 50, 50);
-                              doc.text(`Custo Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
+                              doc.text(`Investimento Total: R$ ${resumoManejo.custoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
                               yFin += 14;
-                              doc.text(`Custo por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
+                              doc.text(`Investimento por Hectare: R$ ${resumoManejo.custoPorHectare.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`, 55, yFin);
                               yFin += 14;
-                              doc.text(`Custo em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
+                              if (resumoManejo.valorSacasPorHa > 0 && planejamentoForm.cultura !== 'Outros') {
+                                doc.text(`Investimento em Sacas/ha: ${resumoManejo.valorSacasPorHa.toFixed(2)} sc/ha`, 55, yFin);
+                              }
                               
                               // Nutrientes Aportados (opcional - formato compacto)
                               if (incluirNutrientesPDF && resumoManejo.totalNutrientes && Object.keys(resumoManejo.totalNutrientes).length > 0) {
@@ -4430,23 +5025,23 @@ function App() {
                                     doc.setFontSize(9);
                                     doc.setTextColor(10, 79, 46);
                                     doc.setFont('helvetica', 'bold');
-                                    doc.text(valor.toFixed(1), x + boxW / 2, yBox + 22, { align: 'center' });
+                                    doc.text(valor.toFixed(2), x + boxW / 2, yBox + 22, { align: 'center' });
                                   });
                                 }
                               }
                               
-                              // Logo MicroXisto centralizada no rodapé
+                              // Logo MicroXisto centralizada no rodapé (alta resolução com fundo transparente)
                               try {
-                                const logoW = 180;
-                                const logoH = 48;
-                                doc.addImage(PDF_ASSETS.logoMicroXisto, 'PNG', (pw - logoW) / 2, ph - logoH - 20, logoW, logoH);
+                                const logoW = 200;
+                                const logoH = 67;
+                                doc.addImage(PDF_ASSETS.logoMicroXisto, 'PNG', (pw - logoW) / 2, ph - logoH - 15, logoW, logoH);
                               } catch(e) {}
                               
                               const pdfBlob = doc.output('blob');
                               const pdfUrl = URL.createObjectURL(pdfBlob);
                               const link = document.createElement('a');
                               link.href = pdfUrl;
-                              link.download = `plano_manejo_${planejamentoForm.cultura}_${new Date().toISOString().slice(0,10)}.pdf`;
+                              link.download = `plano_manejo_${culturaNomePDF}_${new Date().toISOString().slice(0,10)}.pdf`;
                               link.target = '_blank';
                               document.body.appendChild(link);
                               link.click();
@@ -4667,7 +5262,7 @@ function App() {
                     <h4 className="text-lg lg:text-xl font-semibold text-gray-800 mb-2" translate="no">{comparisonData.competitor.company}</h4>
                     <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.competitor.product}</h5>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>Densidade: {comparisonData.competitor.density} g/mL</p>
+                      <p>Densidade: {comparisonData.competitor.density} g/100mL</p>
                       <p>Natureza: {comparisonData.competitor.nature}</p>
                       {comparisonData.competitor.proposito && (
                         <p className="font-bold text-blue-600 mt-2">🎯 Propósito: {comparisonData.competitor.proposito}</p>
@@ -4683,7 +5278,7 @@ function App() {
                       </div>
                       <h5 className="text-base lg:text-lg text-gray-600 mb-4" translate="no">{comparisonData.product.name}</h5>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p>Densidade: {comparisonData.product.density} g/mL</p>
+                        <p>Densidade: {comparisonData.product.density} g/100mL</p>
                         <p>Natureza: {comparisonData.product.nature}</p>
                       </div>
                     </div>
@@ -4743,12 +5338,96 @@ function App() {
               <div className="max-w-6xl mx-auto" data-testid="market-study-page">
                 <h2 className="text-2xl lg:text-3xl font-bold text-green-800 mb-6 lg:mb-8 text-center">Estudo de Mercado</h2>
                 
+                {/* User Dashboard - only shows prices from their state */}
+                {!isAdmin && dashboardData && dashboardData.national && dashboardData.national.length > 0 && (
+                  <div className="mb-6">
+                    <div className="bg-white rounded-lg shadow-md p-4 lg:p-6">
+                      <h3 className="text-lg font-bold text-green-800 mb-1">
+                        {`Preços no seu Estado${dashboardData.user_states ? ' (' + dashboardData.user_states.join(', ') + ')' : ''}`}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-4">Dados agregados de todos os registros do seu estado</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-green-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
+                              <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Menor (R$)</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Preço Médio (R$)</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">Maior (R$)</th>
+                              <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {dashboardData.national.map((item, i) => (
+                              <tr key={i} className="border-t hover:bg-gray-50">
+                                <td className="px-3 py-2">{item.empresa}</td>
+                                <td className="px-3 py-2 font-semibold">{item.produto}</td>
+                                <td className="px-3 py-2 text-center text-blue-600">R$ {(item.min_valor || 0).toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center font-bold">R$ {(item.avg_valor || 0).toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center text-red-600">R$ {(item.max_valor || 0).toFixed(2)}</td>
+                                <td className="px-3 py-2 text-center font-bold text-green-700">R$ {(item.avg_rs_ha || 0).toFixed(2)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Form */}
                 <div className="bg-white rounded-lg shadow-md p-4 lg:p-6 mb-6">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">
                     {editingStudy ? 'Editar Registro' : 'Novo Registro'}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Cultura</label>
+                      <select
+                        value={marketForm.cultura}
+                        onChange={(e) => setMarketForm({...marketForm, cultura: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-cultura-select"
+                      >
+                        <option value="">Selecione a cultura...</option>
+                        <option value="Soja">Soja</option>
+                        <option value="Milho">Milho</option>
+                        <option value="Algodão">Algodão</option>
+                        <option value="Abacate">Abacate</option>
+                        <option value="Abacaxi">Abacaxi</option>
+                        <option value="Alho">Alho</option>
+                        <option value="Amendoim">Amendoim</option>
+                        <option value="Arroz">Arroz</option>
+                        <option value="Aveia">Aveia</option>
+                        <option value="Banana">Banana</option>
+                        <option value="Batata">Batata</option>
+                        <option value="Batata-doce">Batata-doce</option>
+                        <option value="Borracha (seringueira)">Borracha (seringueira)</option>
+                        <option value="Café">Café</option>
+                        <option value="Cacau">Cacau</option>
+                        <option value="Cana-de-açúcar">Cana-de-açúcar</option>
+                        <option value="Cebola">Cebola</option>
+                        <option value="Cevada">Cevada</option>
+                        <option value="Citros">Citros</option>
+                        <option value="Coco">Coco</option>
+                        <option value="Feijão">Feijão</option>
+                        <option value="Fumo (tabaco)">Fumo (tabaco)</option>
+                        <option value="Girassol">Girassol</option>
+                        <option value="Gergelim">Gergelim</option>
+                        <option value="Maçã">Maçã</option>
+                        <option value="Mandioca">Mandioca</option>
+                        <option value="Mamão">Mamão</option>
+                        <option value="Manga">Manga</option>
+                        <option value="Melancia">Melancia</option>
+                        <option value="Melão">Melão</option>
+                        <option value="Milheto">Milheto</option>
+                        <option value="Sorgo">Sorgo</option>
+                        <option value="Tomate">Tomate</option>
+                        <option value="Trigo">Trigo</option>
+                        <option value="Uva">Uva</option>
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-gray-700 font-semibold mb-1 text-sm">Empresa</label>
                       <input
@@ -4772,7 +5451,7 @@ function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Dose/ha</label>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Dose (L/ha)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -4784,7 +5463,7 @@ function App() {
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Valor (R$)</label>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Valor (R$/L)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -4794,6 +5473,20 @@ function App() {
                         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
                         data-testid="market-valor-input"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-gray-700 font-semibold mb-1 text-sm">Prazo</label>
+                      <select
+                        value={marketForm.prazo}
+                        onChange={(e) => setMarketForm({...marketForm, prazo: e.target.value})}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500"
+                        data-testid="market-prazo-select"
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="A vista">A vista</option>
+                        <option value="Safra">Safra</option>
+                        <option value="Safrinha">Safrinha</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-gray-700 font-semibold mb-1 text-sm">Tipo de Venda</label>
@@ -4860,7 +5553,7 @@ function App() {
                       <button
                         onClick={() => {
                           setEditingStudy(null);
-                          setMarketForm({ empresa: '', produto: '', dose_ha: '', valor: '', venda: '', estado: '', concorre_microxisto: '' });
+                          setMarketForm({ cultura: '', empresa: '', produto: '', dose_ha: '', valor: '', prazo: '', venda: '', estado: '', concorre_microxisto: '' });
                         }}
                         className="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
                       >
@@ -4878,38 +5571,44 @@ function App() {
                       <table className="w-full text-sm">
                         <thead className="bg-gray-100">
                           <tr>
+                            <th className="px-3 py-2 text-left">Cultura</th>
                             <th className="px-3 py-2 text-left">Empresa</th>
                             <th className="px-3 py-2 text-left">Produto</th>
-                            <th className="px-3 py-2 text-left">Concorre c/ MicroXisto</th>
-                            <th className="px-3 py-2 text-center">Dose/ha</th>
-                            <th className="px-3 py-2 text-center">Valor</th>
+                            <th className="px-3 py-2 text-center">Dose (L/ha)</th>
+                            <th className="px-3 py-2 text-center">Valor (R$/L)</th>
+                            <th className="px-3 py-2 text-center">Prazo</th>
                             <th className="px-3 py-2 text-center">R$/ha</th>
                             <th className="px-3 py-2 text-center">Venda</th>
                             <th className="px-3 py-2 text-center">Estado</th>
+                            <th className="px-3 py-2 text-center">Produto MX</th>
                             <th className="px-3 py-2 text-center">Ações</th>
                           </tr>
                         </thead>
                         <tbody>
                           {marketStudies.map(study => (
                             <tr key={study.id} className="border-t hover:bg-gray-50">
+                              <td className="px-3 py-2">{study.cultura || '-'}</td>
                               <td className="px-3 py-2">{study.empresa}</td>
                               <td className="px-3 py-2">{study.produto}</td>
-                              <td className="px-3 py-2 text-green-700 font-medium">{study.concorre_microxisto || '-'}</td>
                               <td className="px-3 py-2 text-center">{study.dose_ha}</td>
                               <td className="px-3 py-2 text-center">R$ {parseFloat(study.valor).toFixed(2)}</td>
+                              <td className="px-3 py-2 text-center">{study.prazo || '-'}</td>
                               <td className="px-3 py-2 text-center font-bold text-green-700">R$ {parseFloat(study.rs_ha).toFixed(2)}</td>
                               <td className="px-3 py-2 text-center">{study.venda}</td>
                               <td className="px-3 py-2 text-center">{study.estado}</td>
+                              <td className="px-3 py-2 text-center text-green-700 font-medium">{study.concorre_microxisto || '-'}</td>
                               <td className="px-3 py-2 text-center">
                                 <div className="flex gap-1 justify-center">
                                   <button
                                     onClick={() => {
                                       setEditingStudy(study);
                                       setMarketForm({
+                                        cultura: study.cultura || '',
                                         empresa: study.empresa,
                                         produto: study.produto,
                                         dose_ha: study.dose_ha.toString(),
                                         valor: study.valor.toString(),
+                                        prazo: study.prazo || '',
                                         venda: study.venda,
                                         estado: study.estado,
                                         concorre_microxisto: study.concorre_microxisto || ''
@@ -5084,189 +5783,226 @@ function App() {
             )}
             
             {adminTab === 'market-export' && (
-              <div className="space-y-6">
-                {/* Dashboard Visual */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Dashboard - Análise de Concorrentes</h3>
+              <div className="space-y-4" data-testid="admin-market-dashboard">
+                <div className="card bg-white rounded-lg shadow-md p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-800">Dashboard Estudo de Mercado</h3>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                          });
+                          if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'estudo_mercado.xlsx';
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                          } else {
+                            alert('Erro ao exportar dados');
+                          }
+                        } catch (error) {
+                          alert('Erro ao exportar');
+                        }
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-sm"
+                      data-testid="export-market-btn"
+                    >
+                      Baixar Excel
+                    </button>
+                  </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                  {/* Filters */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Produto MicroXisto</label>
-                      <select value={selectedMicroxistoProduct} onChange={(e) => setSelectedMicroxistoProduct(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-microxisto-filter">
-                        <option value="">Todos</option>
-                        {MICROXISTO_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Estado</label>
-                      <select value={selectedDashEstado} onChange={(e) => setSelectedDashEstado(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-estado-filter">
-                        <option value="">Todos</option>
-                        {(microxistoDashboard?.estados || ESTADOS_BRASIL).map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Tipo de Venda</label>
-                      <select value={selectedDashVenda} onChange={(e) => setSelectedDashVenda(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-venda-filter">
-                        <option value="">Todos</option>
-                        {VENDA_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Empresa Concorrente</label>
-                      <select value={selectedDashEmpresa} onChange={(e) => setSelectedDashEmpresa(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-empresa-filter">
+                      <label className="block text-xs text-gray-600 mb-1">Empresa</label>
+                      <select
+                        value={dashboardFilters.empresa}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, empresa: e.target.value, produto: ''})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-empresa"
+                      >
                         <option value="">Todas</option>
-                        {(microxistoDashboard?.empresas || []).map(emp => <option key={emp} value={emp}>{emp}</option>)}
+                        {filterOptions.empresas.map(emp => (
+                          <option key={emp} value={emp}>{emp}</option>
+                        ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1 font-semibold">Produto Concorrente</label>
-                      <select value={selectedDashProduto} onChange={(e) => setSelectedDashProduto(e.target.value)} className="w-full px-2 py-2 border rounded-lg text-sm focus:outline-none focus:border-green-500" data-testid="admin-dash-produto-filter">
+                      <label className="block text-xs text-gray-600 mb-1">Produto</label>
+                      <select
+                        value={dashboardFilters.produto}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, produto: e.target.value})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-produto"
+                      >
                         <option value="">Todos</option>
-                        {(microxistoDashboard?.produtos || []).map(p => <option key={p} value={p}>{p}</option>)}
+                        {(dashboardFilters.empresa && filterOptions.produtos_by_empresa
+                          ? (filterOptions.produtos_by_empresa[dashboardFilters.empresa] || [])
+                          : filterOptions.produtos
+                        ).map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
                       </select>
                     </div>
-                    <div className="flex items-end gap-2">
-                      <button onClick={fetchMicroxistoDashboard} className="w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold" data-testid="admin-microxisto-search-btn">Buscar</button>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Tipo de Venda</label>
+                      <select
+                        value={dashboardFilters.venda}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, venda: e.target.value})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-venda"
+                      >
+                        <option value="">Todos</option>
+                        {filterOptions.vendas.map(v => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Estado</label>
+                      <select
+                        value={dashboardFilters.estado}
+                        onChange={(e) => setDashboardFilters({...dashboardFilters, estado: e.target.value})}
+                        className="w-full px-2 py-1.5 border rounded text-sm"
+                        data-testid="filter-estado"
+                      >
+                        <option value="">Todos</option>
+                        {filterOptions.estados.map(uf => (
+                          <option key={uf} value={uf}>{uf}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                  <div className="mb-4">
-                    <button onClick={() => { setSelectedMicroxistoProduct(''); setSelectedDashEstado(''); setSelectedDashVenda(''); setSelectedDashEmpresa(''); setSelectedDashProduto(''); }} className="text-sm text-gray-500 hover:text-green-700 underline">Limpar todos os filtros</button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={fetchDashboard}
+                      className="px-4 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 font-semibold"
+                      data-testid="apply-filters-btn"
+                    >
+                      Aplicar Filtros
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDashboardFilters({ estado: '', empresa: '', produto: '', venda: '' });
+                        setTimeout(fetchDashboard, 100);
+                      }}
+                      className="px-4 py-1.5 bg-gray-400 text-white rounded text-sm hover:bg-gray-500"
+                    >
+                      Limpar
+                    </button>
                   </div>
-                  
-                  {microxistoDashboard && microxistoDashboard.competitors.length > 0 ? (
-                    <>
-                      {/* Caixas visuais por concorrente */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                        {microxistoDashboard.competitors.map((item, i) => (
-                          <div key={i} className="border border-green-200 rounded-xl p-4 bg-gradient-to-br from-white to-green-50 hover:shadow-lg transition-shadow">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="text-xs font-bold text-white bg-green-700 px-2 py-1 rounded">{item.produto_microxisto}</span>
-                              <span className="text-xs text-gray-500">{item.estado} | {item.venda}</span>
-                            </div>
-                            <div className="text-base font-bold text-gray-800">{item.empresa}</div>
-                            <div className="text-sm text-gray-600 mb-3">{item.produto}</div>
-                            <div className="grid grid-cols-3 gap-2 text-center">
-                              <div className="bg-blue-50 rounded-lg p-2">
-                                <div className="text-xs text-blue-600 font-semibold">Menor</div>
-                                <div className="text-sm font-bold text-blue-800">R$ {item.min_valor.toFixed(2)}</div>
-                              </div>
-                              <div className="bg-yellow-50 rounded-lg p-2">
-                                <div className="text-xs text-yellow-700 font-semibold">Médio</div>
-                                <div className="text-sm font-bold text-yellow-800">R$ {item.avg_valor.toFixed(2)}</div>
-                              </div>
-                              <div className="bg-red-50 rounded-lg p-2">
-                                <div className="text-xs text-red-600 font-semibold">Maior</div>
-                                <div className="text-sm font-bold text-red-800">R$ {item.max_valor.toFixed(2)}</div>
-                              </div>
-                            </div>
-                            <div className="mt-3 flex justify-between items-center border-t border-green-100 pt-2">
-                              <span className="text-lg font-bold text-green-700">R$/ha {item.avg_rs_ha.toFixed(2)}</span>
-                              <span className="text-xs text-gray-500">{item.count} registro{item.count > 1 ? 's' : ''}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Tabela de Detalhamento */}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-green-50">
-                            <tr>
-                              <th className="px-3 py-2 text-left font-semibold text-green-800">Produto MicroXisto</th>
-                              <th className="px-3 py-2 text-center font-semibold text-green-800">Estado</th>
-                              <th className="px-3 py-2 text-center font-semibold text-green-800">Tipo Venda</th>
-                              <th className="px-3 py-2 text-left font-semibold text-green-800">Empresa</th>
-                              <th className="px-3 py-2 text-left font-semibold text-green-800">Produto</th>
-                              <th className="px-3 py-2 text-center font-semibold text-green-800">Menor Valor</th>
-                              <th className="px-3 py-2 text-center font-semibold text-green-800">Maior Valor</th>
-                              <th className="px-3 py-2 text-center font-semibold text-green-800">Valor Médio</th>
-                              <th className="px-3 py-2 text-center font-semibold text-green-800">R$/ha Médio</th>
-                              <th className="px-3 py-2 text-center font-semibold text-green-800">Registros</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {microxistoDashboard.competitors.map((item, i) => (
-                              <tr key={i} className="border-t hover:bg-gray-50">
-                                <td className="px-3 py-2 font-bold text-green-700">{item.produto_microxisto}</td>
-                                <td className="px-3 py-2 text-center">{item.estado}</td>
-                                <td className="px-3 py-2 text-center text-xs">{item.venda}</td>
-                                <td className="px-3 py-2">{item.empresa}</td>
-                                <td className="px-3 py-2 font-semibold">{item.produto}</td>
-                                <td className="px-3 py-2 text-center text-blue-700 font-medium">R$ {item.min_valor.toFixed(2)}</td>
-                                <td className="px-3 py-2 text-center text-red-700 font-medium">R$ {item.max_valor.toFixed(2)}</td>
-                                <td className="px-3 py-2 text-center font-bold">R$ {item.avg_valor.toFixed(2)}</td>
-                                <td className="px-3 py-2 text-center font-bold text-green-700">R$ {item.avg_rs_ha.toFixed(2)}</td>
-                                <td className="px-3 py-2 text-center">{item.count}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </>
-                  ) : microxistoDashboard ? (
-                    <p className="text-gray-500 text-center py-8">Nenhum dado encontrado para estes filtros.</p>
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">Clique em "Buscar" para carregar o dashboard.</p>
-                  )}
                 </div>
 
-                {/* Tabela editável */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-gray-800">Todos os Registros ({adminAllStudies.length})</h3>
-                    <div className="flex gap-2">
-                      <button onClick={fetchAdminAllStudies} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-semibold" data-testid="admin-load-studies-btn">Carregar Registros</button>
-                      <button onClick={async () => { try { const r = await fetch(`${API_BASE}/api/admin/market-studies/export`, { headers: { 'Authorization': `Bearer ${token}` } }); if (r.ok) { const b = await r.blob(); const u = window.URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'estudo_mercado.xlsx'; a.click(); window.URL.revokeObjectURL(u); } } catch (e) { console.error(e); } }} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 font-semibold" data-testid="export-market-btn">Baixar Excel</button>
+                {/* Summary Cards */}
+                {dashboardData && dashboardData.summary && dashboardData.summary.total > 0 && (
+                  <div className="card bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-lg font-bold text-green-800 mb-4">
+                      Resumo {dashboardFilters.estado ? `- ${dashboardFilters.estado}` : '- Todos os Estados'}
+                      <span className="text-sm font-normal text-gray-500 ml-2">({dashboardData.summary.total} registros)</span>
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 text-center">
+                        <div className="text-xs text-gray-600">Menor Valor</div>
+                        <div className="text-xl font-bold text-blue-600">R$ {dashboardData.summary.min_valor.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
+                        <div className="text-xs text-gray-600">Valor Médio</div>
+                        <div className="text-xl font-bold">R$ {dashboardData.summary.avg_valor.toFixed(2)}</div>
+                      </div>
+                      <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-center">
+                        <div className="text-xs text-gray-600">Maior Valor</div>
+                        <div className="text-xl font-bold text-red-600">R$ {dashboardData.summary.max_valor.toFixed(2)}</div>
+                      </div>
                     </div>
+
+                    {/* By State breakdown */}
+                    {dashboardData.by_state && dashboardData.by_state.length > 1 && !dashboardFilters.estado && (
+                      <>
+                        <h4 className="text-sm font-bold text-green-800 mb-2 mt-4">Por Estado</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {dashboardData.by_state.map((st, i) => (
+                            <div key={i} className="bg-green-50 p-3 rounded-lg border border-green-200">
+                              <div className="font-bold text-green-800 text-lg mb-1">{st.estado}</div>
+                              <div className="grid grid-cols-3 gap-1 text-xs">
+                                <div><span className="text-gray-500">Menor:</span> <span className="font-semibold text-blue-600">R$ {(st.min_valor || 0).toFixed(2)}</span></div>
+                                <div><span className="text-gray-500">Médio:</span> <span className="font-bold">R$ {(st.avg_valor || 0).toFixed(2)}</span></div>
+                                <div><span className="text-gray-500">Maior:</span> <span className="font-semibold text-red-600">R$ {(st.max_valor || 0).toFixed(2)}</span></div>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">{st.count} registros</div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                  {adminAllStudies.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead className="bg-gray-100">
+                )}
+
+                {/* All Records Table with Inline Edit */}
+                {dashboardData && dashboardData.records && dashboardData.records.length > 0 && (
+                  <div className="card bg-white rounded-lg shadow-md p-6">
+                    <h3 className="text-lg font-bold text-green-800 mb-4">
+                      Registros ({dashboardData.records.length})
+                    </h3>
+                    <div className="overflow-x-auto" style={{maxHeight: '500px', overflowY: 'auto'}}>
+                      <table className="w-full text-sm">
+                        <thead className="bg-green-50 sticky top-0">
                           <tr>
-                            <th className="px-2 py-2 text-left">Usuário</th>
-                            <th className="px-2 py-2 text-left">Empresa</th>
-                            <th className="px-2 py-2 text-left">Produto</th>
-                            <th className="px-2 py-2 text-left">Concorre c/ MX</th>
-                            <th className="px-2 py-2 text-center">Dose/ha</th>
-                            <th className="px-2 py-2 text-center">Valor</th>
-                            <th className="px-2 py-2 text-center">R$/ha</th>
-                            <th className="px-2 py-2 text-center">Venda</th>
-                            <th className="px-2 py-2 text-center">Estado</th>
-                            <th className="px-2 py-2 text-center">Ações</th>
+                            <th className="px-2 py-2 text-left font-semibold text-green-800">Cultura</th>
+                            <th className="px-2 py-2 text-left font-semibold text-green-800">Empresa</th>
+                            <th className="px-2 py-2 text-left font-semibold text-green-800">Produto</th>
+                            <th className="px-2 py-2 text-center font-semibold text-green-800">Valor</th>
+                            <th className="px-2 py-2 text-center font-semibold text-green-800">Dose</th>
+                            <th className="px-2 py-2 text-center font-semibold text-green-800">R$/ha</th>
+                            <th className="px-2 py-2 text-center font-semibold text-green-800">Venda</th>
+                            <th className="px-2 py-2 text-center font-semibold text-green-800">Estado</th>
+                            <th className="px-2 py-2 text-center font-semibold text-green-800">Produto MX</th>
+                            <th className="px-2 py-2 text-center font-semibold text-green-800">Ações</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {adminAllStudies.map(study => (
-                            <tr key={study.id} className="border-t hover:bg-gray-50">
-                              {adminEditingRow === study.id ? (
+                          {dashboardData.records.map((rec, i) => (
+                            <tr key={i} className="border-t hover:bg-gray-50">
+                              {adminEditingRow === rec.id ? (
                                 <>
-                                  <td className="px-2 py-1 text-xs text-gray-500">{study.user_email}</td>
-                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.empresa||''} onChange={(e) => setAdminEditForm({...adminEditForm, empresa: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
-                                  <td className="px-2 py-1"><input type="text" value={adminEditForm.produto||''} onChange={(e) => setAdminEditForm({...adminEditForm, produto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
-                                  <td className="px-2 py-1"><select value={adminEditForm.concorre_microxisto||''} onChange={(e) => setAdminEditForm({...adminEditForm, concorre_microxisto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs"><option value="">-</option>{MICROXISTO_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}</select></td>
-                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.dose_ha||''} onChange={(e) => setAdminEditForm({...adminEditForm, dose_ha: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
-                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.valor||''} onChange={(e) => setAdminEditForm({...adminEditForm, valor: e.target.value})} className="w-16 px-1 py-1 border rounded text-xs text-center" /></td>
-                                  <td className="px-2 py-1 text-center text-xs font-bold text-green-700">R$ {(parseFloat(adminEditForm.dose_ha||0)*parseFloat(adminEditForm.valor||0)).toFixed(2)}</td>
-                                  <td className="px-2 py-1"><select value={adminEditForm.venda||''} onChange={(e) => setAdminEditForm({...adminEditForm, venda: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">{VENDA_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select></td>
+                                  <td className="px-2 py-1">{rec.cultura || 'Soja'}</td>
+                                  <td className="px-2 py-1"><input value={adminEditForm.empresa||''} onChange={(e) => setAdminEditForm({...adminEditForm, empresa: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1"><input value={adminEditForm.produto||''} onChange={(e) => setAdminEditForm({...adminEditForm, produto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.valor||''} onChange={(e) => setAdminEditForm({...adminEditForm, valor: e.target.value})} className="w-20 px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1"><input type="number" step="0.01" value={adminEditForm.dose_ha||''} onChange={(e) => setAdminEditForm({...adminEditForm, dose_ha: e.target.value})} className="w-20 px-1 py-1 border rounded text-xs" /></td>
+                                  <td className="px-2 py-1 text-center text-green-700 font-bold">R$ {(parseFloat(adminEditForm.dose_ha||0) * parseFloat(adminEditForm.valor||0)).toFixed(2)}</td>
+                                  <td className="px-2 py-1"><select value={adminEditForm.venda||''} onChange={(e) => setAdminEditForm({...adminEditForm, venda: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">{VENDA_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}</select></td>
                                   <td className="px-2 py-1"><select value={adminEditForm.estado||''} onChange={(e) => setAdminEditForm({...adminEditForm, estado: e.target.value})} className="w-full px-1 py-1 border rounded text-xs">{ESTADOS_BRASIL.map(uf => <option key={uf} value={uf}>{uf}</option>)}</select></td>
-                                  <td className="px-2 py-1 text-center"><div className="flex gap-1 justify-center"><button onClick={() => handleAdminUpdateStudy(study.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">Salvar</button><button onClick={() => { setAdminEditingRow(null); setAdminEditForm({}); }} className="px-2 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500">X</button></div></td>
+                                  <td className="px-2 py-1"><select value={adminEditForm.concorre_microxisto||''} onChange={(e) => setAdminEditForm({...adminEditForm, concorre_microxisto: e.target.value})} className="w-full px-1 py-1 border rounded text-xs"><option value="">-</option>{MICROXISTO_PRODUCTS.map(p => <option key={p} value={p}>{p}</option>)}</select></td>
+                                  <td className="px-2 py-1">
+                                    <div className="flex gap-1">
+                                      <button onClick={() => handleAdminSaveEdit(rec.id)} className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700">Salvar</button>
+                                      <button onClick={() => setAdminEditingRow(null)} className="px-2 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500">X</button>
+                                    </div>
+                                  </td>
                                 </>
                               ) : (
                                 <>
-                                  <td className="px-2 py-2 text-xs text-gray-500">{study.user_email}</td>
-                                  <td className="px-2 py-2">{study.empresa}</td>
-                                  <td className="px-2 py-2">{study.produto}</td>
-                                  <td className="px-2 py-2 text-green-700 font-medium">{study.concorre_microxisto || '-'}</td>
-                                  <td className="px-2 py-2 text-center">{study.dose_ha}</td>
-                                  <td className="px-2 py-2 text-center">R$ {parseFloat(study.valor).toFixed(2)}</td>
-                                  <td className="px-2 py-2 text-center font-bold text-green-700">R$ {parseFloat(study.rs_ha).toFixed(2)}</td>
-                                  <td className="px-2 py-2 text-center">{study.venda}</td>
-                                  <td className="px-2 py-2 text-center">{study.estado}</td>
-                                  <td className="px-2 py-2 text-center"><div className="flex gap-1 justify-center">
-                                    <button onClick={() => { setAdminEditingRow(study.id); setAdminEditForm({ empresa: study.empresa, produto: study.produto, dose_ha: study.dose_ha?.toString()||'', valor: study.valor?.toString()||'', venda: study.venda, estado: study.estado, concorre_microxisto: study.concorre_microxisto||'' }); }} className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700" data-testid={`admin-edit-${study.id}`}>Editar</button>
-                                    <button onClick={() => handleAdminDeleteStudy(study.id)} className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700" data-testid={`admin-delete-${study.id}`}>Excluir</button>
-                                  </div></td>
+                                  <td className="px-2 py-1.5">{rec.cultura || 'Soja'}</td>
+                                  <td className="px-2 py-1.5">{rec.empresa}</td>
+                                  <td className="px-2 py-1.5 font-semibold">{rec.produto}</td>
+                                  <td className="px-2 py-1.5 text-center">R$ {(rec.valor || 0).toFixed(2)}</td>
+                                  <td className="px-2 py-1.5 text-center">{(rec.dose_ha || 0).toFixed(2)}</td>
+                                  <td className="px-2 py-1.5 text-center font-bold text-green-700">R$ {(rec.rs_ha || 0).toFixed(2)}</td>
+                                  <td className="px-2 py-1.5 text-center">
+                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${rec.venda === 'Venda direta' ? 'bg-blue-100 text-blue-800' : rec.venda === 'Distribuicao' ? 'bg-orange-100 text-orange-800' : rec.venda === 'Cooperativa' ? 'bg-purple-100 text-purple-800' : 'bg-teal-100 text-teal-800'}`}>{rec.venda}</span>
+                                  </td>
+                                  <td className="px-2 py-1.5 text-center font-medium">{rec.estado}</td>
+                                  <td className="px-2 py-1.5 text-center text-green-700 font-medium">{rec.concorre_microxisto || '-'}</td>
+                                  <td className="px-2 py-1.5">
+                                    <div className="flex gap-1 justify-center">
+                                      <button onClick={() => { setAdminEditingRow(rec.id); setAdminEditForm({ empresa: rec.empresa, produto: rec.produto, dose_ha: rec.dose_ha?.toString()||'', valor: rec.valor?.toString()||'', venda: rec.venda, estado: rec.estado, concorre_microxisto: rec.concorre_microxisto||'' }); }} className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700" data-testid={`admin-edit-${rec.id}`}>Editar</button>
+                                      <button onClick={() => handleAdminDeleteStudy(rec.id)} className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700" data-testid={`admin-delete-${rec.id}`}>Excluir</button>
+                                    </div>
+                                  </td>
                                 </>
                               )}
                             </tr>
@@ -5274,10 +6010,14 @@ function App() {
                         </tbody>
                       </table>
                     </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">Clique em "Carregar Registros" para visualizar todos os dados.</p>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {dashboardData && dashboardData.records && dashboardData.records.length === 0 && (
+                  <div className="card bg-white rounded-lg shadow-md p-6 text-center">
+                    <p className="text-gray-500 py-4">Nenhum dado encontrado para os filtros selecionados.</p>
+                  </div>
+                )}
               </div>
             )}
             
@@ -5317,6 +6057,114 @@ function App() {
           </div>
         )}
       </main>
+      
+      {/* Footer - Desktop only */}
+      <footer className="desktop-only" style={{backgroundColor: '#004F27'}}>
+        <div className="max-w-6xl mx-auto px-8 py-10">
+          <div className="grid grid-cols-3 gap-8">
+            {/* Branding */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <img src="/xistoapp-icon.png" alt="XistoApp" className="h-10 w-10 rounded-lg object-cover" />
+                <span className="text-xl font-bold tracking-tight">
+                  <span className="text-white">Xisto</span><span style={{color: '#9BE178'}}>App</span>
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed" style={{color: 'rgba(255,255,255,0.7)'}}>
+                Consulta e comparação de produtos MicroXisto para o agronegócio brasileiro.
+              </p>
+            </div>
+            
+            {/* Links Rápidos */}
+            <div>
+              <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Links Rápidos</h4>
+              <div className="flex flex-col gap-2">
+                {[
+                  { page: 'technologies', label: 'Tecnologias' },
+                  { page: 'cultures', label: 'Culturas' },
+                  { page: 'planejamento', label: 'Planejamento' },
+                  { page: 'comparison', label: 'Comparativo' },
+                  { page: 'estudo-mercado', label: 'Estudo de Mercado' },
+                ].map(item => (
+                  <button
+                    key={item.page}
+                    onClick={() => { if (isLoggedIn) setCurrentPage(item.page); else setCurrentPage('login'); }}
+                    className="text-left text-sm hover:underline transition"
+                    style={{color: 'rgba(255,255,255,0.7)'}}
+                    onMouseEnter={e => e.target.style.color = '#9BE178'}
+                    onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.7)'}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Redes Sociais */}
+            <div>
+              <h4 className="text-white font-semibold text-sm mb-3 uppercase tracking-wider">Conecte-se</h4>
+              <div className="flex flex-col gap-2 mb-4">
+                <a href="https://www.microxisto.com.br/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm transition" style={{color: 'rgba(255,255,255,0.7)'}} onMouseEnter={e => e.currentTarget.style.color = '#9BE178'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 flex-shrink-0" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                  microxisto.com.br
+                </a>
+                <a href="https://www.instagram.com/microxisto" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm transition" style={{color: 'rgba(255,255,255,0.7)'}} onMouseEnter={e => e.currentTarget.style.color = '#9BE178'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 flex-shrink-0" fill="currentColor"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
+                  @microxisto
+                </a>
+                <a href="https://www.facebook.com/MicroXisto" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm transition" style={{color: 'rgba(255,255,255,0.7)'}} onMouseEnter={e => e.currentTarget.style.color = '#9BE178'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 flex-shrink-0" fill="currentColor"><path d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.85C10.44 7.34 11.93 5.96 14.22 5.96C15.31 5.96 16.45 6.15 16.45 6.15V8.62H15.19C13.95 8.62 13.56 9.39 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96A10 10 0 0 0 22 12.06C22 6.53 17.5 2.04 12 2.04Z"/></svg>
+                  Facebook
+                </a>
+                <a href="https://www.linkedin.com/company/microxisto/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm transition" style={{color: 'rgba(255,255,255,0.7)'}} onMouseEnter={e => e.currentTarget.style.color = '#9BE178'} onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.7)'}>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 flex-shrink-0" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+                  LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          {/* Bottom bar */}
+          <div className="border-t mt-8 pt-4" style={{borderColor: 'rgba(255,255,255,0.15)'}}>
+            <p className="text-center text-xs" style={{color: 'rgba(255,255,255,0.5)'}}>
+              &copy; {new Date().getFullYear()} MicroXisto. Todos os direitos reservados.
+            </p>
+          </div>
+        </div>
+      </footer>
+      
+      {/* Bottom Navigation - Mobile only */}
+      {isLoggedIn && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-50" data-testid="bottom-nav">
+          <div className="flex justify-around items-center py-2">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1 ${currentPage === 'home' ? '' : 'text-gray-400'}`}
+              style={currentPage === 'home' ? {color: '#004F27'} : {}}
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span className="text-xs font-medium">Inicio</span>
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setCurrentPage('admin')}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 ${currentPage === 'admin' ? '' : 'text-gray-400'}`}
+                style={currentPage === 'admin' ? {color: '#004F27'} : {}}
+              >
+                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                <span className="text-xs font-medium">Admin</span>
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center gap-0.5 px-3 py-1 text-red-500"
+            >
+              <svg viewBox="0 0 24 24" className="w-6 h-6" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+              <span className="text-xs font-medium">Sair</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

@@ -9,6 +9,16 @@
   --border-gray: #e2e8f0;
 }
 
+/* Responsive visibility helpers */
+@media (min-width: 1024px) {
+  .mobile-only { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .desktop-only { display: none !important; }
+  /* Extra bottom padding on mobile for fixed nav bar */
+  main { padding-bottom: 7rem !important; }
+}
+
 * {
   margin: 0;
   padding: 0;

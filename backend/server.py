@@ -1,10 +1,14 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 import os
+import asyncio
+import random
+from pathlib import Path
 from motor.motor_asyncio import AsyncIOMotorClient
 import jwt
 from datetime import datetime, timedelta, timezone
@@ -12,8 +16,11 @@ import uuid
 import bcrypt
 import csv
 import io
+import httpx
 from contextlib import asynccontextmanager
-import openpyxl
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # Database setup
 MONGO_URL = os.environ.get('MONGO_URL', "mongodb://localhost:27017")
@@ -26,6 +33,10 @@ db = client[DB_NAME]
 SECRET_KEY = os.environ.get('SECRET_KEY', 'microxisto-secret-key-2025-fallback')
 ALGORITHM = "HS256"
 security = HTTPBearer()
+
+# Resend config
+RESEND_API_KEY = "re_2aNs51cL_Fbvk7fsFCdxkVK4kyt8q9Epc"
+SENDER_EMAIL = "noreply@easyx.agr.br"
 
 # Pydantic models
 class Technology(BaseModel):
@@ -142,30 +153,27 @@ class CompetitorUpdate(BaseModel):
     additives: str
     proposito: Optional[str] = ""  # NOVO CAMPO
 
-# Estudo de Mercado models
-class MarketStudyCreate(BaseModel):
+class MarketStudy(BaseModel):
+    cultura: str = ""
     empresa: str
     produto: str
     dose_ha: float
     valor: float
-    venda: str  # "Venda direta", "Distribuição", "Cooperativa"
-    estado: str  # Brazilian states + PY
-    concorre_microxisto: Optional[str] = None  # MicroXisto product it competes with
-
-class MarketStudyUpdate(BaseModel):
-    empresa: Optional[str] = None
-    produto: Optional[str] = None
-    dose_ha: Optional[float] = None
-    valor: Optional[float] = None
-    venda: Optional[str] = None
-    estado: Optional[str] = None
-    concorre_microxisto: Optional[str] = None
+    prazo: str = ""
+    venda: str
+    estado: str
+    concorre_microxisto: Optional[str] = ""
 
 # Lifespan manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize default data
     await initialize_default_data()
+    # Migrate old market studies: add cultura='Soja' where missing
+    await db.market_studies.update_many(
+        {"$or": [{"cultura": {"$exists": False}}, {"cultura": ""}, {"cultura": None}]},
+        {"$set": {"cultura": "Soja"}}
+    )
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -425,17 +433,17 @@ async def login(request: LoginRequest):
     if not user["is_approved"]:
         raise HTTPException(status_code=401, detail="Account not approved")
     
-    access_token = create_access_token(data={"sub": user["id"]})
+    access_token = create_access_token(data={"sub": user["id"], "is_admin": user["is_admin"]})
     return {"access_token": access_token, "token_type": "bearer", "is_admin": user["is_admin"]}
 
 @app.get("/api/technologies")
 async def get_technologies():
-    technologies = await db.technologies.find({}, {"_id": 0}).to_list(None)
+    technologies = await db.technologies.find({}, {"_id": 0}).to_list(5000)
     return technologies
 
 @app.get("/api/technologies/{tech_id}/products")
 async def get_products_by_technology(tech_id: str):
-    products = await db.products.find({"technology_id": tech_id}, {"_id": 0}).to_list(None)
+    products = await db.products.find({"technology_id": tech_id}, {"_id": 0}).to_list(5000)
     return products
 
 
@@ -446,7 +454,7 @@ async def get_products_by_technology(tech_id: str):
 @app.get("/api/cultures")
 async def get_cultures():
     """Get all cultures for users"""
-    cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+    cultures = await db.cultures.find({}, {"_id": 0}).to_list(5000)
     return cultures
 
 @app.post("/api/admin/cultures")
@@ -464,6 +472,7 @@ async def create_culture(culture: Culture, credentials: HTTPAuthorizationCredent
         culture_data["created_at"] = datetime.utcnow()
         
         await db.cultures.insert_one(culture_data)
+        culture_data.pop("_id", None)
         return {"message": "Culture created successfully", "culture": culture_data}
     
     except jwt.InvalidTokenError:
@@ -478,8 +487,8 @@ async def update_culture(culture_id: str, culture: Culture, credentials: HTTPAut
         if not payload.get("is_admin"):
             raise HTTPException(status_code=403, detail="Admin access required")
         
-        # Update culture
-        culture_data = culture.dict()
+        # Update culture - exclude id to preserve the original
+        culture_data = culture.dict(exclude={"id"})
         culture_data["updated_at"] = datetime.utcnow()
         
         result = await db.cultures.update_one(
@@ -524,7 +533,7 @@ async def get_planejamentos(credentials: HTTPAuthorizationCredentials = Depends(
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_email = payload.get("email")
         
-        planejamentos = await db.planejamentos.find({"user_email": user_email}, {"_id": 0}).to_list(None)
+        planejamentos = await db.planejamentos.find({"user_email": user_email}, {"_id": 0}).to_list(5000)
         return planejamentos
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -542,7 +551,7 @@ async def create_planejamento(planejamento: Planejamento, credentials: HTTPAutho
         planejamento_data["created_at"] = datetime.utcnow().isoformat()
         
         await db.planejamentos.insert_one(planejamento_data)
-        
+        planejamento_data.pop("_id", None)
         return planejamento_data
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -587,7 +596,7 @@ async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Dep
         if not payload.get("is_admin"):
             raise HTTPException(status_code=403, detail="Admin access required")
         
-        cultures = await db.cultures.find({}, {"_id": 0}).to_list(None)
+        cultures = await db.cultures.find({}, {"_id": 0}).to_list(5000)
         return cultures
     
     except jwt.InvalidTokenError:
@@ -600,7 +609,7 @@ async def get_all_cultures_admin(credentials: HTTPAuthorizationCredentials = Dep
 @app.get("/api/products")
 async def get_all_products():
     """Get all products (for planejamento)"""
-    products = await db.products.find({}, {"_id": 0}).to_list(None)
+    products = await db.products.find({}, {"_id": 0}).to_list(5000)
     return products
 
 @app.get("/api/products/{product_id}")
@@ -616,12 +625,12 @@ async def get_competitor_companies():
         {"$group": {"_id": "$company"}},
         {"$sort": {"_id": 1}}
     ]
-    companies = await db.competitors.aggregate(pipeline).to_list(None)
+    companies = await db.competitors.aggregate(pipeline).to_list(5000)
     return [{"company": item["_id"]} for item in companies]
 
 @app.get("/api/competitors/companies/{company}/products")
 async def get_competitor_products(company: str):
-    products = await db.competitors.find({"company": company}, {"_id": 0}).to_list(None)
+    products = await db.competitors.find({"company": company}, {"_id": 0}).to_list(5000)
     return products
 
 @app.get("/api/competitors/{competitor_id}")
@@ -635,7 +644,7 @@ async def get_competitor(competitor_id: str):
 @app.get("/api/products/by-proposito/{proposito}")
 async def get_products_by_proposito(proposito: str):
     """Get MicroXisto products that match a specific purpose"""
-    products = await db.products.find({"proposito": proposito}, {"_id": 0}).to_list(None)
+    products = await db.products.find({"proposito": proposito}, {"_id": 0}).to_list(5000)
     return products
 
 @app.get("/api/home")
@@ -646,12 +655,12 @@ async def get_home_content():
 # Admin routes - User Management
 @app.get("/api/admin/users")
 async def get_all_users(admin_user: dict = Depends(get_admin_user)):
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(None)
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(5000)
     return users
 
 @app.get("/api/admin/users/pending")
 async def get_pending_users(admin_user: dict = Depends(get_admin_user)):
-    users = await db.users.find({"is_approved": False}, {"_id": 0, "password": 0}).to_list(None)
+    users = await db.users.find({"is_approved": False}, {"_id": 0, "password": 0}).to_list(5000)
     return users
 
 @app.post("/api/admin/users/approve")
@@ -706,7 +715,7 @@ async def delete_technology(tech_id: str, admin_user: dict = Depends(get_admin_u
 # Admin routes - Products Management  
 @app.get("/api/admin/products")
 async def get_all_products(admin_user: dict = Depends(get_admin_user)):
-    products = await db.products.find({}, {"_id": 0}).to_list(None)
+    products = await db.products.find({}, {"_id": 0}).to_list(5000)
     return products
 
 @app.put("/api/admin/products/{product_id}")
@@ -730,7 +739,7 @@ async def delete_product(product_id: str, admin_user: dict = Depends(get_admin_u
 # Admin routes - Competitors Management
 @app.get("/api/admin/competitors")
 async def get_all_competitors(admin_user: dict = Depends(get_admin_user)):
-    competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
+    competitors = await db.competitors.find({}, {"_id": 0}).to_list(5000)
     return competitors
 
 @app.put("/api/admin/competitors/{competitor_id}")
@@ -847,396 +856,746 @@ async def create_competitor(competitor: Competitor, admin_user: dict = Depends(g
     return competitor
 
 # ==========================================
-# MAINTENANCE MODE APIs
+# GET ALL COMPETITORS (for autocomplete search)
 # ==========================================
-
-@app.get("/api/maintenance-status")
-async def get_maintenance_status():
-    """Check if maintenance mode is active - never cache"""
-    from fastapi.responses import JSONResponse
-    status = await db.settings.find_one({"key": "maintenance_mode"}, {"_id": 0})
-    data = {"active": status.get("active", False), "message": status.get("message", "Em atualização")} if status else {"active": False, "message": ""}
-    return JSONResponse(content=data, headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"})
-
-@app.post("/api/admin/maintenance")
-async def toggle_maintenance(admin_user: dict = Depends(get_admin_user)):
-    """Toggle maintenance mode"""
-    current = await db.settings.find_one({"key": "maintenance_mode"})
-    new_status = not (current.get("active", False) if current else False)
-    
-    await db.settings.update_one(
-        {"key": "maintenance_mode"},
-        {"$set": {"key": "maintenance_mode", "active": new_status, "message": "Em atualização"}},
-        upsert=True
-    )
-    return {"active": new_status, "message": "Modo manutenção ativado" if new_status else "Modo manutenção desativado"}
-
-# ==========================================
-# ESTUDO DE MERCADO APIs
-# ==========================================
-
-BRAZILIAN_STATES = [
-    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
-    "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
-    "RS", "RO", "RR", "SC", "SP", "SE", "TO", "PY"
-]
-
-@app.get("/api/market-studies")
-async def get_market_studies(current_user: dict = Depends(get_current_user)):
-    """Get market studies for the current user"""
-    studies = await db.market_studies.find(
-        {"user_id": current_user["id"]}, {"_id": 0}
-    ).to_list(None)
-    return studies
-
-@app.post("/api/market-studies")
-async def create_market_study(study: MarketStudyCreate, current_user: dict = Depends(get_current_user)):
-    """Create a new market study entry"""
-    rs_ha = study.dose_ha * study.valor if study.dose_ha and study.valor else 0
-    
-    study_data = {
-        "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
-        "user_email": current_user.get("email", ""),
-        "empresa": study.empresa,
-        "produto": study.produto,
-        "dose_ha": study.dose_ha,
-        "valor": study.valor,
-        "venda": study.venda,
-        "estado": study.estado,
-        "concorre_microxisto": study.concorre_microxisto or "",
-        "rs_ha": rs_ha,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await db.market_studies.insert_one(study_data)
-    study_data.pop("_id", None)
-    return study_data
-
-@app.put("/api/market-studies/{study_id}")
-async def update_market_study(study_id: str, study: MarketStudyUpdate, current_user: dict = Depends(get_current_user)):
-    """Update a market study entry"""
-    existing = await db.market_studies.find_one({"id": study_id, "user_id": current_user["id"]})
-    if not existing:
-        raise HTTPException(status_code=404, detail="Estudo não encontrado")
-    
-    update_data = {k: v for k, v in study.dict().items() if v is not None}
-    
-    # Recalculate rs_ha
-    dose = update_data.get("dose_ha", existing.get("dose_ha", 0))
-    valor = update_data.get("valor", existing.get("valor", 0))
-    update_data["rs_ha"] = dose * valor
-    
-    await db.market_studies.update_one(
-        {"id": study_id, "user_id": current_user["id"]},
-        {"$set": update_data}
-    )
-    return {"message": "Estudo atualizado com sucesso"}
-
-@app.delete("/api/market-studies/{study_id}")
-async def delete_market_study(study_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete a market study entry"""
-    result = await db.market_studies.delete_one({"id": study_id, "user_id": current_user["id"]})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Estudo não encontrado")
-    return {"message": "Estudo removido com sucesso"}
-
-@app.get("/api/admin/market-studies/export")
-async def export_market_studies_excel(admin_user: dict = Depends(get_admin_user)):
-    """Export all market studies to Excel (admin only)"""
-    studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
-    
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Estudo de Mercado"
-    
-    # Headers
-    headers = ["Usuário", "Empresa", "Produto", "Concorre c/ MicroXisto", "Dose/ha", "Valor", "R$/ha", "Venda", "Estado", "Data"]
-    ws.append(headers)
-    
-    # Style headers
-    for col in range(1, len(headers) + 1):
-        cell = ws.cell(row=1, column=col)
-        cell.font = openpyxl.styles.Font(bold=True)
-    
-    # Data rows
-    for s in studies:
-        ws.append([
-            s.get("user_email", ""),
-            s.get("empresa", ""),
-            s.get("produto", ""),
-            s.get("concorre_microxisto", ""),
-            s.get("dose_ha", 0),
-            s.get("valor", 0),
-            s.get("rs_ha", 0),
-            s.get("venda", ""),
-            s.get("estado", ""),
-            s.get("created_at", "")
-        ])
-    
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    
-    return StreamingResponse(
-        output,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=estudo_mercado.xlsx"}
-    )
-
 @app.get("/api/competitors")
-async def get_all_competitors_public():
-    """Get all competitors (public, for search)"""
-    competitors = await db.competitors.find({}, {"_id": 0}).to_list(None)
+async def get_all_competitors():
+    """Get all competitors"""
+    competitors = await db.competitors.find({}, {"_id": 0}).to_list(5000)
     return competitors
 
 # ==========================================
-# ADMIN MARKET STUDIES MANAGEMENT
+# MAINTENANCE MODE APIs
 # ==========================================
+@app.get("/api/maintenance-status")
+async def get_maintenance_status():
+    """Check if maintenance mode is active"""
+    config = await db.app_config.find_one({"key": "maintenance_mode"}, {"_id": 0})
+    if config:
+        return {"active": config.get("active", False)}
+    return {"active": False}
 
+@app.post("/api/admin/maintenance")
+async def toggle_maintenance(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Toggle maintenance mode (admin only)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        config = await db.app_config.find_one({"key": "maintenance_mode"})
+        current_status = config.get("active", False) if config else False
+        new_status = not current_status
+        
+        await db.app_config.update_one(
+            {"key": "maintenance_mode"},
+            {"$set": {"key": "maintenance_mode", "active": new_status, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True
+        )
+        
+        status_text = "ativado" if new_status else "desativado"
+        return {"active": new_status, "message": f"Modo manutenção {status_text}"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ==========================================
+# MARKET STUDIES APIs
+# ==========================================
+@app.get("/api/market-studies")
+async def get_market_studies(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get market studies for logged user"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0}).to_list(5000)
+        return studies
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.post("/api/market-studies")
+async def create_market_study(study: MarketStudy, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Create a new market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        study_data = study.dict()
+        study_data["id"] = str(uuid.uuid4())
+        study_data["user_id"] = user_id
+        study_data["created_at"] = datetime.now(timezone.utc).isoformat()
+        study_data["rs_ha"] = study.dose_ha * study.valor
+        study_data["concorre_microxisto"] = study.concorre_microxisto or ""
+        
+        await db.market_studies.insert_one(study_data)
+        result = {k: v for k, v in study_data.items() if k != "_id"}
+        return result
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.put("/api/market-studies/{study_id}")
+async def update_market_study(study_id: str, study: MarketStudy, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Update a market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        update_data = study.dict()
+        update_data["rs_ha"] = study.dose_ha * study.valor
+        update_data["concorre_microxisto"] = study.concorre_microxisto or ""
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        result = await db.market_studies.update_one(
+            {"id": study_id, "user_id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Study not found")
+        return {"message": "Estudo atualizado com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/market-studies/{study_id}")
+async def delete_market_study(study_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete a market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        result = await db.market_studies.delete_one({"id": study_id, "user_id": user_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Study not found")
+        return {"message": "Estudo removido com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/market-studies/dashboard")
+async def get_market_studies_dashboard(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get dashboard data for regular users - only shows data from their state"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Find user's states from their own studies
+        user_studies = await db.market_studies.find({"user_id": user_id}, {"_id": 0, "estado": 1}).to_list(5000)
+        user_states = list(set(s.get("estado", "") for s in user_studies if s.get("estado")))
+        
+        # Get all studies from user's states
+        if user_states:
+            all_studies = await db.market_studies.find({"estado": {"$in": user_states}}, {"_id": 0}).to_list(5000)
+        else:
+            all_studies = []
+        
+        # Aggregate by empresa+produto
+        product_map = {}
+        state_map = {}
+        for s in all_studies:
+            key = f"{s.get('empresa', '')}|{s.get('produto', '')}"
+            valor = s.get("valor", 0)
+            dose = s.get("dose_ha", 0)
+            rs_ha = dose * valor
+            
+            if key not in product_map:
+                product_map[key] = {
+                    "empresa": s.get("empresa", ""),
+                    "produto": s.get("produto", ""),
+                    "count": 0, "valores": [], "doses": [], "rs_has": []
+                }
+            product_map[key]["count"] += 1
+            product_map[key]["valores"].append(valor)
+            product_map[key]["doses"].append(dose)
+            product_map[key]["rs_has"].append(rs_ha)
+            
+            state = s.get("estado", "")
+            if state not in state_map:
+                state_map[state] = {"estado": state, "count": 0, "valores": [], "rs_has": [], "empresas_set": set()}
+            state_map[state]["count"] += 1
+            state_map[state]["valores"].append(valor)
+            state_map[state]["rs_has"].append(rs_ha)
+            state_map[state]["empresas_set"].add(s.get("empresa", ""))
+        
+        products = []
+        for p in product_map.values():
+            products.append({
+                "empresa": p["empresa"],
+                "produto": p["produto"],
+                "count": p["count"],
+                "avg_valor": sum(p["valores"]) / len(p["valores"]),
+                "min_valor": min(p["valores"]),
+                "max_valor": max(p["valores"]),
+                "avg_dose": sum(p["doses"]) / len(p["doses"]),
+                "avg_rs_ha": sum(p["rs_has"]) / len(p["rs_has"]),
+                "min_rs_ha": min(p["rs_has"]),
+                "max_rs_ha": max(p["rs_has"]),
+            })
+        
+        by_state = []
+        for st in state_map.values():
+            by_state.append({
+                "estado": st["estado"],
+                "count": st["count"],
+                "avg_valor": sum(st["valores"]) / len(st["valores"]),
+                "avg_rs_ha": sum(st["rs_has"]) / len(st["rs_has"]),
+                "empresas": sorted(list(st["empresas_set"]))
+            })
+        
+        return {"national": products, "by_state": by_state, "user_states": user_states}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/admin/market-studies/dashboard-filtered")
+async def get_market_studies_dashboard_filtered(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    estado: Optional[str] = Query(None),
+    empresa: Optional[str] = Query(None),
+    produto: Optional[str] = Query(None),
+    venda: Optional[str] = Query(None),
+    data_inicio: Optional[str] = Query(None),
+    data_fim: Optional[str] = Query(None)
+):
+    """Get filtered dashboard data for admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        query = {}
+        if estado:
+            query["estado"] = estado
+        if empresa:
+            query["empresa"] = empresa
+        if produto:
+            query["produto"] = produto
+        if venda:
+            query["venda"] = venda
+        
+        all_studies = await db.market_studies.find(query, {"_id": 0}).to_list(5000)
+        
+        # Get all studies for filter options (unfiltered)
+        all_for_filters = await db.market_studies.find({}, {"_id": 0}).to_list(5000)
+        empresas_set = set()
+        estados_set = set()
+        produtos_set = set()
+        vendas_set = set()
+        produtos_by_empresa = {}
+        for s in all_for_filters:
+            emp = s.get("empresa", "")
+            prod = s.get("produto", "")
+            empresas_set.add(emp)
+            estados_set.add(s.get("estado", ""))
+            produtos_set.add(prod)
+            if s.get("venda"):
+                vendas_set.add(s.get("venda", ""))
+            if emp not in produtos_by_empresa:
+                produtos_by_empresa[emp] = set()
+            produtos_by_empresa[emp].add(prod)
+        
+        # Individual records for the table
+        records = []
+        for s in all_studies:
+            records.append({
+                "id": s.get("id", ""),
+                "empresa": s.get("empresa", ""),
+                "produto": s.get("produto", ""),
+                "valor": s.get("valor", 0),
+                "dose_ha": s.get("dose_ha", 0),
+                "rs_ha": s.get("rs_ha", round(s.get("dose_ha", 0) * s.get("valor", 0), 2)),
+                "venda": s.get("venda", ""),
+                "estado": s.get("estado", ""),
+                "concorre_microxisto": s.get("concorre_microxisto", ""),
+                "user_id": s.get("user_id", ""),
+                "cultura": s.get("cultura", ""),
+                "prazo": s.get("prazo", ""),
+                "created_at": s.get("created_at", ""),
+            })
+        
+        # Summary stats
+        summary = {}
+        if records:
+            valores = [r["valor"] for r in records]
+            rs_has = [r["rs_ha"] for r in records]
+            summary = {
+                "total": len(records),
+                "avg_valor": sum(valores) / len(valores),
+                "min_valor": min(valores),
+                "max_valor": max(valores),
+                "avg_rs_ha": sum(rs_has) / len(rs_has),
+                "min_rs_ha": min(rs_has),
+                "max_rs_ha": max(rs_has),
+            }
+        
+        # By state breakdown
+        state_map = {}
+        for s in all_studies:
+            state = s.get("estado", "")
+            valor = s.get("valor", 0)
+            rs_ha = s.get("dose_ha", 0) * valor
+            if state not in state_map:
+                state_map[state] = {"estado": state, "count": 0, "valores": [], "rs_has": []}
+            state_map[state]["count"] += 1
+            state_map[state]["valores"].append(valor)
+            state_map[state]["rs_has"].append(rs_ha)
+        
+        by_state = []
+        for st in state_map.values():
+            by_state.append({
+                "estado": st["estado"],
+                "count": st["count"],
+                "avg_valor": sum(st["valores"]) / len(st["valores"]),
+                "min_valor": min(st["valores"]),
+                "max_valor": max(st["valores"]),
+                "avg_rs_ha": sum(st["rs_has"]) / len(st["rs_has"]),
+            })
+        
+        return {
+            "records": records,
+            "summary": summary,
+            "by_state": by_state,
+            "filter_options": {
+                "empresas": sorted(list(empresas_set)),
+                "estados": sorted(list(estados_set)),
+                "produtos": sorted(list(produtos_set)),
+                "vendas": sorted(list(vendas_set)),
+                "produtos_by_empresa": {k: sorted(list(v)) for k, v in produtos_by_empresa.items()}
+            }
+        }
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/admin/market-studies/export")
+async def export_market_studies(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Export all market studies as xlsx"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        import openpyxl
+        
+        studies = await db.market_studies.find({}, {"_id": 0}).to_list(5000)
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Estudo de Mercado"
+        
+        headers = ["Empresa", "Produto", "Dose/ha", "Valor (R$)", "R$/ha", "Venda", "Estado", "Produto MicroXisto", "Cultura", "Data"]
+        ws.append(headers)
+        
+        for s in studies:
+            ws.append([
+                s.get("empresa", ""),
+                s.get("produto", ""),
+                s.get("dose_ha", 0),
+                s.get("valor", 0),
+                s.get("dose_ha", 0) * s.get("valor", 0),
+                s.get("venda", ""),
+                s.get("estado", ""),
+                s.get("concorre_microxisto", ""),
+                s.get("cultura", ""),
+                s.get("created_at", "")
+            ])
+        
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=estudo_mercado.xlsx"}
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# ==========================================
+# ADMIN MARKET STUDIES - ALL, EDIT, DELETE
+# ==========================================
 @app.get("/api/admin/market-studies/all")
-async def get_all_market_studies(admin_user: dict = Depends(get_admin_user)):
-    """Get ALL market studies from ALL users (admin only)"""
-    studies = await db.market_studies.find({}, {"_id": 0}).sort("created_at", -1).to_list(None)
-    return studies
+async def get_all_market_studies(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Admin: Get ALL users' market studies"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        studies = await db.market_studies.find({}, {"_id": 0}).sort("created_at", -1).to_list(None)
+        # Enrich with user email
+        users = {u["id"]: u.get("email", "") for u in await db.users.find({}, {"_id": 0, "id": 1, "email": 1}).to_list(None)}
+        for s in studies:
+            s["user_email"] = users.get(s.get("user_id", ""), "")
+        return studies
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.put("/api/admin/market-studies/{study_id}")
-async def admin_update_market_study(study_id: str, study: MarketStudyUpdate, admin_user: dict = Depends(get_admin_user)):
-    """Admin can update any market study entry"""
-    existing = await db.market_studies.find_one({"id": study_id})
-    if not existing:
-        raise HTTPException(status_code=404, detail="Estudo não encontrado")
-    
-    update_data = {k: v for k, v in study.dict().items() if v is not None}
-    
-    # Recalculate rs_ha
-    dose = update_data.get("dose_ha", existing.get("dose_ha", 0))
-    valor = update_data.get("valor", existing.get("valor", 0))
-    update_data["rs_ha"] = dose * valor
-    
-    await db.market_studies.update_one(
-        {"id": study_id},
-        {"$set": update_data}
-    )
-    return {"message": "Estudo atualizado com sucesso"}
+async def admin_update_market_study(study_id: str, study: MarketStudy, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Admin: Edit any user's market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        existing = await db.market_studies.find_one({"id": study_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Study not found")
+        update_data = study.dict()
+        update_data["rs_ha"] = study.dose_ha * study.valor
+        update_data["concorre_microxisto"] = study.concorre_microxisto or ""
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.market_studies.update_one({"id": study_id}, {"$set": update_data})
+        return {"message": "Estudo atualizado com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.delete("/api/admin/market-studies/{study_id}")
-async def admin_delete_market_study(study_id: str, admin_user: dict = Depends(get_admin_user)):
-    """Admin can delete any market study entry"""
-    result = await db.market_studies.delete_one({"id": study_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Estudo não encontrado")
-    return {"message": "Estudo removido com sucesso"}
+async def admin_delete_market_study(study_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Admin: Delete any user's market study"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        result = await db.market_studies.delete_one({"id": study_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Study not found")
+        return {"message": "Estudo removido com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.get("/api/admin/market-studies/dashboard-by-microxisto")
 async def get_dashboard_by_microxisto(
-    produto_microxisto: Optional[str] = None,
-    estado: Optional[str] = None,
-    venda: Optional[str] = None,
-    empresa: Optional[str] = None,
-    produto_concorrente: Optional[str] = None,
-    admin_user: dict = Depends(get_admin_user)
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    microxisto_product: Optional[str] = Query(None),
+    estado: Optional[str] = Query(None),
+    tipo_venda: Optional[str] = Query(None),
+    empresa: Optional[str] = Query(None),
+    produto: Optional[str] = Query(None),
 ):
-    """Get competitor analysis grouped by MicroXisto product (admin only)"""
-    match_filter = {}
-    if produto_microxisto:
-        match_filter["concorre_microxisto"] = produto_microxisto
-    else:
-        match_filter["concorre_microxisto"] = {"$exists": True, "$nin": ["", None]}
-    if estado:
-        match_filter["estado"] = estado
-    if venda:
-        match_filter["venda"] = venda
-    if empresa:
-        match_filter["empresa"] = empresa
-    if produto_concorrente:
-        match_filter["produto"] = produto_concorrente
-    
-    pipeline_base = [{"$match": match_filter}] if match_filter else []
-    
-    # Group by MicroXisto product, showing competitor stats
-    pipeline = pipeline_base + [
-        {"$group": {
-            "_id": {
-                "microxisto": "$concorre_microxisto",
-                "empresa": "$empresa",
-                "produto": "$produto",
-                "venda": "$venda",
-                "estado": "$estado"
-            },
-            "min_valor": {"$min": "$valor"},
-            "max_valor": {"$max": "$valor"},
-            "avg_valor": {"$avg": "$valor"},
-            "min_rs_ha": {"$min": "$rs_ha"},
-            "max_rs_ha": {"$max": "$rs_ha"},
-            "avg_rs_ha": {"$avg": "$rs_ha"},
-            "avg_dose": {"$avg": "$dose_ha"},
-            "count": {"$sum": 1}
-        }},
-        {"$sort": {"_id.microxisto": 1, "avg_rs_ha": 1}}
-    ]
-    
-    results = await db.market_studies.aggregate(pipeline).to_list(None)
-    
-    # Get distinct values for filters
-    all_microxisto = await db.market_studies.distinct("concorre_microxisto")
-    all_microxisto = [p for p in all_microxisto if p]
-    all_estados = await db.market_studies.distinct("estado")
-    all_vendas = await db.market_studies.distinct("venda")
-    all_empresas = await db.market_studies.distinct("empresa")
-    all_produtos = await db.market_studies.distinct("produto")
-    
-    return {
-        "competitors": [{
-            "produto_microxisto": r["_id"]["microxisto"],
-            "empresa": r["_id"]["empresa"],
-            "produto": r["_id"]["produto"],
-            "venda": r["_id"].get("venda", ""),
-            "estado": r["_id"].get("estado", ""),
-            "min_valor": round(r["min_valor"], 2),
-            "max_valor": round(r["max_valor"], 2),
-            "avg_valor": round(r["avg_valor"], 2),
-            "min_rs_ha": round(r["min_rs_ha"], 2),
-            "max_rs_ha": round(r["max_rs_ha"], 2),
-            "avg_rs_ha": round(r["avg_rs_ha"], 2),
-            "avg_dose": round(r["avg_dose"], 2),
-            "count": r["count"]
-        } for r in results],
-        "microxisto_products": sorted(all_microxisto),
-        "estados": sorted([e for e in all_estados if e]),
-        "vendas": sorted([v for v in all_vendas if v]),
-        "empresas": sorted([e for e in all_empresas if e]),
-        "produtos": sorted([p for p in all_produtos if p])
-    }
+    """Admin: Dashboard grouped by MicroXisto product with filters"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        query = {}
+        if microxisto_product:
+            query["concorre_microxisto"] = microxisto_product
+        if estado:
+            query["estado"] = estado
+        if tipo_venda:
+            query["venda"] = tipo_venda
+        if empresa:
+            query["empresa"] = empresa
+        if produto:
+            query["produto"] = produto
+        studies = await db.market_studies.find(query, {"_id": 0}).to_list(None)
+        all_studies = await db.market_studies.find({}, {"_id": 0}).to_list(None)
+        # Build filter options
+        filter_opts = {"microxisto_products": set(), "estados": set(), "tipos_venda": set(), "empresas": set(), "produtos": set()}
+        for s in all_studies:
+            if s.get("concorre_microxisto"): filter_opts["microxisto_products"].add(s["concorre_microxisto"])
+            if s.get("estado"): filter_opts["estados"].add(s["estado"])
+            if s.get("venda"): filter_opts["tipos_venda"].add(s["venda"])
+            if s.get("empresa"): filter_opts["empresas"].add(s["empresa"])
+            if s.get("produto"): filter_opts["produtos"].add(s["produto"])
+        # Build summary boxes
+        summary = {"total": len(studies)}
+        if studies:
+            valores = [s.get("valor", 0) for s in studies]
+            rs_has = [s.get("dose_ha", 0) * s.get("valor", 0) for s in studies]
+            summary.update({
+                "avg_valor": round(sum(valores) / len(valores), 2),
+                "min_valor": min(valores), "max_valor": max(valores),
+                "avg_rs_ha": round(sum(rs_has) / len(rs_has), 2),
+                "min_rs_ha": round(min(rs_has), 2), "max_rs_ha": round(max(rs_has), 2)
+            })
+        records = []
+        for s in studies:
+            records.append({
+                "id": s.get("id", ""), "empresa": s.get("empresa", ""),
+                "produto": s.get("produto", ""), "valor": s.get("valor", 0),
+                "dose_ha": s.get("dose_ha", 0),
+                "rs_ha": round(s.get("dose_ha", 0) * s.get("valor", 0), 2),
+                "venda": s.get("venda", ""), "estado": s.get("estado", ""),
+                "concorre_microxisto": s.get("concorre_microxisto", ""),
+                "cultura": s.get("cultura", ""), "prazo": s.get("prazo", ""),
+            })
+        return {
+            "summary": summary, "records": records,
+            "filter_options": {k: sorted(list(v)) for k, v in filter_opts.items()}
+        }
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 # ==========================================
 # USER ACTIVITY TRACKING
 # ==========================================
-
 @app.post("/api/track-activity")
-async def track_activity(current_user: dict = Depends(get_current_user)):
-    """Track user login/activity"""
-    await db.user_activity.update_one(
-        {"user_id": current_user["id"], "date": datetime.now(timezone.utc).strftime("%Y-%m-%d")},
-        {"$inc": {"count": 1}, "$set": {"user_email": current_user.get("email", ""), "user_id": current_user["id"]}},
-        upsert=True
-    )
-    return {"status": "ok"}
+async def track_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Track user login activity"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+        if user:
+            await db.user_activity.insert_one({
+                "user_id": user_id,
+                "email": user.get("email", ""),
+                "action": "login",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            })
+        return {"message": "Activity tracked"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+@app.post("/api/admin/migrate-market-cultura")
+async def migrate_market_cultura(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Set cultura='Soja' for all market studies that don't have a cultura field"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        result = await db.market_studies.update_many(
+            {"$or": [{"cultura": {"$exists": False}}, {"cultura": ""}, {"cultura": None}]},
+            {"$set": {"cultura": "Soja"}}
+        )
+        return {"message": f"Atualizados {result.modified_count} registros com cultura='Soja'"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 @app.get("/api/admin/user-activity")
-async def get_user_activity(admin_user: dict = Depends(get_admin_user)):
-    """Get user activity stats (admin only)"""
-    pipeline = [
-        {"$group": {
-            "_id": "$user_email",
-            "total_accesses": {"$sum": "$count"},
-            "days_active": {"$sum": 1},
-            "last_access": {"$max": "$date"}
-        }},
-        {"$sort": {"total_accesses": -1}}
-    ]
-    stats = await db.user_activity.aggregate(pipeline).to_list(None)
-    return [{"email": s["_id"], "total_accesses": s["total_accesses"], "days_active": s["days_active"], "last_access": s["last_access"]} for s in stats]
+async def get_user_activity(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get user activity for admin - aggregated per user"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        activities = await db.user_activity.find({}, {"_id": 0}).sort("timestamp", -1).to_list(5000)
+        
+        # Aggregate per user
+        user_map = {}
+        for a in activities:
+            email = a.get("email", "unknown")
+            if email not in user_map:
+                user_map[email] = {
+                    "email": email,
+                    "total_accesses": 0,
+                    "days": set(),
+                    "last_access": a.get("timestamp", "")
+                }
+            user_map[email]["total_accesses"] += 1
+            ts = a.get("timestamp", "")
+            if ts:
+                day = ts[:10]
+                user_map[email]["days"].add(day)
+        
+        result = []
+        for u in user_map.values():
+            result.append({
+                "email": u["email"],
+                "total_accesses": u["total_accesses"],
+                "days_active": len(u["days"]),
+                "last_access": u["last_access"][:16].replace("T", " ") if u["last_access"] else "-"
+            })
+        
+        result.sort(key=lambda x: x["total_accesses"], reverse=True)
+        return result
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-# ==========================================
-# MARKET STUDY DASHBOARD
-# ==========================================
 
-@app.get("/api/market-studies/dashboard")
-async def get_market_dashboard(current_user: dict = Depends(get_current_user)):
-    """Get market study dashboard data - averages by region and national"""
-    # National averages by produto
-    pipeline_national = [
-        {"$group": {
-            "_id": {"empresa": "$empresa", "produto": "$produto"},
-            "avg_valor": {"$avg": "$valor"},
-            "avg_dose": {"$avg": "$dose_ha"},
-            "avg_rs_ha": {"$avg": "$rs_ha"},
-            "count": {"$sum": 1},
-            "estados": {"$addToSet": "$estado"}
-        }},
-        {"$sort": {"avg_rs_ha": -1}}
-    ]
-    national = await db.market_studies.aggregate(pipeline_national).to_list(None)
-    
-    # By state summary
-    pipeline_state_summary = [
-        {"$group": {
-            "_id": "$estado",
-            "avg_rs_ha": {"$avg": "$rs_ha"},
-            "avg_valor": {"$avg": "$valor"},
-            "count": {"$sum": 1},
-            "empresas": {"$addToSet": "$empresa"}
-        }},
-        {"$sort": {"_id": 1}}
-    ]
-    state_summary = await db.market_studies.aggregate(pipeline_state_summary).to_list(None)
-    
-    return {
-        "national": [{"empresa": s["_id"]["empresa"], "produto": s["_id"]["produto"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"], "estados": s["estados"]} for s in national],
-        "by_state": [{"estado": s["_id"], "avg_rs_ha": round(s["avg_rs_ha"], 2), "avg_valor": round(s["avg_valor"], 2), "count": s["count"], "empresas": s["empresas"]} for s in state_summary]
-    }
+# ==================== PLANEJAMENTO REPORTS ====================
 
-@app.get("/api/admin/market-studies/dashboard-filtered")
-async def get_market_dashboard_filtered(
-    estado: Optional[str] = None,
-    empresa: Optional[str] = None,
-    data_inicio: Optional[str] = None,
-    data_fim: Optional[str] = None,
-    admin_user: dict = Depends(get_admin_user)
-):
-    """Get filtered market study dashboard (admin only)"""
-    match_filter = {}
-    if estado:
-        match_filter["estado"] = estado
-    if empresa:
-        match_filter["empresa"] = empresa
-    if data_inicio or data_fim:
-        date_filter = {}
-        if data_inicio:
-            date_filter["$gte"] = data_inicio
-        if data_fim:
-            date_filter["$lte"] = data_fim + "T23:59:59"
-        match_filter["created_at"] = date_filter
-    
-    pipeline_base = [{"$match": match_filter}] if match_filter else []
-    
-    # By produto
-    pipeline_product = pipeline_base + [
-        {"$group": {
-            "_id": {"empresa": "$empresa", "produto": "$produto"},
-            "avg_valor": {"$avg": "$valor"},
-            "avg_dose": {"$avg": "$dose_ha"},
-            "avg_rs_ha": {"$avg": "$rs_ha"},
-            "count": {"$sum": 1},
-            "estados": {"$addToSet": "$estado"}
-        }},
-        {"$sort": {"avg_rs_ha": -1}}
-    ]
-    products = await db.market_studies.aggregate(pipeline_product).to_list(None)
-    
-    # By state
-    pipeline_state = pipeline_base + [
-        {"$group": {
-            "_id": "$estado",
-            "avg_rs_ha": {"$avg": "$rs_ha"},
-            "avg_valor": {"$avg": "$valor"},
-            "count": {"$sum": 1},
-            "empresas": {"$addToSet": "$empresa"}
-        }},
-        {"$sort": {"_id": 1}}
-    ]
-    states = await db.market_studies.aggregate(pipeline_state).to_list(None)
-    
-    # Get distinct values for filters
-    all_empresas = await db.market_studies.distinct("empresa")
-    all_estados = await db.market_studies.distinct("estado")
-    
-    return {
-        "products": [{"empresa": s["_id"]["empresa"], "produto": s["_id"]["produto"], "avg_valor": round(s["avg_valor"], 2), "avg_dose": round(s["avg_dose"], 2), "avg_rs_ha": round(s["avg_rs_ha"], 2), "count": s["count"], "estados": s["estados"]} for s in products],
-        "by_state": [{"estado": s["_id"], "avg_rs_ha": round(s["avg_rs_ha"], 2), "avg_valor": round(s["avg_valor"], 2), "count": s["count"], "empresas": s["empresas"]} for s in states],
-        "filter_options": {"empresas": sorted(all_empresas), "estados": sorted(all_estados)}
-    }
+class PlanejamentoReport(BaseModel):
+    form_data: dict
+    produtos_selecionados: list
+    resumo: dict = {}
+
+@app.post("/api/planejamento-reports")
+async def save_planejamento_report(report: PlanejamentoReport, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Save a planejamento report (available for 10 days)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        report_data = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "form_data": report.form_data,
+            "produtos_selecionados": report.produtos_selecionados,
+            "resumo": report.resumo,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        await db.planejamento_reports.insert_one(report_data)
+        result = {k: v for k, v in report_data.items() if k != "_id"}
+        return result
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/api/planejamento-reports")
+async def get_planejamento_reports(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get user's planejamento reports (last 10 days only)"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        # Calculate 10 days ago
+        ten_days_ago = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
+        
+        reports = await db.planejamento_reports.find(
+            {"user_id": user_id, "created_at": {"$gte": ten_days_ago}},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(50)
+        
+        return reports
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.delete("/api/planejamento-reports/{report_id}")
+async def delete_planejamento_report(report_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Delete a planejamento report"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        
+        result = await db.planejamento_reports.delete_one({"id": report_id, "user_id": user_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Report not found")
+        return {"message": "Relatório excluído com sucesso"}
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+# ==================== PASSWORD RESET ====================
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetVerify(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+
+@app.post("/api/auth/forgot-password")
+async def forgot_password(request: PasswordResetRequest):
+    """Send password reset code to user's email"""
+    try:
+        user = await db.users.find_one({"email": request.email}, {"_id": 0})
+        if not user:
+            raise HTTPException(status_code=404, detail="E-mail não encontrado")
+        
+        # Generate 6-digit code
+        code = str(random.randint(100000, 999999))
+        expires_at = (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat()
+        
+        # Store reset code
+        await db.password_resets.delete_many({"email": request.email})
+        await db.password_resets.insert_one({
+            "email": request.email,
+            "code": code,
+            "expires_at": expires_at,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Send email via Resend
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #004F27; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">XistoApp</h1>
+            </div>
+            <div style="background-color: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 0 0 8px 8px;">
+                <h2 style="color: #333; margin-top: 0;">Recuperação de Senha</h2>
+                <p style="color: #555;">Você solicitou a redefinição de sua senha. Use o código abaixo:</p>
+                <div style="background-color: #004F27; color: white; text-align: center; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px;">{code}</span>
+                </div>
+                <p style="color: #555;">Este código expira em <strong>15 minutos</strong>.</p>
+                <p style="color: #999; font-size: 12px;">Se você não solicitou esta recuperação, ignore este e-mail.</p>
+            </div>
+        </div>
+        """
+        
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [request.email],
+            "subject": "XistoApp - Código de Recuperação de Senha",
+            "html": html_content
+        }
+        
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {RESEND_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json=params
+            )
+            if resp.status_code != 200:
+                raise Exception(resp.text)
+        
+        return {"message": "Código enviado para o seu e-mail"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar e-mail: {str(e)}")
+
+@app.post("/api/auth/reset-password")
+async def reset_password(request: PasswordResetVerify):
+    """Verify code and reset password"""
+    try:
+        # Find valid reset code
+        reset_entry = await db.password_resets.find_one(
+            {"email": request.email, "code": request.code}, {"_id": 0}
+        )
+        
+        if not reset_entry:
+            raise HTTPException(status_code=400, detail="Código inválido")
+        
+        # Check expiry
+        expires_at = datetime.fromisoformat(reset_entry["expires_at"])
+        if datetime.now(timezone.utc) > expires_at:
+            await db.password_resets.delete_many({"email": request.email})
+            raise HTTPException(status_code=400, detail="Código expirado. Solicite um novo.")
+        
+        # Update password
+        hashed_password = bcrypt.hashpw(request.new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        result = await db.users.update_one(
+            {"email": request.email},
+            {"$set": {"password": hashed_password}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        
+        # Clean up used code
+        await db.password_resets.delete_many({"email": request.email})
+        return {"message": "Senha alterada com sucesso!"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao redefinir senha: {str(e)}")
+
+
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok"}
+
+
+# Serve React static files (for Railway/production)
+STATIC_DIR = Path(__file__).parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR / "static")), name="staticfiles")
+
+    @app.get("/{full_path:path}")
+    async def serve_react(full_path: str):
+        file_path = STATIC_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(STATIC_DIR / "index.html"))
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,6 +1,6 @@
 {
-  "name": "EasyX - MicroXisto",
-  "short_name": "EasyX",
+  "name": "XistoApp - MicroXisto",
+  "short_name": "XistoApp",
   "description": "Sistema de consulta e comparação de produtos MicroXisto",
   "start_url": "/",
   "display": "standalone",
@@ -9,13 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192x192.png",
+      "src": "/xistoapp-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/xistoapp-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
@@ -23,31 +23,5 @@
   ],
   "categories": ["business", "productivity"],
   "lang": "pt-BR",
-  "scope": "/",
-  "shortcuts": [
-    {
-      "name": "Tecnologias",
-      "short_name": "Tecnologias",
-      "description": "Consultar tecnologias MicroXisto",
-      "url": "/?page=technologies",
-      "icons": [
-        {
-          "src": "/icon-192x192.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Comparativo",
-      "short_name": "Comparativo",
-      "description": "Comparar produtos com concorrentes",
-      "url": "/?page=comparison",
-      "icons": [
-        {
-          "src": "/icon-192x192.png",
-          "sizes": "96x96"
-        }
-      ]
-    }
-  ]
+  "scope": "/"
 }
