@@ -1269,6 +1269,61 @@ async def admin_delete_market_study(study_id: str, credentials: HTTPAuthorizatio
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+class BulkMarketStudy(BaseModel):
+    records: List[Dict[str, Any]]
+
+@app.post("/api/admin/market-studies/bulk-import")
+async def bulk_import_market_studies(data: BulkMarketStudy, credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Admin: Bulk import market studies from pasted Excel data"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if not payload.get("is_admin"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        
+        user_id = payload.get("sub")
+        imported = 0
+        errors = []
+        
+        for i, rec in enumerate(data.records):
+            try:
+                empresa = str(rec.get("empresa", "")).strip()
+                produto = str(rec.get("produto", "")).strip()
+                if not empresa or not produto:
+                    errors.append(f"Linha {i+1}: Empresa e Produto são obrigatórios")
+                    continue
+                
+                dose_ha = float(rec.get("dose_ha", 0) or 0)
+                valor = float(rec.get("valor", 0) or 0)
+                
+                study_doc = {
+                    "id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "cultura": str(rec.get("cultura", "")).strip() or "Soja",
+                    "empresa": empresa,
+                    "produto": produto,
+                    "dose_ha": dose_ha,
+                    "valor": valor,
+                    "rs_ha": round(dose_ha * valor, 2),
+                    "prazo": str(rec.get("prazo", "")).strip(),
+                    "venda": str(rec.get("venda", "")).strip() or "Venda direta",
+                    "estado": str(rec.get("estado", "")).strip() or "SP",
+                    "concorre_microxisto": str(rec.get("concorre_microxisto", "")).strip(),
+                    "created_at": datetime.now(timezone.utc).isoformat()
+                }
+                await db.market_studies.insert_one(study_doc)
+                imported += 1
+            except Exception as e:
+                errors.append(f"Linha {i+1}: {str(e)}")
+        
+        return {
+            "message": f"{imported} registros importados com sucesso",
+            "imported": imported,
+            "errors": errors,
+            "total_sent": len(data.records)
+        }
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 @app.get("/api/admin/market-studies/dashboard-by-microxisto")
 async def get_dashboard_by_microxisto(
     credentials: HTTPAuthorizationCredentials = Depends(security),

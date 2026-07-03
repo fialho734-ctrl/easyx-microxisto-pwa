@@ -2544,6 +2544,62 @@ function App() {
 
   const MICROXISTO_PRODUCTS = ['Magnus', 'Pullseed Ni', 'Pullseed G', 'Active', 'One-Max', 'Complex', 'MN-MAX', 'ZINMAX', 'S-MAX', 'Guardian', 'TRUCKER', 'CA-ULTRA', 'MG-ULTRA', 'Citro-X', 'Tek-F', 'Alvo', 'DTA'];
 
+  // Bulk import states
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkPasteData, setBulkPasteData] = useState('');
+  const [bulkPreview, setBulkPreview] = useState([]);
+  const [bulkImporting, setBulkImporting] = useState(false);
+
+  const parseBulkPaste = (text) => {
+    if (!text.trim()) { setBulkPreview([]); return; }
+    const lines = text.trim().split('\n');
+    const records = [];
+    for (const line of lines) {
+      const cols = line.split('\t');
+      if (cols.length < 4) continue;
+      // Expected order: Empresa, Produto, Dose/ha, Valor, Venda, Estado, Produto MX, Cultura
+      records.push({
+        empresa: (cols[0] || '').trim(),
+        produto: (cols[1] || '').trim(),
+        dose_ha: parseFloat((cols[2] || '0').replace(',', '.')) || 0,
+        valor: parseFloat((cols[3] || '0').replace(',', '.')) || 0,
+        venda: (cols[4] || 'Venda direta').trim(),
+        estado: (cols[5] || '').trim(),
+        concorre_microxisto: (cols[6] || '').trim(),
+        cultura: (cols[7] || 'Soja').trim(),
+      });
+    }
+    setBulkPreview(records);
+  };
+
+  const handleBulkImport = async () => {
+    if (bulkPreview.length === 0) return;
+    setBulkImporting(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/market-studies/bulk-import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ records: bulkPreview })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        alert(`${result.imported} registros importados com sucesso!${result.errors.length > 0 ? '\n\nErros:\n' + result.errors.join('\n') : ''}`);
+        setBulkPasteData('');
+        setBulkPreview([]);
+        setShowBulkImport(false);
+        fetchAdminMarketStudies();
+        fetchAdminMxDashboard();
+        fetchDashboard();
+      } else {
+        const err = await response.json();
+        alert('Erro: ' + (err.detail || 'Falha na importação'));
+      }
+    } catch (error) {
+      alert('Erro na importação: ' + error.message);
+    }
+    setBulkImporting(false);
+  };
+
   // Estágio options
   const ESTAGIO_OPTIONS = ['TS', 'Sulco', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'R1', 'R2', 'R3', 'R4', 'R5', 'R5.1', 'R5.2', 'R5.3', 'R5.4', 'R6'];
   
@@ -5787,7 +5843,15 @@ function App() {
                 <div className="card bg-white rounded-lg shadow-md p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800">Dashboard Estudo de Mercado</h3>
-                    <button
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowBulkImport(!showBulkImport)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
+                        data-testid="import-excel-btn"
+                      >
+                        {showBulkImport ? 'Fechar Importação' : 'Importar do Excel'}
+                      </button>
+                      <button
                       onClick={async () => {
                         try {
                           const response = await fetch(`${API_BASE}/api/admin/market-studies/export`, {
@@ -5813,8 +5877,85 @@ function App() {
                     >
                       Baixar Excel
                     </button>
+                    </div>
                   </div>
                   
+                  {/* Bulk Import Panel */}
+                  {showBulkImport && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4" data-testid="bulk-import-panel">
+                      <h4 className="font-bold text-blue-800 mb-2">Importar dados do Excel</h4>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Copie as colunas do Excel na ordem: <strong>Empresa | Produto | Dose/ha | Valor | Tipo Venda | Estado | Produto MX | Cultura</strong>
+                      </p>
+                      <p className="text-xs text-gray-500 mb-3">
+                        Selecione as linhas no Excel (sem cabeçalho), copie com Ctrl+C e cole abaixo com Ctrl+V
+                      </p>
+                      <textarea
+                        value={bulkPasteData}
+                        onChange={(e) => { setBulkPasteData(e.target.value); parseBulkPaste(e.target.value); }}
+                        placeholder={"Cole aqui os dados do Excel...\nExemplo:\nConcorrente A\tProduto X\t2.5\t100\tVenda direta\tSP\tMagnus\tSoja"}
+                        className="w-full h-32 px-3 py-2 border border-blue-300 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500"
+                        data-testid="bulk-paste-textarea"
+                      />
+                      
+                      {bulkPreview.length > 0 && (
+                        <div className="mt-3">
+                          <h5 className="font-semibold text-blue-800 mb-2">Preview: {bulkPreview.length} registros encontrados</h5>
+                          <div className="overflow-x-auto max-h-48 overflow-y-auto border rounded">
+                            <table className="w-full text-xs">
+                              <thead className="bg-blue-100 sticky top-0">
+                                <tr>
+                                  <th className="px-2 py-1 text-left">#</th>
+                                  <th className="px-2 py-1 text-left">Empresa</th>
+                                  <th className="px-2 py-1 text-left">Produto</th>
+                                  <th className="px-2 py-1">Dose</th>
+                                  <th className="px-2 py-1">Valor</th>
+                                  <th className="px-2 py-1">R$/ha</th>
+                                  <th className="px-2 py-1">Venda</th>
+                                  <th className="px-2 py-1">Estado</th>
+                                  <th className="px-2 py-1">Produto MX</th>
+                                  <th className="px-2 py-1">Cultura</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {bulkPreview.map((r, i) => (
+                                  <tr key={i} className="border-t hover:bg-blue-50">
+                                    <td className="px-2 py-1 text-gray-400">{i+1}</td>
+                                    <td className="px-2 py-1">{r.empresa}</td>
+                                    <td className="px-2 py-1 font-semibold">{r.produto}</td>
+                                    <td className="px-2 py-1 text-center">{r.dose_ha}</td>
+                                    <td className="px-2 py-1 text-center">R$ {r.valor.toFixed(2)}</td>
+                                    <td className="px-2 py-1 text-center text-green-700 font-bold">R$ {(r.dose_ha * r.valor).toFixed(2)}</td>
+                                    <td className="px-2 py-1 text-center">{r.venda}</td>
+                                    <td className="px-2 py-1 text-center">{r.estado}</td>
+                                    <td className="px-2 py-1 text-center">{r.concorre_microxisto || '-'}</td>
+                                    <td className="px-2 py-1 text-center">{r.cultura}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              onClick={handleBulkImport}
+                              disabled={bulkImporting}
+                              className={`px-6 py-2 rounded-lg font-semibold text-white text-sm ${bulkImporting ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
+                              data-testid="confirm-bulk-import-btn"
+                            >
+                              {bulkImporting ? 'Importando...' : `Importar ${bulkPreview.length} registros`}
+                            </button>
+                            <button
+                              onClick={() => { setBulkPasteData(''); setBulkPreview([]); }}
+                              className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 text-sm"
+                            >
+                              Limpar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Filters */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                     <div>
